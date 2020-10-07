@@ -1,0 +1,71 @@
+.collapseField {
+    max-width: 0;
+    overflow: auto;
+    display: block;
+    position: absolute;
+    z-index: 1;
+    width: 20%;
+    height: auto;
+    max-height: 80%;
+    border-radius: 5px;
+    /*background-color: #0f1b07;*/
+    background-color: transparent;
+    -webkit-transition: max-width .5s;
+    -o-transition: max-width .5s;
+    transition: max-width .5s;
+}
+
+.collapseList {
+    overflow: hidden;
+    background-color: rgba(15, 27, 7, 0.8);
+    box-shadow: 0 0 15px #546250;
+    height: 89vh;
+    cursor: pointer;
+    padding: 0;
+}
+
+.collapse:checked ~ .collapseField {
+    max-width: 100%;
+}
+
+.collapseList li{
+  display: block;
+  height: auto;    
+  padding: 5px;
+}
+
+.collapseList li:hover{
+  background: #2c5214;
+}
+
+.collapseList li:last-child{
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius :4px;
+}
+
+.collapseLbl:before{
+  height: 2px;
+  width: 20px;
+  background: rgb(249, 235, 210);
+  display: inline-block;
+  content: "";
+  box-shadow: 0px -5px 0px 0px rgb(249, 235, 210), 0px -10px 0px 0px rgb(249, 235, 210);
+  margin-right: 10px;
+  position: relative;
+}
+
+.collapseLbl {
+  cursor: pointer;
+  display: inline;
+  margin: 0;
+  background-color: #0f1b07;
+  color: white;
+  padding-left: 6px;
+  padding-top: 1%;
+}
+
+.collapse {
+  /*visibility: hidden;*/
+  position: absolute;
+    max-width: 100%;
+}

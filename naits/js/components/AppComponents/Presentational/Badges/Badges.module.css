@@ -1,0 +1,224 @@
+.container {
+  margin-left: 7px;
+  margin-right: 7px;
+  margin-top: 9px;
+  float: left;
+  background-color: rgba(36, 19, 8, 0.9);
+  box-shadow: 1px 1px 10px rgb(36, 19, 8);
+  width: 142px;
+  height: 59px;
+  padding-top: 2px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+}
+
+.container > p {
+  word-wrap: break-word;
+  width: 69px;
+
+  margin: 7px;
+  padding:  0;
+  float: left;
+}
+
+.container .title {
+  text-align: center;
+  padding: 0 0 30px;
+  margin: 0;
+}
+
+.gauge-container {
+  display: inline-block;
+  position: relative;
+  left: -8%;
+  width: 55px;
+}
+
+.heart {
+  width: 30px;
+  height: 30px;
+  display: inline-block;
+  position: absolute;
+  top: 49%;
+  left: 51%;
+  transform: translate(-50%, -50%);
+  font-weight: 300;
+}
+
+.biohazard {
+  width: 32px;
+  height: 33px;
+  display: inline-block;
+  position: absolute;
+  top: 46%;
+  left: 51%;
+  transform: translate(-50%, -50%);
+  font-weight: 300;
+}
+
+.print {
+  width: 32px;
+  height: 33px;
+  display: inline-block;
+  position: absolute;
+  top: 46%;
+  left: 51%;
+  transform: translate(-50%, -50%);
+  font-weight: 300;
+}
+
+.needle {
+
+  animation-duration: 2500ms;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+
+  position: absolute;
+  top: 20%;
+  left: 45%;
+
+}
+
+.needleTop {
+	border-style: solid;
+	border-width: 0px 3px 16px 3px;
+}
+
+.needleBottom {
+	border-style: solid;
+	border-width: 16px 3px 0px 3px;
+}
+
+@keyframes waggle {
+    0%   {transform:rotate(0deg);}
+    10%  {transform:rotate(12deg);}
+    40%  {transform:rotate(-25deg);}
+    60%  {transform:rotate(20deg);}
+    80%  {transform:rotate(-15deg);}
+    100% {transform:rotate(0deg);}
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: rgb(249, 235, 210);
+    right: -13px;
+    min-width: 141px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 16;
+    border-radius: 5px;
+}
+
+.dropdown-content > div {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+/* Change color of dropdown links on hover */
+.dropdown-content > div:hover {
+  background-color: rgba(224, 171, 16, 0.8);
+  border-radius: 5px;
+  -webkit-transition: background-color 600ms ease;
+  -ms-transition: background-color 600ms ease;
+  -moz-transition: background-color 600ms ease;
+  transition: background-color 600ms ease;
+}
+
+/* Show the dropdown menu on hover */
+.gauge-container:hover .dropdown-content {
+    display: block;
+}
+
+.container:hover .gauge-container .dropdown-content {
+    display: block;
+}
+
+.show-dropdown {
+  display: none;
+  position: absolute;
+  background-color: rgba(36, 19, 8, 0.9);
+  min-width: 350px;
+  height: 320px;
+  margin-top: 8px;
+  margin-left: -75px;
+  box-shadow: 0px 8px 16px 0px rgb(36, 19, 8);
+  opacity: 1;
+  border-radius: 5px;
+  overflow: auto;
+  z-index: 30;
+}
+
+.show-dropdown > div {
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+.gauge-container:hover .show-dropdown {
+    display: block;
+}
+
+.container:hover .gauge-container .show-dropdown {
+    display: block;
+}
+
+.activateStatuses {
+  width: 160px;
+  height: 60px;
+  background-color: rgba(36, 19, 8, 0.9);
+  box-shadow: 1px 1px 10px rgb(36, 19, 8);
+  margin-top: 9px;
+  margin-left: 7px;
+  margin-right: 7px;
+  border-radius: 5px;
+  cursor: pointer;
+  float: left;
+  padding-top: 3px;
+}
+
+.activateStatuses:hover > .ul_group {
+  display: block;
+  position: relative;
+  z-index: 2;
+}
+
+.ul_group {
+  background-color: rgba(36, 19, 8, 0.9);
+  box-shadow: 1px 1px 10px rgb(36, 19, 8);
+  list-style-type: none;
+  margin-bottom: 5px;
+  display: none;
+  padding: 0;
+}
+
+.ul_group > li > div {
+  margin-top: 0;
+  margin-left: 0;
+  background-color: rgba(36, 19, 8, 0.9);
+  width: 160px;
+}
+
+.imgTxtHolder {
+  height: 100%;
+}
+
+.statusText {
+  word-wrap: break-word;
+  width: 69px;
+  margin: 7px;
+  padding: 0;
+  float: left;
+}
+
+.statusImg {
+  width: 55px;
+  margin-right: 4px;
+}
+
+.svgUtil {
+  margin-left: 7px;
+  margin-top: 4px;
+}

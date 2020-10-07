@@ -1,0 +1,319 @@
+.imgNaits > img {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.btn {
+  border: none;
+  display: block!important;
+  text-align: center!important;
+  cursor: pointer!important;
+  text-transform: uppercase;
+  overflow: hidden!important;
+  position: relative!important;
+  color: #fff!important;
+  background-color: rgba(4, 4, 4, 0.42)!important;
+  padding: 17px 60px!important;
+  margin: 0 auto!important;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.20)!important;
+  text-shadow: 2px 2px 6px rgba(0,0,0,0.3)!important;
+}
+
+.btn span {
+  position: relative;
+  z-index: 1;
+}
+
+.btn:after {
+  content: ""!important;
+  position: absolute!important;
+  left: 0!important;
+  top: 0!important;
+  height: 490%!important;
+  width: 140%!important;
+  background: #225556!important;
+  -webkit-transition: all 0.9s ease-in-out!important;
+  transition: all 0.9s ease-in-out!important;
+  -webkit-transform: translateX(-63%) translateY(-8%) rotate(59deg)!important;
+  transform: translateX(-63%) translateY(-8%) rotate(59deg)!important;
+}
+
+.btn:hover:after {
+  -webkit-transform: scale(8) translateX(-9%) translateY(-25%) rotate(45deg)!important;
+  transform: scale(8) translateX(-9%) translateY(-25%) rotate(45deg)!important;
+}
+
+
+/*Main div login form f.r*/
+.bg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color:black;
+  background-image: url("img/wireframe-teal.png");
+  background-size: cover;
+  overflow: hidden;
+}
+
+/*Main div login form f.r*/
+.mainLoginComp {
+  position: absolute;
+  top: 14%;
+  left: 39%;
+  width: 23%;
+  /*background: red;*/
+  border-radius: 12px;
+  background: rgba(130,130,130,0.4);
+
+  border: 1px solid;
+  border-top-color: rgba(255,255,255,0.4);
+  border-left-color: rgba(255,255,255,0.4);
+  border-bottom-color: rgba(60,60,60,0.4);
+  border-right-color: rgba(60,60,60,0.4);
+  text-align: -webkit-center;
+  text-shadow: #004C4C;
+}
+
+.topForm {
+  /* position: relative; */
+  /* width: 300px; */
+  /* height: 15%; */
+  /* margin: 0 auto; */
+
+  border: 1px solid;
+  border-top-color: rgba(255,255,255,0.4);
+  border-left-color: rgba(255,255,255,0);
+  border-bottom-color: rgba(60,60,60,0.4);
+  border-right-color: rgba(60,60,60,0);
+  text-align: -webkit-center;
+  text-shadow: #004C4C;
+}
+
+.topForm input, topForm button {
+  border: 1px solid;
+  border-bottom-color: rgba(255,255,255,0.5);
+  border-right-color: rgba(60,60,60,0.35);
+  border-top-color: rgba(60,60,60,0.35);
+  border-left-color: rgba(80,80,80,0.45);
+  padding: 8px 24px 8px 10px;
+  font: bold .875em/1.25em "Open Sans Condensed", sans-serif;
+  letter-spacing: .075em;
+  color: #fff;
+  text-shadow: 0 1px 0 rgba(0,0,0,1);
+  margin-bottom: 19px;
+}
+
+.topForm input:focus { background-color: rgba(0,0,0,0.4); }
+
+.bottomForm {
+  padding-top: 7%!important;
+}
+
+/*custom span for img for e-mail and pass f.r*/
+.emailForm {
+  width: 100%;
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACEAAAAhCAMAAABgOjJdAAAAaVBMVEUAAAD////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8G612AAAAInRSTlMAAQIEBgcMDxIZGigyQENERUdWW2mCmKK1vM/Z5Obr7e/9tq1ayQAAAGhJREFUOE/t0DcSgCAARNEFxZwxBxTuf0gLpRKcsdHGX23xqgX+Po7QMxuolE6mRkDUwI7ljatRUFUsEQDEolQWgXDOAT4F1Crg9k3bObgRIDXX0yIu85mAZPoxX5hFtunHRGIWf2+1A+6NBtlbxDZgAAAAAElFTkSuQmCC);
+  background-position: 100% 49%;
+  height: auto;
+}
+
+.passForm {
+  width: 100%;
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACEAAAAhCAMAAABgOjJdAAAAbFBMVEUAAAD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8+T+BWAAAAI3RSTlMAAQIEBgkLExobICMkJicqKzU3OEVSZm90gomRkqC61eDt9coP1rcAAABdSURBVDjL7c43FoAwEENBgcnZ5Ixh739HGihZFzx3/q2mEGAznaPZc0W0CQaIa40rNTEiIRdoTkaUBCCjPyIaSUo5UO19iYWeCk74rU6EvU4EnU7sByfm92kKm9FuyAIKCwnZi5EAAAAASUVORK5CYII=);
+  background-position: 100% 49%;
+  height: auto;
+}
+
+input[class*="input_error"] {
+  outline: none!important;
+  border: 1px solid rgb(255, 0, 0)!important;
+}
+
+
+.h2{
+    color:#E0E0E0;
+    font-style: border 2px border-style black;
+}
+
+.p {
+    color:beige;
+}
+
+
+/*shine effect on hover f.r*/
+.shine {
+    position: relative;
+    overflow: hidden;
+      margin-right:4px;
+      margin-bottom:8px;
+      width:98%;
+      height:35px;
+    background-color: #118888;
+    border-radius: 0px;
+    border-style: none;
+    border-width: 0px;
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.8);
+    cursor: pointer;
+    color: #fff;
+    font-size: 13px;
+    line-height: 32px;
+    padding: 0px 0px;
+    text-align: center;
+    transition: background-color 0.2s ease 0s;
+    vertical-align: middle;
+    transition-property: left, top, opacity;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.shine:hover {
+    text-shadow: 1px 1px 0 rgba(59, 51, 12, 0.8);
+    background-color: rgba(62, 62, 62, 0.8);
+    background-color: #004C4C;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/**
+ * The "shine" element (thunder)f.r
+ */
+.shine:after {
+  content: "";
+  position: absolute;
+  top: -110%;
+  left: -210%;
+  width: 200%;
+  height: 200%;
+  opacity: 0;
+  transform: rotate(30deg);
+  background: rgba(255, 255, 255, 0.13);
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.13) 0%,
+    rgba(255, 255, 255, 0.13) 77%,
+    rgba(255, 255, 255, 0.5) 92%,
+    rgba(255, 255, 255, 0.0) 100%
+  );
+}
+
+/* Hover state - trigger effect f.r*/
+.shine:hover:after {
+  opacity: 1;
+  top: 100%;
+  left: 100%;
+  transition-property: left, top, opacity;
+  transition-duration: 1s, 1s, 0.15s;
+  transition-timing-function: ease;
+}
+
+/* Active state */
+.shine:active:after {
+  opacity: 0;
+}
+
+
+.stripes {
+  background: repeating-linear-gradient(-45deg, transparent, transparent 12%, rgba(130,130,130,0.3) 9px, rgba(130,130,130,0.3) 24%);
+  padding: 2% 3%;
+  border-top: 1px solid;
+  border-top-color: rgba(255,255,255,0.4);
+
+  border-bottom-left-radius: 11px;
+  border-bottom-right-radius: 11px;
+
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  align-content: space-around;
+  align-items: center;
+
+  height: 48px;
+
+}
+
+
+.stripes div {
+  order: 0;
+  flex: 0 1 46%;
+  align-self: auto;
+
+  font: bold 1.075em/0.15em "Open Sans Condensed", sans-serif;
+  letter-spacing: 0.075em;
+  text-shadow: 1px 2px 3px rgba(0,0,0,0.3);
+  vertical-align: middle;
+  text-align: center;
+
+  color: rgba(255, 255, 255, 0.74);
+  cursor: pointer;
+}
+
+
+.stripes > div > a {
+  font: bold 1.075em/1.15em "Open Sans Condensed", sans-serif;
+  letter-spacing: 0.075em;
+  color: rgba(255, 255, 255, 0.74);
+  text-shadow: 1px 2px 3px rgba(0,0,0,0.3);
+  cursor: pointer;
+}
+
+
+.fadeIn{
+    animation-name: fadeIn;
+    -webkit-animation-name: fadeIn;
+
+    animation-duration: 0.5s;
+    -webkit-animation-duration: 0.5s;
+
+    animation-timing-function: ease-in-out;
+    -webkit-animation-timing-function: ease-in-out;
+
+    visibility: visible !important;
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0.0;
+    }
+    60% {
+    }
+    80% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@-webkit-keyframes fadeIn {
+    0% {
+        opacity: 0.0;
+    }
+    60% {
+    }
+    80% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+.langPaddingRight {
+  padding-right: 6%;
+}
+
+.language {
+  background: rgba(152, 140, 132, 0);
+  border: 1px solid;
+  border-color: transparent;
+  text-shadow: #004C4C;
+  color: white;
+  letter-spacing: .075em;
+}
+
+
+
+.language:focus {
+  outline: rgba(0, 0, 0, 0);
+}

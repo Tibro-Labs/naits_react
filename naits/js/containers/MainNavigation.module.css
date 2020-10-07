@@ -1,0 +1,14 @@
+.imgGeorgia {
+  opacity: 0.4;
+  position: absolute;
+  left: 18%;
+  right: 0;
+  top: 26%;
+  margin: auto;
+  height: 40%;
+}
+
+.imgGeorgia img {
+  max-width: 88%;
+  max-height: 100%;
+}

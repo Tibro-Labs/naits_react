@@ -1,0 +1,514 @@
+/* Gis Styles*/
+
+.inventory {
+    background-color: rgba(35, 28, 9, 0.72);
+    float: left;
+    width: 85%;
+    height: inherit;
+    /* margin-top: 2px; */
+}
+
+.mapContainer {
+    float: left;
+    width: 80%;
+    height: calc(100% - 5vh);
+    max-height: none !important;
+    max-width: none !important;
+}
+
+.mapLoading_label {
+    font-size: 15px;
+    color: white !important;
+    text-shadow: -1px 0 0 black, -1px -1px 0 black, 0 -1px 0 black, 1px -1px 0 black, 1px 0 0 black, 1px 1px 0 black, 0 1px 0 black, -1px 1px 0 black !important;
+    overflow: hidden;
+    z-index: 999;
+    float: right;
+}
+
+/*******************/
+/*  Metadata Panel */
+/*******************/
+
+.sidePanel {
+    background-color: rgba(35, 28, 9, 0.72);
+    width: 15%;
+    height: inherit;
+    padding: 2px;
+    /* margin-left: 85%; */
+    /* margin-top: 2px; */
+    overflow: auto;
+}
+
+.sidePanel #form {
+    background-color: transparent;
+}
+
+.gisMetadataForm {
+    padding: 5%;
+    /* background-image: url(../img/BG_MainContent.png); */
+}
+
+.gisMetadataForm :first-child {
+    display: block !important;
+    border-spacing: 0px !important;
+    color: white;
+}
+
+.gisMetadataForm label {
+    display: grid !important;
+}
+
+.gisMetadataForm .required {
+    display: contents !important;
+}
+
+.gisMetadataForm :first-child fieldset :nth-child(5) {
+    display: inline-block;
+    margin-top: 2.5rem;
+}
+
+.gisMetadataForm :first-child fieldset .form-group fieldset .form-group {
+    margin-bottom: 0;
+}
+
+.gisMetadataForm .field-string {
+    display: inherit !important;
+}
+
+.gisMetadataForm .field-number {
+    display: inherit !important;
+}
+
+.gisMetadataForm textarea {
+    min-width: inherit !important;
+}
+
+.gisMetadataForm input[type="date"].form-control, input[type="time"].form-control, input[type="datetime-local"].form-control, input[type="month"].form-control {
+    color: black;
+}
+
+/* Hackity all the way, hide codelist option element, what if they change index position ?  */
+.gisMetadataForm [id='root_quarantine.basic.info_QUARANTINE_TYPE'] option[value='0'] {
+    display: none;
+}
+
+.strayPetLocationForm {
+    padding: 5%;
+}
+
+.strayPetLocationForm :first-child {
+    display: block !important;
+    border-spacing: 0 !important;
+    color: white;
+}
+
+.strayPetLocationForm label {
+    display: grid !important;
+}
+
+.strayPetLocationForm .required {
+    display: contents !important;
+}
+
+.strayPetLocationForm :first-child fieldset :nth-child(5) {
+    display: inline-block;
+    margin-top: 0;
+}
+
+.strayPetLocationForm :first-child fieldset .form-group fieldset .form-group {
+    margin-bottom: 0;
+    display: block !important;
+}
+
+.strayPetLocationForm .field-string {
+    display: inherit !important;
+}
+
+.strayPetLocationForm .field-number {
+    display: inherit !important;
+}
+
+.strayPetLocationForm textarea {
+    min-width: inherit !important;
+}
+
+.strayPetLocationForm input[type="date"].form-control, input[type="time"].form-control, input[type="datetime-local"].form-control, input[type="month"].form-control {
+    color: black;
+}
+
+#gis_linkGrid_btn:hover {
+    border: 1px solid rgb(249, 235, 210) !important;
+}
+
+/*************/
+/*  Toolbar  */
+/*************/
+.mapToolbar {
+    width: 80%;
+    float: left;
+    height: 5vh;
+    background-color: rgba(1, 1, 1, 0.3);
+    border: 1px solid black;
+}
+
+.scalePanel {
+    float: right;
+    width: 10%;
+    height: inherit;
+    margin-bottom: 0px;
+    /* padding: 11px; */
+    background-repeat: no-repeat;
+    border: 1px solid #000;
+    border-radius: 2px;
+    -webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05)
+}
+
+.scale_dropdown {
+    font-size: 13px;
+    background-color: transparent;
+    background-repeat: repeat-x;
+    border: 1px solid #000;
+    width: 100%;
+    color: white;
+    border-radius: 2px;
+}
+
+.scale_dropdown option {
+    background-color: #101010;
+}
+
+.gisCRS {
+    float: right;
+    margin-right: 0px;
+    width: 10%;
+    height: inherit;
+    border: 1px solid #000;
+    color: white;
+    text-align: center;
+    /* padding: 13px; */
+}
+
+.toolbarBtn {
+    float: left;
+    height: 5vh;
+    width: 5vh;
+    margin-bottom: 0px;
+    background-color: transparent;
+    background-repeat: no-repeat;
+    border: 1px solid #000;
+    border-radius: 2px;
+    -webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+}
+
+.toolbarBtn:hover {
+    border: 1px solid rgb(249, 235, 210);
+    border-radius: 2px;
+}
+
+.filterMovement {
+    color: white;
+    font-size: 13px;
+    text-align: center;
+}
+
+.filterMovementBtn {
+    width: auto;
+    height: auto;
+    background-color: transparent;
+    background-image: linear-gradient(rgba(255, 255, 255, 0), rgba(128, 128, 128, 0.1));
+    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.15) rgba(0, 0, 0, 0.2);
+    border: 1px solid black;
+    border-radius: 5px;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.1) inset, 0 1px 2px rgba(0, 0, 0, 0.1);
+    float: right;
+    cursor: pointer;
+    color: white;
+    font-size: 14px;
+    line-height: 22px;
+    padding: 2px 12px;
+    text-align: center;
+    transition: background-color 0.2s ease 0s;
+    vertical-align: middle;
+    margin-right: 5px;
+    margin-left: 5px;
+    margin-top: 7px;
+    margin-bottom: 7px;
+}
+
+.filterMovementBtn:hover {
+    background-color: rgb(249, 235, 210);
+    color: black;
+}
+
+.filterHistory {
+    color: white;
+    font-size: 13px;
+    text-align: right;
+}
+
+.movementDatePicker {
+    background: rgb(249, 235, 210);
+    border: 1px solid black;
+    border-radius: 5px;
+    color: black;
+    margin: 7px;
+    float: right;
+}
+
+.QuarantineIcon {
+    width: 25px;
+    height: 25px;
+    position: absolute;
+    background-image: url('img/quarantine.svg');
+    transform: translate(-50%, -50%);
+    font-weight: 300;
+}
+
+.gisTooltip {
+    /* background-image: url(../img/BG_MainContent.png) !important; */
+    background-color: rgba(1, 1, 1, 0.3) !important;
+    color: white !important;
+    border: 2px solid black !important;
+	text-shadow: -1px 0 0 black, -1px -1px 0 black,
+				0 -1px 0 black, 1px -1px 0 black,
+				1px 0 0 black, 1px 1px 0 black,
+				0 1px 0 black, -1px 1px 0 black !important;
+	white-space: nowrap !important;
+}
+
+/*******************/
+/* LayerList Panel */
+/*******************/
+.layerPanel {
+    float: left;
+    width: 20%;
+    height: inherit;
+    overflow: auto;
+    /* temp settings */
+    font-size: 20px;
+    text-align: center;
+    color: white;
+}
+
+.infoList {
+    background-color: rgba(1, 1, 1, 0.3);
+    height: auto;
+    width: 100%;
+    padding: 10px;
+    border-radius: 1px;
+    border: 1px black solid;
+}
+
+.infoListContent {
+    margin:0px;
+    padding:0px;
+    color:rgb(249, 235, 210);
+    font-family: Trebuchet MS,Tahoma,Verdana,Arial,sans-serif;
+    font-size:12px;
+    font-weight: bold;
+    text-align: left;
+}
+
+.layerList {
+    cursor:pointer;
+    background-repeat: repeat-x;
+    background-color: rgba(1, 1, 1, 0.3);
+    border: 1px solid black;
+    width:100%;
+    overflow: auto;
+    padding: 10px;
+    margin-right:4px;
+}
+
+.layerList-heading {
+    text-align: center;
+}
+
+.layerList-title {
+    margin-top: 0;
+    font-size: 15px;
+    color: inherit
+}
+
+.layerList-body {
+    /*height: auto;*/
+    max-height: 30.8vh;
+    padding: 1px;
+    text-align: left;
+    background-color: transparent;
+    color: white;
+    border: 1px solid black;
+    font-size: 13px;
+    overflow: inherit;
+    /*padding: 15px;*/
+}
+
+.layerList-footer {
+    padding: 10px 15px;
+    background-color: #fcfcfc;
+    border-top: 1px solid #dddddd;
+    border-bottom-right-radius: 3px;
+    border-bottom-left-radius: 3px
+}
+
+.layerListItem:hover{
+    background-color: black;
+}
+
+/*******************/
+/*      Map        */
+/*******************/
+
+.leaflet-measure-path-measurement {
+    position: absolute;
+    font-size: 10px;
+    color: black;
+    text-shadow: -1px  0 0 white,
+                 -1px -1px 0 white,
+                  0 -1px 0 white,
+                  1px -1px 0 white,
+                  1px  0 0 white,
+                  1px  1px 0 white,
+                  0  1px 0 white,
+                 -1px  1px 0 white;
+    white-space: nowrap;
+    transform-origin: 0;
+}
+
+.leaflet-measure-path-measurement > div {
+    position: relative;
+    margin-top: -50% !important;
+    left: -50%;
+}
+
+/*************/
+/*  Calendar */
+/*************/
+
+/* positions the expanding div thingy <Calendar />  in fixed place on screen
+    avoids zIndexes overlapping, clippings of div elements and other full range of headaches
+    calculation is bottom left corner point of mapContainer, i.e map */
+.gisCalendar {
+    position: fixed;
+    bottom: calc(5vh + 28px);    /*footer + toolbar*/
+    left: calc(1/5 * 85vw);     /* 20% out of 85% left-floating inventory div = Panel */
+}
+
+
+/*************/
+/*  GeoCoder */
+/*************/
+
+.geoCoder {
+
+}
+
+.geoCoderUI {
+    display: grid;
+    border: none !important;
+    background-color: #fff;
+    border-radius: 4px;
+}
+
+.geoCoderInput {
+    display: inline-flex;
+}
+
+.geoCoderCriteria {
+    display: inline-flex;
+    font-family: cursive;
+}
+
+.geoCoderResults {
+    display: grid;
+    font-family: cursive;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.gcButton {
+    display: block;
+    background-color: #fff;
+    width: 34px;
+    height: 34px;
+    cursor: pointer;
+    max-width: unset;
+
+    border: 1px solid rgba(0,0,0,0.2);
+    border-radius: 4px;
+
+    background-clip: padding-box;
+    background-position: 50% 50%;
+    background-repeat: no-repeat;
+
+    position: relative;
+    overflow: hidden;
+    transform: translate3d(0, 0, 0);
+}
+    .gcButton:hover {
+        background-color: #f0f0f0;
+    }
+    .gcButton:after {
+        content: "";
+        display: block;
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+        background-image: radial-gradient(circle, #c9c9c9 10%, transparent 10.01%);
+        background-repeat: no-repeat;
+        background-position: 50%;
+        transform: scale(10, 10);
+        opacity: 0;
+        transition: transform .5s, opacity 1s;
+    }
+    .gcButton:active:after {
+        transform: scale(0, 0);
+        opacity: 0.5;
+        transition: 0s;
+    }
+
+#gcSearch {
+    background-image: url(img/search.png);
+}
+
+#gcClear {
+    background-image: url(img/clear.png);
+}
+
+#gcCollapse {
+    background-image: url(img/collapse.png);
+}
+
+.gcInput {
+    border-width: unset;
+    color: black;
+    padding: 5px;
+    width: 200px;
+}
+
+.gcDdl {
+    border: none;
+    padding: 5px;
+    color: rgba(0,0,0,0.75);
+}
+
+.gcResults {
+    padding: 10px;
+    color: rgba(0,0,0,0.75);
+    /* color: #0078A8 */
+}
+    .gcResults:hover {
+        background-color: #f0f0f0;
+    }
+
+.searchResult {
+    padding: 3px;
+}
+    .searchResult:hover{
+        background-color: #f0f0f0;
+    }

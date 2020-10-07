@@ -1,0 +1,53 @@
+.invoice-input {
+	width: 20%;
+	margin: 0;
+}
+
+.invoice-container {
+	padding: 1.5rem;
+	text-align: left;
+}
+
+.invoice-date-label {
+	margin-right: 5px;
+}
+
+.invoice-date-label2 {
+	margin-left: 5px;
+}
+
+.invoice-button {
+	margin-top: -4px;
+	margin-right: 5px;
+}
+
+html {
+	font-size: 12px;
+}
+
+.CustomDropdown {
+	display: inline-flex;
+	width: 18rem;
+}
+
+.CustomDropdown > div {
+  background-color: #e3eedd!important;
+}
+
+.CustomDropdown > div > div {
+  background-color: #e3eedd!important;
+}
+
+.CustomDropdown span[class=Select-multi-value-wrapper] {
+  display: table;
+}
+
+.header {
+	color: #e3eedd;
+	margin-top: 5px;
+}
+
+.flexMargin {
+	display: inline-flex;
+	margin-top: 1rem;
+}

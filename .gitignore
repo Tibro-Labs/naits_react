@@ -1,0 +1,15 @@
+.build_war
+.directory
+.yarnclean
+.vscode
+extracted-messages
+node_modules
+npm-debug.log*
+package-lock.json
+*.retry
+*.war
+*.woff2
+WEB-INF
+naits/client.min*
+naits/naits-georgia*
+naits/index.html

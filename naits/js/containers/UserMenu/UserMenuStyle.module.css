@@ -1,0 +1,107 @@
+.absolute-center, .menu .btn.trigger .line, .menu .btn .fa, .menu {
+  position: relative;
+  top: 34%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-50%);
+}
+
+.menu {
+  width: 10em;
+  height: 10em;
+}
+.menu .btn {
+  position: absolute;
+  top: -35%;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-image: url(img/BG_MainContent.png);
+  opacity: 0;
+  z-index: -10;
+  cursor: pointer;
+  transition: opacity 1s, z-index 0.3s, transform 1s;
+  transform: translateX(0);
+}
+.menu .btn .fa {
+  font-size: 3em;
+  transition: color 0.3s;
+}
+.menu .btn:hover .fa {
+  color: rgba(255, 255, 255, 0.7);
+}
+.menu .btn.trigger {
+  opacity: 1;
+  z-index: 100;
+  cursor: pointer;
+  transition: transform 0.3s;
+  top: 0px;
+}
+.menu .btn.trigger:hover {
+  transform: scale(1.2);
+}
+.menu .btn.trigger:hover .line {
+  background-color: rgba(255, 255, 255, 0.7);
+}
+.menu .btn.trigger:hover .line:before, .menu .btn.trigger:hover .line:after {
+  background-color: rgba(255, 255, 255, 0.7);
+}
+.menu .btn.trigger .line {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 60%;
+  height: 6px;
+  background: rgba(165, 165, 165, 0.6);
+  border-radius: 6px;
+  transition: background-color 0.3s, height 0.3s, top 0.3s;
+}
+.menu .btn.trigger .line:before, .menu .btn.trigger .line:after {
+  content: "";
+  display: block;
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  background: rgba(165, 165, 165, 0.6);
+  border-radius: 6px;
+  transition: background-color 0.3s, transform 0.3s;
+}
+.menu .btn.trigger .line:before {
+  top: -12px;
+  transform-origin: 9% 100%;
+}
+.menu .btn.trigger .line:after {
+  top: 12px;
+  transform-origin: 16% 100%;
+}
+.menu .rotater {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 50%;
+}
+.menu.active .btn-icon {
+  opacity: 1;
+  z-index: 50;
+}
+.menu.active .trigger .line {
+  height: 0px;
+  top: 45%;
+}
+.menu.active .trigger .line:before {
+  transform: rotate(45deg);
+  width: 44px;
+  top: -7px;
+  left: 21px;
+  transform-origin: 9% 100%;
+}
+.menu.active .trigger .line:after {
+  transform: rotate(-45deg);
+  width: 44px;
+  top: 19px;
+  transform-origin: 9% 100%;
+  left: 25px;
+}

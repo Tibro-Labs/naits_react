@@ -1,0 +1,40 @@
+.ear_tag_action_btn {
+background-color: rgb(92, 130, 26);
+border: 6px solid rgb(92, 130, 26);
+width: 10%;
+height: 60%;
+margin-left: 81%;
+padding: 7px;
+border-radius: 4px;
+border-style: solid;
+border-width: 1px;
+}
+.title{
+  margin-top: 2.8%;
+  font-size: 150%;
+}
+.dateLabel{
+  margin-left: 70%;
+  margin-top: 7%;
+}
+.inputText {
+  width: auto;
+  margin-top: 17%;
+  margin-left: -73%;
+}
+
+.date_btn{
+  height: 60%;
+  padding-top: 5px;
+}
+
+.note{
+  width: 214%;
+  height: 70px;
+  margin-left: 67%;
+  margin-top: -1%;
+}
+.date{
+  margin-left: 31%;
+  margin-top: 2.1%;
+}

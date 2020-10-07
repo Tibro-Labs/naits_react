@@ -1,0 +1,39 @@
+.childrenFallback > div:nth-child(2) {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  height:100%;
+  padding: 50px 0;
+  padding-bottom: 28px;
+  overflow: hidden;
+}
+
+.childrenFallback > div:nth-child(2) > div:nth-child(1) {
+  /* height: 100%;
+  overflow: auto; */
+}
+
+.childrenFallback > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) {
+  /* height: calc(95.5% - 41px);
+  margin-bottom: 41px; */
+}
+
+.children {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  height:100%;
+  padding: 50px 0;
+  padding-bottom: 28px;
+  overflow: hidden;
+}
+
+.languageSelector {
+  position: absolute;
+  right: 1%;
+  top: 20%;
+}
+
+.languageSelector button {
+  background: rgba(255, 255, 255, 0.03);
+}

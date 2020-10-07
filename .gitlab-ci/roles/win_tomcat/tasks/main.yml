@@ -1,0 +1,36 @@
+---
+- name: Stop tomcat
+  win_command: C:\naits_tomcat\stop_tomcat.bat
+
+- name: Set context.xml
+  win_template:
+    src: context.xml
+    dest: C:\naits_tomcat\apache-tomcat\conf\context.xml
+
+- name: Set environment variables
+  win_template:
+    src: setenv.bat
+    dest: C:\naits_tomcat\apache-tomcat\bin\setenv.bat
+
+- name: Copy triglav rest
+  win_copy:
+    src: "{{ base_dir }}/triglav_rest.war"
+    dest: C:\naits_tomcat\apache-tomcat\webapps\
+
+- name: Copy naits frontend
+  win_copy:
+    src: "{{ base_dir }}/naits.war"
+    dest: C:\naits_tomcat\apache-tomcat\webapps\
+
+- name: Remove old triglav_rest
+  win_file:
+    path: C:\naits_tomcat\apache-tomcat\webapps\triglav_rest
+    state: absent
+
+- name: Remove old naits frontend
+  win_file:
+    path: C:\naits_tomcat\apache-tomcat\webapps\naits
+    state: absent
+
+- name: Start tomcat
+  win_command: C:\naits_tomcat\start_tomcat.bat

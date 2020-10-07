@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+    <Context>
+        <WatchedResource>WEB-INF/web.xml</WatchedResource>
+        <Resource
+            name="jdbc/svarog"
+            auth="Container"
+            type="javax.sql.DataSource"
+            driverClassName="{{ db_driver_name }}"
+            url="{{ db_connstring }}"
+            username="{{ db_username }}"
+            password="{{ db_password }}"
+            maxActive="200"
+            maxIdle="10"
+            maxWait="-1"
+            accessToUnderlyingConnectionAllowed="true"
+            removeAbandoned="false"
+            removeAbandonedTimeout="3000" />
+    </Context>

@@ -1,0 +1,224 @@
+.divToolTip
+{
+	background-color: rgba(255,255,255,0.9);
+	display: none;
+	/*padding: 20px;*/
+	width:340px;
+
+	font-family: Trebuchet MS,Tahoma,Verdana,Arial,sans-serif;
+    color: #000;
+    font-size:12px;
+
+}
+
+.divTTtLoader
+{
+	overflow-x:auto;
+	height:150px;
+	padding: 20px;
+	background: url("../img/toolTip/helpIcon.png") no-repeat scroll 0 0;
+    background-position: right bottom;
+
+}
+
+.divTTtDisplayNone
+{
+	display: none;
+}
+
+
+
+.divPointerLEFT
+{
+	display: none;
+	background: url("../img/toolTip/pointerRight.png") no-repeat scroll 0 0;
+	width: 20px;
+	height: 20px;
+}
+.divPointerRIGHT
+{
+	display: none;
+	background: url("../img/toolTip/pointer.png") no-repeat scroll 0 0;
+	width: 20px;
+	height: 20px;
+}
+
+/*NAVIGATOR BEGIN*/
+.div_TTT_navigatorHolder
+{
+	float: left;
+	width: 100%;
+	height: 40px;
+	background-color: rgba(21,63,99,0.7);
+	text-align: center;
+	vertical-align: middle;
+
+}
+.div_TTT_BackBtn
+{
+	float: left;
+	width: 33%;
+	height: 40px;
+	text-align: center;
+	vertical-align: middle;
+}
+
+.div_div_TTT_CloseBtn
+{
+	float: left;
+	width: 34%;
+	height: 40px;
+
+}
+.div_TTT_ForwardBtn
+{
+	float: left;
+	width: 33%;
+	height: 40px;
+
+}
+
+.aTTTNavigator
+{
+	font-family: Trebuchet MS,Tahoma,Verdana,Arial,sans-serif;
+    color: #e0e0e0;
+    height:30px;
+    cursor:pointer;
+    display: block;
+    font-size:13px;
+    padding-top: 10px;
+    /*
+    font-weight: bold;
+    width: auto;
+
+    font-family: monospace;
+
+
+    text-align: center;
+    padding: 6px;
+    text-decoration: none;
+    */
+	-webkit-transition:400ms ease;
+    -moz-transition:400ms ease;
+    -o-transition:400ms ease;
+    transition:400ms ease;
+}
+
+.aTTTNavigator:hover, .aTTTNavigator:active
+{
+    color: #000;
+
+    /*background-color: #c0981a;*/
+
+  	background-color: rgba(192, 152, 26, 0.6);
+}
+/*NAVIGATOR END*/
+	@-moz-keyframes blink {0%{opacity:0;} 50%{opacity:1;} 100%{opacity:0;}} /* Firefox */
+    @-webkit-keyframes blink {0%{opacity:0;} 50%{opacity:1;} 100%{opacity:0;}} /* Webkit */
+    @-ms-keyframes blink {0%{opacity:0;} 50%{opacity:1;} 100%{opacity:0;}} /* IE */
+    @keyframes blink {0%{opacity:0;} 50%{opacity:1;} 100%{opacity:0;}} /* Opera */
+    .blink {
+
+
+
+    -moz-transition:all 0.5s ease-in-out;
+    -webkit-transition:all 0.5s ease-in-out;
+    -o-transition:all 0.5s ease-in-out;
+    -ms-transition:all 0.5s ease-in-out;
+    transition:all 0.5s ease-in-out;
+    -moz-animation:blink normal 1.5s infinite ease-in-out; /* Firefox */
+    -webkit-animation:blink normal 1.5s infinite ease-in-out; /* Webkit */
+    -ms-animation:blink normal 1.5s infinite ease-in-out; /* IE */
+    animation:blink normal 1.5s infinite ease-in-out; /* Opera */
+}
+
+
+/*Section for making the borders of a particular element blink*/
+	@-moz-keyframes elementblink
+	{
+		0%
+		{
+			box-shadow: 0px 0px 0px 3px rgba(255,255,255,0);
+			/*border: 5px solid rgba(255, 255, 255, 0);*/
+		}
+		50%
+		{
+			box-shadow: 0px 0px 0px 3px rgba(255,255,255,1);
+			/*border: 5px solid rgba(255, 255, 255, 1);*/
+		}
+		100%
+		{
+			box-shadow: 0px 0px 0px 3px rgba(255,255,255,0);
+			/*border: 5px solid rgba(255, 255, 255, 0);*/
+		}
+	}
+	/* Firefox */
+    @-webkit-keyframes elementblink
+    {
+		0%
+		{
+			box-shadow: 0px 0px 0px 3px rgba(255,255,255,0);
+			/*border: 5px solid rgba(255, 255, 255, 0);*/
+		}
+		50%
+		{
+			box-shadow: 0px 0px 0px 3px rgba(255,255,255,1);
+			/*border: 5px solid rgba(255, 255, 255, 1);*/
+		}
+		100%
+		{
+			box-shadow: 0px 0px 0px 3px rgba(255,255,255,0);
+			/*border: 5px solid rgba(255, 255, 255, 0);*/
+		}
+	}
+    /* Webkit */
+    @-ms-keyframes elementblink
+    {
+		0%
+		{
+			box-shadow: 0px 0px 0px 3px rgba(255,255,255,0);
+			/*border: 5px solid rgba(255, 255, 255, 0);*/
+		}
+		50%
+		{
+			box-shadow: 0px 0px 0px 3px rgba(255,255,255,1);
+			/*border: 5px solid rgba(255, 255, 255, 1);*/
+		}
+		100%
+		{
+			box-shadow: 0px 0px 0px 3px rgba(255,255,255,0);
+			/*border: 5px solid rgba(255, 255, 255, 0);*/
+		}
+	}
+    /* IE */
+    @keyframes elementblink
+    {
+		0%
+		{
+			box-shadow: 0px 0px 0px 3px rgba(255,255,255,0);
+			/*border: 5px solid rgba(255, 255, 255, 0);*/
+		}
+		50%
+		{
+			box-shadow: 0px 0px 0px 3px rgba(255,255,255,1);
+			/*border: 5px solid rgba(255, 255, 255, 1);*/
+		}
+		100%
+		{
+			box-shadow: 0px 0px 0px 3px rgba(255,255,255,0);
+			/*border: 5px solid rgba(255, 255, 255, 0);*/
+		}
+	}
+    /* Opera */
+    .elementblink {
+    -moz-transition:all 0.5s ease-in-out;
+    -webkit-transition:all 0.5s ease-in-out;
+    -o-transition:all 0.5s ease-in-out;
+    -ms-transition:all 0.5s ease-in-out;
+    transition:all 0.5s ease-in-out;
+    -moz-animation:elementblink normal 1.5s infinite ease-in-out; /* Firefox */
+    -webkit-animation:elementblink normal 1.5s infinite ease-in-out; /* Webkit */
+    -ms-animation:elementblink normal 1.5s infinite ease-in-out; /* IE */
+    animation:elementblink normal 1.5s infinite ease-in-out; /* Opera */
+}
+/*END Section for making the borders of a particular element blink*/

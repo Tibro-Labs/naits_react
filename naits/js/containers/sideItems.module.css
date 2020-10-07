@@ -1,0 +1,28 @@
+.search {
+  margin-top: 10px;
+}
+
+.search > p {
+  margin: 0;
+}
+
+.button {
+  width: auto;
+  min-width: 100px;
+  border: 1px solid rgba(36, 19, 8, 0.4);
+  border-radius: 5px;
+  height: 40px;
+  background-color: rgba(36, 19, 8, 0.4);
+  color: #dad8d3;
+  font-weight: 100;
+  margin-left: 5px;
+  -webkit-transition: background-color 600ms ease, color 600ms ease;
+  -ms-transition: background-color 600ms ease, color 600ms ease;
+  -moz-transition: background-color 600ms ease, color 600ms ease;
+  transition: background-color 600ms ease, color 600ms ease;
+}
+
+.button:hover {
+  background-color: rgba(224, 171, 16, 0.6);
+  color: black;
+}

@@ -1,0 +1,15 @@
+.swal-button--danger {
+    background-color: rgb(141, 35, 15);
+}
+
+.swal-button--cancel {
+  background-color: #C1C1C1;
+}
+
+.swal-button--info {
+  background-color: #7CD1F9;
+}
+
+.swal-footer {
+  text-align: center;
+}

@@ -1,0 +1,322 @@
+.form-test {
+    cursor: default;
+    /* background-color: rgba(22, 41, 10, 0.8); */
+    /* border: 1px solid #0f1b07; */
+    padding: 0 20px 20px 20px;
+    align-items: right;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+
+    -moz-animation-name: showEffect;
+    -moz-animation-iteration-count: 1;
+    -moz-animation-timing-function: ease-in;
+    -moz-animation-duration: 0.3s;
+
+    -webkit-animation-name: showEffect;
+    -webkit-animation-iteration-count: 1;
+    -webkit-animation-timing-function: ease-in;
+    -webkit-animation-duration: 0.3s;
+
+    animation-name: showEffect;
+    animation-iteration-count: 1;
+    animation-timing-function: ease-in;
+    animation-duration: 0.3s;
+
+}
+
+.sidebar-form {
+    background-color: #22282F;
+    opacity: 0.7;
+    padding: 20px;
+    align-items: right;
+    border: 1px solid #888;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    border-radius: 5px;
+}
+
+#form {
+    /* height: 100%; */
+    /* width: 100%; */
+    background-color: rgba(22, 41, 10, 0.8);
+    border: 1px solid #0f1b07;
+}
+
+.btn_close_form {
+    width: auto;
+    height: auto;
+    margin-right: 20px;
+    background-color: #8c8c8c;
+    background-image: linear-gradient(rgba(255, 255, 255, 0), rgba(128, 128, 128, 0.1));
+    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.15) rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    border-style: solid;
+    border-width: 1px;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.1) inset, 0 1px 2px rgba(0, 0, 0, 0.1);
+    float: right;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 14px;
+    line-height: 22px;
+    padding: 2px 12px;
+    text-align: center;
+    transition: background-color 0.2s ease 0s;
+    vertical-align: middle;
+}
+
+.btn_close_form:hover {
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+    color: #000;
+    background-color: #a6a6a6;
+    background-image: linear-gradient(rgba(255, 255, 255, 0), rgba(128, 128, 128, 0.1));
+    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.15) rgba(0, 0, 0, 0.2);
+}
+
+.btn_delete_form {
+    width: auto;
+    height: auto;
+    background-color: #8d230f;
+    background-image: linear-gradient(rgba(255, 255, 255, 0), rgba(128, 128, 128, 0.1));
+    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.15) rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    border-style: solid;
+    border-width: 1px;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.1) inset, 0 1px 2px rgba(0, 0, 0, 0.1);
+    float: left;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 14px;
+    line-height: 22px;
+    padding: 2px 12px;
+    text-align: center;
+    transition: background-color 0.2s ease 0s;
+    vertical-align: middle;
+}
+
+.btn_delete_form:hover {
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+    color: #000;
+    background-color: #b83014;
+    background-image: linear-gradient(rgba(255, 255, 255, 0), rgba(128, 128, 128, 0.1));
+    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.15) rgba(0, 0, 0, 0.2);
+}
+
+.btn_save_form {
+    width: auto;
+    height: auto;
+    background-color: #5c821a;
+    background-image: linear-gradient(rgba(255, 255, 255, 0), rgba(128, 128, 128, 0.1));
+    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.15) rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    border-style: solid;
+    border-width: 1px;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.1) inset, 0 1px 2px rgba(0, 0, 0, 0.1);
+    float: right;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 14px;
+    line-height: 22px;
+    padding: 2px 12px;
+    text-align: center;
+    transition: background-color 0.2s ease 0s;
+    vertical-align: middle;
+    /* height: 45.5px; */
+}
+
+.btn_save_form:hover {
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+    color: #000;
+    background-color: #78aa22;
+    background-image: linear-gradient(rgba(255, 255, 255, 0), rgba(128, 128, 128, 0.1));
+    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.15) rgba(0, 0, 0, 0.2);
+}
+
+.datePickerInlineV2 {
+  margin-top:2.5%;
+}
+.btn_download_form {
+    width: auto;
+    height: auto;
+    margin-right: 20px;
+    background-color: #5c821a;
+    background-image: linear-gradient(rgba(255, 255, 255, 0), rgba(128, 128, 128, 0.1));
+    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.15) rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    border-style: solid;
+    border-width: 1px;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.1) inset, 0 1px 2px rgba(0, 0, 0, 0.1);
+    float: right;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 14px;
+    line-height: 22px;
+    padding: 2px 12px;
+    text-align: center;
+    transition: background-color 0.2s ease 0s;
+    vertical-align: middle;
+}
+
+.btn_download_form:hover {
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+    color: #000;
+    background-color: #78aa22;
+    background-image: linear-gradient(rgba(255, 255, 255, 0), rgba(128, 128, 128, 0.1));
+    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.15) rgba(0, 0, 0, 0.2);
+}
+
+/*kni css for custom form (multicolumn) */
+.structuredForm {
+    /*background-color: rgba(70, 92, 107, 0.84);*/
+    /*margin-left: 25%;*/
+    float: left;
+    width: 50%;
+    padding: 0 1em;
+}
+fieldset .structuredForm:nth-child(even) {
+    clear: left;
+}
+
+.structuredForm input, .structuredForm textarea, .structuredForm select,
+.form-group input, .form-group textarea, .form-group select {
+    color: black;
+    background-color: #e3eedd;
+}
+
+/* .structuredForm label, .form-group label, fieldset legend {
+    color: #ffffff;
+} */
+
+.structuredForm [readonly], .form-group [readonly] {
+    color: black;
+    border: 2px solid;
+    border-color: #3E1F00;
+    cursor: not-allowed;
+
+}
+
+.structuredForm .form-control {
+    height: 40px;
+}
+
+/* Following seelctors are for dynamic alignment of fields in json schema forms */
+.form-control {
+    width: 100%;
+}
+
+.field-object {
+    display: table;
+    width: 100%;
+    border-spacing: 5px;
+}
+
+fieldset {
+    display: table-row;
+    width: auto;
+    clear: both;
+}
+
+.field-string, .field-integer, .field-number, .field-array {
+    display: inline-table;
+    position: relative;
+}
+
+textarea {
+    min-width: 500px;
+}
+
+.close {
+  opacity: 1;
+  text-shadow: none;
+  font-size: 30px;
+  /* color: #aaaaaa */
+  color: white;
+  }
+
+.modal {
+    display: none;
+    z-index: 9993;
+    padding-top: 60px;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: calc(100% - 28px);
+    background-color: rgba(0,0,0,0.4);
+    overflow: auto;
+}
+
+.customModal {
+    display: none;
+    z-index: 100;
+    padding-top: 60px;
+    width: 87%;
+    height: calc(100% - 28px);
+    margin-left: 15%;
+    margin-top: 2.5rem;
+}
+
+.modal-content {
+background-color: rgba(1, 1, 1, 0.74);
+margin-left: 1%;
+border: 1px solid #888;
+width: 98%;
+height: 100%;
+/* / max-height: 80%; / */
+overflow: auto;
+}
+
+.modal-header {
+    cursor: move;
+    padding: 0 20px 0 20px;
+    border-bottom: none;
+}
+
+.modal-body {
+    padding: 0 20px 20px 20px;
+    height: 96%;
+}
+
+.custom-modal-content{
+  background-color: rgba(22, 41, 10, 0.87);
+    width: auto;
+    height: auto;
+    /* margin-top: 2%;
+    margin-left: 4%; */
+    border: 1px solid #0f1b07
+}
+.disable_scroll_bar{
+      overflow: hidden;
+}
+
+.dateLabel{
+  margin-top: -4%;
+  margin-left: -62%;
+}
+.setDateLabel{
+    margin-left: -69%;
+    margin-top: -5%;
+    color: white;
+  }
+
+#search_modal_content {
+  width: auto;
+  max-height: none;
+  max-width: none;
+  margin-left: 10%;
+  margin-right: 10%;
+}
+
+#search_modal_body {
+  padding: 0;
+  color: black;
+}
+
+#search_modal #displayContent {
+  width: 100%;
+  margin-left: 0;
+}
+
+.to-front {
+    z-index: 9994;
+}

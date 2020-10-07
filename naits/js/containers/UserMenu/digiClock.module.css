@@ -1,0 +1,22 @@
+.digitalClock {
+  background-color: transparent;
+  width: 85%;
+  height: 29%;
+  font-size: 50px;
+  color: black;
+}
+.digitalClockContainer {
+  position: absolute;
+  top: 15%;
+  transform: translateX(-50%) translateY(-50%);
+  padding-left: 5%;
+  -webkit-transition: all 0.3s ease-in-out;
+  -moz-transition: all 0.3s ease-in-out;
+  transition: all 0.3s ease-in-out;
+}
+
+.digitalClockContainer > p {
+  color: black!important;
+  text-align: right!important;
+  font-size: 12.5px!important;
+}

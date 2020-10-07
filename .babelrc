@@ -1,0 +1,27 @@
+{
+  "presets": ["env", "react"],
+  "plugins": [
+    "transform-async-to-generator",
+    "transform-regenerator",
+    "transform-runtime",
+    "react-html-attrs",
+    "transform-class-properties",
+    "syntax-dynamic-import",
+    "transform-object-rest-spread",
+    "transform-export-extensions"
+  ],
+  "env": {
+    "development": {
+      "plugins": [
+        "transform-runtime",
+        ["react-transform", {
+          "transforms": [{
+            "transform" : "react-transform-hmr",
+              "imports"   : ["react"],
+              "locals"    : ["module"]
+          }]
+        }]
+      ]
+    }
+  }
+}

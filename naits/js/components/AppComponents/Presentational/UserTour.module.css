@@ -1,0 +1,15 @@
+.container {
+  position: absolute;
+  top: 0;
+}
+
+.container > div:nth-child(1) > div:nth-child(1) {
+  height: auto !important;
+  padding: 1rem !important;
+  border-radius: 0.25rem;
+}
+
+
+.container > div:nth-child(1) > div:nth-child(1) > p {
+  padding-bottom: 28px;
+}

@@ -1,0 +1,6 @@
+---
+- name: Apply triglav_rest svarog.properties for naits windows production
+  template:
+    src: triglav_svarog.properties.tpl
+    dest: "{{ base_dir }}/temp/WEB-INF/classes/svarog.properties"
+  delegate_to: 127.0.0.1

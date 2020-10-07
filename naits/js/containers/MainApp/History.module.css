@@ -1,0 +1,67 @@
+.scrollLeft {
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+
+  /* background: #ffd90030; */
+  /* border: 1px solid;
+  border-top-color: rgba(255,255,255,0.4);
+  border-left-color: rgba(255,255,255,0.4);
+  border-bottom-color: rgba(60,60,60,0.4);
+  border-right-color: rgba(60,60,60,0.4); */
+}
+.scrollLeft p {
+  color: rgb(166, 164, 156);
+  font-size: x-large;
+  display:flex;
+  align-items: center; /* Vertical center alignment */
+  justify-content: left; /* Horizontal center alignment */
+  height: 100%;
+  padding: 10px 14px;
+  margin: -5px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 2rem;
+  /* Starting position */
+  /*
+  -moz-transform:translateX(100%);
+  -webkit-transform:translateX(100%);
+  transform:translateX(100%);
+  */
+  /* Apply animation to this element */
+  -moz-animation: scrollLeft 15s linear infinite;
+  -webkit-animation: scrollLeft 15s linear infinite;
+  animation: scrollLeft 15s linear infinite;
+}
+
+/* Move it (define the animation) */
+/*
+@-moz-keyframes scrollLeft {
+  0%   {
+    -moz-transform: translateX(30%);
+  }
+  100% {
+    -moz-transform: translateX(-100%);
+  }
+}
+@-webkit-keyframes scrollLeft {
+  0%   {
+    -webkit-transform: translateX(30%);
+  }
+  100% {
+    -webkit-transform: translateX(-100%);
+  }
+}
+@keyframes scrollLeft {
+  0%   {
+    -moz-transform: translateX(30%);
+    -webkit-transform: translateX(30%);
+    transform: translateX(30%);
+  }
+  100% {
+    -moz-transform: translateX(-100%);
+    -webkit-transform: translateX(-100%);
+    transform: translateX(-100%);
+  }
+}
+*/

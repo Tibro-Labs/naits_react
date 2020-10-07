@@ -1,0 +1,50 @@
+.main div[id=searchandload] {
+  display: inline-block;
+  /* margin-bottom: -1%; */
+}
+
+@media (min-device-width: 2200px) {
+  .main div[id=searchandload] {
+    display: block;
+  }
+}
+
+.main div[class=react-grid-Container] {
+  width: 100%!important;
+}
+
+.main span[id=reactGridspan2] {
+  color: white;
+}
+
+.main div[class=react-grid-Grid] {
+  min-height: calc( 102vh - 246px ) !important;
+}
+
+.main p[id=searchAndLoadParagraph] {
+  display: none;
+}
+
+.main form[id=searchAndLoadForm] {
+  display: inline-flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-content: space-around;
+  align-items: center;
+  border: 1px solid #888;
+  border-radius: 5px;
+}
+
+.main form[id=searchAndLoadForm] select {
+  margin-top: 0;
+  margin-left: 1%;
+}
+
+.main div[id=searchAndLoadDynamicSelect] {
+  width: 100%;
+}
+
+.main div[id=searchAndLoadDynamicSelect] > div {
+  width: 100%;
+}

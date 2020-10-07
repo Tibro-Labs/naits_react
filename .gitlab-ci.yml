@@ -1,0 +1,617 @@
+stages:
+  - 1_linter
+  - 2_build_and_deploy
+  - 3_deploy_tibrolabs.com
+  - 4_upgrade_tibrolabs.com_db
+  - 5_install_users_localDB
+  - 6_prod
+  - 7_real_prod
+
+variables:
+  TIBROLABS_UBUNTU_SERVER: "208.97.140.215"
+  TIBROLABS_UBUNTU_HOSTNAME: "naits.tibrolabs.com"
+  TIBROLABS_UBUNTU_USER: "ubuntu"
+  TIBROLABS_UBUNTU_POSTGRES_PASSWORD: "mnogumiejak123"
+
+before_script:
+  - git reset --hard HEAD
+  - git stash
+  - git pull origin $CI_BUILD_REF_NAME
+
+after_script:
+  - git reset --hard HEAD
+  - git stash
+  - git pull origin $CI_BUILD_REF_NAME
+
+1_npm_install:
+  stage: 1_linter
+  script:
+    - pwd
+    - git reset --hard HEAD
+    - mkdir -p ~/node_modules
+    - ln -s ~/node_modules node_modules &>/dev/null
+    # - rm -rf node_modules/perun-components || true
+    # - rm -rf node_modules/perun-redux || true
+    # - npm install
+
+2_linter_autofix:
+  stage: 1_linter
+  script:
+    - pwd
+    - git remote set-url origin git@gitlab.tibrolabs.com:tibro/react-georgia.git
+    - git fetch origin $CI_BUILD_REF_NAME
+    - git reset --hard origin/$CI_BUILD_REF_NAME
+    - git clean -fdx
+    - git checkout $CI_BUILD_REF_NAME
+    - git pull
+    #- mkdir -p ~/node_modules
+    #- ln -s ~/node_modules node_modules &>/dev/null
+    #- npm install || exit 0
+    - npm run test &>/dev/null || true
+    - git add .
+    - git commit -m "auto fix lint" || exit 0
+    - git push origin HEAD:$CI_BUILD_REF_NAME
+  only:
+    - master
+
+3_linter:
+  stage: 1_linter
+  script:
+    - mkdir -p ~/node_modules
+    - ln -s ~/node_modules node_modules &>/dev/null
+    - npm install
+    - npm run test
+
+4_build_war:
+  stage: 2_build_and_deploy
+  script:
+    - pwd
+    - git remote set-url origin git@gitlab.tibrolabs.com:tibro/react-georgia.git
+    - git fetch origin $CI_BUILD_REF_NAME
+    - git reset --hard origin/$CI_BUILD_REF_NAME
+    - git clean -fdx
+    - git checkout $CI_BUILD_REF_NAME
+    - git reset --hard origin/$CI_BUILD_REF_NAME
+    - git pull
+
+    #- mkdir -p ~/node_modules
+    #- ln -s ~/node_modules node_modules &>/dev/null
+    - rm -rf node_modules/perun-components
+    - rm -rf node_modules/perun-redux
+    - npm install
+    - npm version patch -m "Bump version to %s [ci_skip]"
+    - npm run build-war
+    - mkdir -p ~/JARS/georgia/
+    - cp naits.war ~/JARS/georgia/
+    - git push origin HEAD:$CI_BUILD_REF_NAME
+  artifacts:
+    name: "${CI_BUILD_NAME}_${CI_BUILD_REF_NAME}"
+    paths:
+    - naits.war
+    expire_in: 7 days
+  only:
+    - master
+
+5_deploy_and_prep_tirglav_rest.war:
+  stage: 2_build_and_deploy
+  script:
+    - scp 192.168.100.155:/home/gitlab-runner/JARS/staging/triglav_rest.war /home/gitlab-runner/JARS/georgia/
+    #- scp 192.168.100.155:/opt/NAITS/triglav_rest.war /home/gitlab-runner/JARS/georgia/
+    #- scp 192.168.100.155:/home/gitlab-runner/JARS/staging/triglav_rest.war /home/gitlab-runner/JARS/georgia/
+
+    - zip -d /home/gitlab-runner/JARS/georgia/triglav_rest.war plugins/afpzrr_sop_triglav_plugin-1.0_dev.jar || true
+    - zip -d /home/gitlab-runner/JARS/georgia/triglav_rest.war plugins/aleph_triglav_plugin-1.0_dev.jar || true
+    - zip -d /home/gitlab-runner/JARS/georgia/triglav_rest.war plugins/afsard_triglav_plugin-1.0_dev.jar || true
+
+    - git -C ../naits_triglav_plugin reset --hard HEAD
+    - git -C ../naits_triglav_plugin clean -df
+    - git -C ../naits_triglav_plugin checkout master
+    - git -C ../naits_triglav_plugin pull
+
+    - cd ../naits_triglav_plugin
+
+    - zip -d /home/gitlab-runner/JARS/georgia/triglav_rest.war 'reports/*' || true
+    - zip -ru /home/gitlab-runner/JARS/georgia/triglav_rest.war reports || true
+    - mkdir -p WEB-INF/classes
+    - mv conf WEB-INF/classes/
+    - zip -d /home/gitlab-runner/JARS/georgia/triglav_rest.war 'WEB-INF/classes/conf/*' || true
+    - zip -ru /home/gitlab-runner/JARS/georgia/triglav_rest.war WEB-INF || true
+
+    - git -C ../gitlab-ci remote set-url origin git@gitlab.prtech.mk:prtech/gitlab-ci.git
+    - git -C ../gitlab-ci reset --hard HEAD
+    - git -C ../gitlab-ci clean -df
+    - git -C ../gitlab-ci checkout master
+    - git -C ../gitlab-ci pull
+
+    - git -C ../triglav_rest remote set-url origin git@gitlab.prtech.mk:prtech/triglav_rest.git
+    - git -C ../triglav_rest reset --hard HEAD
+    - git -C ../triglav_rest clean -df
+    - git -C ../triglav_rest checkout staging
+    - git -C ../triglav_rest pull
+
+    - cd ../gitlab-ci/ansible
+    - ./ansible-gitlab-ci.sh georgia tomcat $CI_PROJECT_DIR/../triglav_rest
+    - cp /home/gitlab-runner/JARS/georgia/triglav_rest.war $CI_PROJECT_DIR/
+    - cp -r /home/gitlab-runner/UserManuals /opt/tomcats/georgia/webapps/
+
+  environment:
+    name: $CI_BUILD_REF_NAME
+  artifacts:
+    name: "${CI_BUILD_NAME}_${CI_BUILD_REF_NAME}"
+    paths:
+    - triglav_rest.war
+    expire_in: 5 days
+  only:
+    - master
+
+
+01.freeze_tibrolabs.com:
+  stage: 3_deploy_tibrolabs.com
+  script:
+    - mkdir -p temp/WEB-INF/classes
+    - mkdir -p /home/gitlab-runner/JARS/georgia/freeze
+
+    - unzip -j "triglav_rest.war" "WEB-INF/classes/svarog.properties" -d "temp/WEB-INF/classes"
+    - |
+      sed -i \
+      -e "/conn.type=/ s/=.*/=JNDI/" \
+      -e "/driver.name=/ s/=.*/=org.postgresql.Driver/" \
+      -e "/conn.string=/ s/=.*/=jdbc:postgresql:\/\/127.0.0.1:5432\/postgres/" \
+      -e "/user.name=/ s/=.*/=postgres/" \
+      -e "/user.password=/ s/=.*/=${TIBROLABS_UBUNTU_POSTGRES_PASSWORD}/" \
+      -e "/conn.dbType=/ s/=.*/=POSTGRES/" \
+      -e "/conn.defaultSchema=/ s/=.*/=naits/" \
+      -e "/sys.masterRepo=/ s/=.*/=svarog/" \
+      -e "/sys.defaultLocale=/ s/=.*/=en_US/" \
+      -e "/sys.gis.default_srid=/ s/=.*/=32638/" \
+      -e "/sys.conf.path=/ s/=.*/=conf/" \
+      -e "/frontend.services_host=/ s/=.*/=https:\/\/${TIBROLABS_UBUNTU_HOSTNAME}\/triglav_rest\//" \
+      -e "/frontend.gui_host=/ s/=.*/=https:\/\/${TIBROLABS_UBUNTU_HOSTNAME}\/naits\//" \
+      -e "/mail.from=/ s/=.*/=naits@tibrolabs.com/" \
+      -e "/mail.username=/ s/=.*/=naits@tibrolabs.com/" \
+      -e "/mail.password=/ s/=.*/=Y9qU^WNC/" \
+      -e "/mail.host=/ s/=.*/=sub5.mail.dreamhost.com/" \
+      -e "/mail.smtp.auth=/ s/=.*/=true/" \
+      -e "/mail.smtp.starttls.enable=/ s/=.*/=true/" \
+      -e "/mail.smtp.port=/ s/=.*/=587/" \
+      -e "/print.jrxml_path=/ s/=.*/=\/opt\/tomcats\/georgia\/webapps\/triglav_rest\/reports/" \
+      -e "/triglav.plugin_path=/ s/=.*/=\/opt\/tomcats\/georgia\/webapps\/triglav_rest\/plugins/" \
+      -e "/sys.gis.default_srid=/ s/=.*/=32638/" \
+      -e "/sys.gis.allow_boundary_intersect=/ s/=.*/=true/" \
+      -e "/sys.jdbc.batch_size=/ s/=.*/=100/" \
+      temp/WEB-INF/classes/svarog.properties
+
+    - zip -d triglav_rest.war WEB-INF/classes/svarog.properties || true
+
+    - cd temp/
+    - zip -ru $CI_PROJECT_DIR/triglav_rest.war WEB-INF/classes/svarog.properties
+
+    - cd $CI_PROJECT_DIR/
+    - echo $CI_PROJECT_DIR
+    - cp naits.war /home/gitlab-runner/JARS/georgia/freeze
+    - cp triglav_rest.war /home/gitlab-runner/JARS/georgia/freeze
+  dependencies:
+    - 4_build_war
+    - 5_deploy_and_prep_tirglav_rest.war
+  when: manual
+  only:
+  - master
+
+
+
+02.deploy_to_tibrolabs.com:
+  stage: 3_deploy_tibrolabs.com
+  script:
+    - git -C ../gitlab-ci remote set-url origin git@gitlab.prtech.mk:prtech/gitlab-ci.git
+    - git -C ../gitlab-ci reset --hard HEAD
+    - git -C ../gitlab-ci clean -df
+    - git -C ../gitlab-ci checkout master
+    - git -C ../gitlab-ci pull
+
+    - git -C ../triglav_rest remote set-url origin git@gitlab.prtech.mk:prtech/triglav_rest.git
+    - git -C ../triglav_rest reset --hard HEAD
+    - git -C ../triglav_rest clean -df
+    - git -C ../triglav_rest checkout staging
+    - git -C ../triglav_rest pull
+
+    - cd ../gitlab-ci/ansible
+    - ./ansible-gitlab-ci.sh dreamhost dreamhost $CI_PROJECT_DIR/../triglav_rest
+    - |
+      ssh dreamhost /bin/bash <<'ENDSSH'
+        /opt/tomcats/control_tomcats.sh stop georgia || true
+      ENDSSH
+    - ansible -i dreamhost, -b -m copy -a "src=/home/gitlab-runner/JARS/georgia/freeze/triglav_rest.war dest=/opt/tomcats/georgia/webapps" all
+    - ansible -i dreamhost, -b -m copy -a "src=/home/gitlab-runner/JARS/georgia/freeze/naits.war dest=/opt/tomcats/georgia/webapps" all
+    - |
+      ssh dreamhost /bin/bash <<'ENDSSH'
+        sudo rm -rf /opt/tomcats/georgia/webapps/triglav_rest/
+        sudo rm -rf /opt/tomcats/georgia/webapps/naits/
+        /opt/tomcats/control_tomcats.sh restart georgia || true
+      ENDSSH
+  environment:
+    name: dreamhost
+  when: manual
+  only:
+  - master
+
+03.restart_tibrolabs.com:
+  stage: 3_deploy_tibrolabs.com
+  script:
+    - |
+      ssh dreamhost /bin/bash <<'ENDSSH'
+        /opt/tomcats/control_tomcats.sh restart georgia || true
+      ENDSSH
+  environment:
+    name: dreamhost
+  when: manual
+  only:
+  - master
+
+01.upgrade_tibrolabs.com_db:
+  stage: 4_upgrade_tibrolabs.com_db
+  script:
+    - git -C ../svarog remote set-url origin git@gitlab.prtech.mk:prtech/svarog.git
+    - git -C ../svarog reset --hard HEAD
+    - git -C ../svarog clean -dfx
+    - git -C ../svarog checkout staging
+    - git -C ../svarog pull
+
+    - git -C ../common_libs remote set-url origin git@gitlab.prtech.mk:prtech/common_libs.git
+    - git -C ../common_libs reset --hard HEAD
+    - git -C ../common_libs clean -df
+    - git -C ../common_libs checkout staging
+    - git -C ../common_libs pull
+    - rm -rf ../common_libs/svarog-2*
+
+    - cd ../svarog
+    - cp /home/gitlab-runner/JARS/master/svarog_custom_naits-1.0_dev.jar custom
+
+    - ant compile
+    - ant build_dev
+    - ant clean-build
+
+    - ant build_json
+    - ant clean-build
+
+
+    - cd ../svarog/.gitlab-ci
+    - ansible -m ping gitlab-ci-runner -i hosts/gitlabci.yml
+    - ./ansible-svarog.sh georgia `pwd`/../ POSTGRES
+    - cd ../
+
+    - |
+      sed -i \
+      -e "/conn.type=/ s/=.*/=JDBC/" \
+      -e "/driver.name=/ s/=.*/=org.postgresql.Driver/" \
+      -e "/conn.string=/ s/=.*/=jdbc:postgresql:\/\/127.0.0.1:5432\/postgres/" \
+      -e "/user.name=/ s/=.*/=postgres/" \
+      -e "/user.password=/ s/=.*/=${TIBROLABS_UBUNTU_POSTGRES_PASSWORD}/" \
+      -e "/conn.dbType=/ s/=.*/=POSTGRES/" \
+      -e "/conn.defaultSchema=/ s/=.*/=naits/" \
+      -e "/sys.masterRepo=/ s/=.*/=svarog/" \
+      -e "/sys.defaultLocale=/ s/=.*/=en_US/" \
+      -e "/sys.gis.default_srid=/ s/=.*/=32638/" \
+      -e "/sys.gis.allow_boundary_intersect=/ s/=.*/=true/" \
+      -e "/sys.jdbc.batch_size=/ s/=.*/=100/" \
+      svarog.properties
+    - cat svarog.properties
+
+
+    - mkdir -p svarog
+    # copy to temp dir svarog
+    - rsync -av build build.xml conf custom lib release svarog.properties svarog/
+    - zip -9r svarog.zip svarog
+    - ansible -i dreamhost, -b -m copy -a "src=./svarog.zip dest=/opt/ force=yes" all
+    - |
+      ssh dreamhost /bin/bash <<'ENDSSH'
+        rm -rf /opt/svarog || true
+        cd /opt/
+        unzip svarog.zip
+        cd svarog
+        ant upgrade_svarog_force
+      ENDSSH
+  when: manual
+  only:
+  - master
+
+
+02.install_users_tibrolabs.com:
+  stage: 4_upgrade_tibrolabs.com_db
+  script:
+    - git -C ../dbDataSvarogConverter remote set-url origin git@gitlab.prtech.mk:prtech/dbDataSvarogConverter.git
+    - git -C ../dbDataSvarogConverter reset --hard HEAD
+    - git -C ../dbDataSvarogConverter clean -dfx
+    - git -C ../dbDataSvarogConverter checkout master
+    - git -C ../dbDataSvarogConverter pull
+
+    - git -C ../common_libs remote set-url origin git@gitlab.prtech.mk:prtech/common_libs.git
+    - git -C ../common_libs reset --hard HEAD
+    - git -C ../common_libs clean -df
+    - git -C ../common_libs checkout staging
+    - git -C ../common_libs pull
+
+    - cd ../dbDataSvarogConverter/
+    - ant jar
+    - mv build/jar/*.jar .
+
+    - |
+      sed -i \
+      -e "/conn.type=/ s/=.*/=JDBC/" \
+      -e "/driver.name=/ s/=.*/=org.postgresql.Driver/" \
+      -e "/conn.string=/ s/=.*/=jdbc:postgresql:\/\/127.0.0.1:5432\/postgres/" \
+      -e "/user.name=/ s/=.*/=postgres/" \
+      -e "/user.password=/ s/=.*/=${TIBROLABS_UBUNTU_POSTGRES_PASSWORD}/" \
+      -e "/conn.dbType=/ s/=.*/=POSTGRES/" \
+      -e "/conn.defaultSchema=/ s/=.*/=naits/" \
+      -e "/sys.masterRepo=/ s/=.*/=svarog/" \
+      -e "/sys.defaultLocale=/ s/=.*/=en_US/" \
+      -e "/sys.gis.default_srid=/ s/=.*/=32638/" \
+      -e "/sys.gis.allow_boundary_intersect=/ s/=.*/=true/" \
+      -e "/sys.jdbc.batch_size=/ s/=.*/=100/" \
+      svarog.properties
+    - cat svarog.properties
+
+    #- cd $CI_PROJECT_DIR/
+
+    - mkdir -p dbDataInstall
+    # copy to temp dir
+    - rsync -av ./* dbDataInstall/
+    - zip -9r dbDataInstall.zip dbDataInstall
+    - ansible -i dreamhost, -b -m copy -a "src=./dbDataInstall.zip dest=/opt/ force=yes" all
+    - |
+      ssh dreamhost /bin/bash <<'ENDSSH'
+        rm -rf /opt/dbDataInstall || true
+        cd /opt/
+        unzip dbDataInstall.zip
+        cd dbDataInstall/
+        java -cp "dbDataSvarogConverter-1.0_dev.jar:../common_libs/*" "dbDataUserManager.UserInstaller" INSTALL_USERS admin welcome
+      ENDSSH
+  when: manual
+  only:
+  - master
+
+
+
+01.install_users_localDB:
+  stage: 5_install_users_localDB
+  script:
+    - git -C ../dbDataSvarogConverter remote set-url origin git@gitlab.prtech.mk:prtech/dbDataSvarogConverter.git
+    - git -C ../dbDataSvarogConverter reset --hard HEAD
+    - git -C ../dbDataSvarogConverter clean -dfx
+    - git -C ../dbDataSvarogConverter checkout master
+    - git -C ../dbDataSvarogConverter pull
+
+    - git -C ../common_libs remote set-url origin git@gitlab.prtech.mk:prtech/common_libs.git
+    - git -C ../common_libs reset --hard HEAD
+    - git -C ../common_libs clean -df
+    - git -C ../common_libs checkout staging
+    - git -C ../common_libs pull
+
+    - cd ../dbDataSvarogConverter/
+    - ant jar
+    - mv build/jar/*.jar .
+
+    - |
+      sed -i \
+      -e "/conn.type=/ s/=.*/=JDBC/" \
+      -e "/driver.name=/ s/=.*/=org.postgresql.Driver/" \
+      -e "/conn.string=/ s/=.*/=jdbc:postgresql:\/\/192.168.100.144:5432\/postgres/" \
+      -e "/user.name=/ s/=.*/=postgres/" \
+      -e "/user.password=/ s/=.*/=postgres/" \
+      -e "/conn.dbType=/ s/=.*/=POSTGRES/" \
+      -e "/conn.defaultSchema=/ s/=.*/=naits/" \
+      -e "/sys.masterRepo=/ s/=.*/=svarog/" \
+      -e "/sys.defaultLocale=/ s/=.*/=en_US/" \
+      -e "/sys.gis.default_srid=/ s/=.*/=32638/" \
+      -e "/sys.gis.allow_boundary_intersect=/ s/=.*/=true/" \
+      -e "/sys.jdbc.batch_size=/ s/=.*/=100/" \
+      svarog.properties
+    - cat svarog.properties
+
+    - java -cp "dbDataSvarogConverter-1.0_dev.jar:../common_libs/*" "dbDataUserManager.UserInstaller" INSTALL_USERS admin welcome
+  when: manual
+  only:
+  - master
+
+
+01.deploy_to_prod_naits_windows_STAGE_APP1:
+  stage: 6_prod
+  script:
+    - status_one=0
+    - status_two=0
+    - (ifconfig | grep tun0 > /dev/null) || status_one=$? || true
+    - if [ $status_one -ne 0 ]; then barracudavpn -s --login Ljube.Janev@moa.gov.ge --serverpwd Lj32145; fi
+    - (ifconfig | grep tun0 > /dev/null) || status_two=$? || true
+    - if [ $status_two -ne 0 ]; then echo "VPN DOWN" && barracudavpn -p || exit 1; fi
+
+    # create temp dir so that it can be put into triglav_rest.war (zip)
+    - mkdir -p temp/WEB-INF/classes
+    #- cp "/opt/tomcats/georgia/webapps/triglav_rest.war" "triglav_rest.war"
+    - unzip -j "triglav_rest.war" "WEB-INF/classes/svarog.properties" -d "temp/WEB-INF/classes"
+    - cd $CI_PROJECT_DIR
+
+    # apply ansible svarog_properties for win
+    - cd .gitlab-ci/
+    - ./ansible-winsvarog_properties.sh $CI_PROJECT_DIR naits-stage-app1
+    - cd $CI_PROJECT_DIR
+    # remove old svarog properties and properties template files
+    - zip -d triglav_rest.war WEB-INF/classes/svarog.properties || true
+    - zip -d triglav_rest.war WEB-INF/classes/svarog.properties.tpl || true
+    # add new svarog properties to triglav_rest
+    - cd temp/
+    - zip -ru $CI_PROJECT_DIR/triglav_rest.war WEB-INF/classes/svarog.properties
+    - cd $CI_PROJECT_DIR
+    # apply new wars and settings to windows bitnami tomcat
+    - cd .gitlab-ci/
+    - ./ansible-wintomcat.sh $CI_PROJECT_DIR naits-stage-app1
+    - cd $CI_PROJECT_DIR
+
+    - barracudavpn -p
+  when: manual
+  dependencies:
+    - 4_build_war
+    - 5_deploy_and_prep_tirglav_rest.war
+  only:
+    - master
+  tags:
+    - naits_vpn
+
+02.restart_prod_naits_windows_tomcat_STAGE_APP1:
+  stage: 6_prod
+  script:
+    - status_one=0
+    - status_two=0
+    - (ifconfig | grep tun0 > /dev/null) || status_one=$? || true
+    - if [ $status_one -ne 0 ]; then barracudavpn -s --login Ljube.Janev@moa.gov.ge --serverpwd Lj32145; fi
+    - (ifconfig | grep tun0 > /dev/null) || status_two=$? || true
+    - if [ $status_two -ne 0 ]; then echo "VPN DOWN" && barracudavpn -p || exit 1; fi
+
+    - cd .gitlab-ci/
+    - ./ansible-wintomcat_restart.sh $CI_PROJECT_DIR naits-stage-app1
+    - cd $CI_PROJECT_DIR
+
+    - barracudavpn -p
+  when: manual
+  dependencies:
+    - 4_build_war
+    - 5_deploy_and_prep_tirglav_rest.war
+  only:
+    - master
+  tags:
+    - naits_vpn
+    
+
+03.upgrade_prod_naits_db:
+  stage: 6_prod
+  script:
+    - git -C ../svarog remote set-url origin git@gitlab.prtech.mk:prtech/svarog.git
+    - git -C ../svarog reset --hard HEAD
+    - git -C ../svarog clean -dfx
+    - git -C ../svarog checkout staging
+    - git -C ../svarog pull
+
+    - git -C ../common_libs remote set-url origin git@gitlab.prtech.mk:prtech/common_libs.git
+    - git -C ../common_libs reset --hard HEAD
+    - git -C ../common_libs clean -df
+    - git -C ../common_libs checkout staging
+    - git -C ../common_libs pull
+    - rm -rf ../common_libs/svarog-2*
+
+    - cd ../svarog
+    - cp /home/gitlab-runner/JARS/master/svarog_custom_naits-1.0_dev.jar custom
+
+    - ant compile
+    - ant build_dev
+    - ant clean-build
+
+    - ant build_json
+    - ant clean-build
+
+
+    - cd ../svarog/.gitlab-ci
+    - ansible -m ping gitlab-ci-runner -i hosts/gitlabci.yml
+    - ./ansible-svarog.sh georgia `pwd`/../ POSTGRES
+    - cd ../
+
+    - |
+      sed -i \
+      -e "/conn.type=/ s/=.*/=JDBC/" \
+      -e "/driver.name=/ s/=.*/=org.postgresql.Driver/" \
+      -e "/conn.string=/ s/=.*/=jdbc:postgresql:\/\/172.16.20.37:5432\/postgres/" \
+      -e "/user.name=/ s/=.*/=postgres/" \
+      -e "/user.password=/ s/=.*/=${TIBROLABS_UBUNTU_POSTGRES_PASSWORD}/" \
+      -e "/conn.dbType=/ s/=.*/=POSTGRES/" \
+      -e "/conn.defaultSchema=/ s/=.*/=naits/" \
+      -e "/sys.masterRepo=/ s/=.*/=svarog/" \
+      -e "/sys.defaultLocale=/ s/=.*/=en_US/" \
+      -e "/sys.gis.default_srid=/ s/=.*/=32638/" \
+      -e "/sys.gis.allow_boundary_intersect=/ s/=.*/=true/" \
+      -e "/sys.jdbc.batch_size=/ s/=.*/=100/" \
+      svarog.properties
+    - cat svarog.properties
+
+
+    - mkdir -p svarog
+    # copy to temp dir svarog
+    - rsync -av build build.xml conf custom lib release svarog.properties svarog/
+    - zip -9r svarog.zip svarog
+    - ansible -i dreamhost, -b -m copy -a "src=./svarog.zip dest=/opt/ force=yes" all
+    - |
+      ssh dreamhost /bin/bash <<'ENDSSH'
+        rm -rf /opt/svarog || true
+        cd /opt/
+        unzip svarog.zip
+        cd svarog
+        barracudavpn -s --login Ljube.Janev@moa.gov.ge --serverpwd Lj32145
+        ant upgrade_svarog_force
+        barracudavpn -p
+      ENDSSH
+  when: manual
+  only:
+  - master
+  
+01.deploy_to_prod_naits_windows_PROD_APP1:
+  stage: 7_real_prod
+  script:
+    - status_one=0
+    - status_two=0
+    - (ifconfig | grep tun0 > /dev/null) || status_one=$? || true
+    - if [ $status_one -ne 0 ]; then barracudavpn -s --login Ljube.Janev@moa.gov.ge --serverpwd Lj32145; fi
+    - (ifconfig | grep tun0 > /dev/null) || status_two=$? || true
+    - if [ $status_two -ne 0 ]; then echo "VPN DOWN" && barracudavpn -p || exit 1; fi
+
+    # create temp dir so that it can be put into triglav_rest.war (zip)
+    - mkdir -p temp/WEB-INF/classes
+    #- cp "/opt/tomcats/georgia/webapps/triglav_rest.war" "triglav_rest.war"
+    - unzip -j "triglav_rest.war" "WEB-INF/classes/svarog.properties" -d "temp/WEB-INF/classes"
+    - cd $CI_PROJECT_DIR
+
+    # apply ansible svarog_properties for win
+    - cd .gitlab-ci/
+    - ./ansible-winsvarog_properties.sh $CI_PROJECT_DIR naits-prod-app1
+    - cd $CI_PROJECT_DIR
+    # remove old svarog properties and properties template files
+    - zip -d triglav_rest.war WEB-INF/classes/svarog.properties || true
+    - zip -d triglav_rest.war WEB-INF/classes/svarog.properties.tpl || true
+    # add new svarog properties to triglav_rest
+    - cd temp/
+    - zip -ru $CI_PROJECT_DIR/triglav_rest.war WEB-INF/classes/svarog.properties
+    - cd $CI_PROJECT_DIR
+    # apply new wars and settings to windows bitnami tomcat
+    - cd .gitlab-ci/
+    - ./ansible-wintomcat.sh $CI_PROJECT_DIR naits-prod-app1
+    - cd $CI_PROJECT_DIR
+
+    - barracudavpn -p
+  when: manual
+  dependencies:
+    - 4_build_war
+    - 5_deploy_and_prep_tirglav_rest.war
+  only:
+    - master
+  tags:
+    - naits_vpn
+
+02.restart_prod_naits_windows_tomcat_PROD_APP1:
+  stage: 7_real_prod
+  script:
+    - status_one=0
+    - status_two=0
+    - (ifconfig | grep tun0 > /dev/null) || status_one=$? || true
+    - if [ $status_one -ne 0 ]; then barracudavpn -s --login Ljube.Janev@moa.gov.ge --serverpwd Lj32145; fi
+    - (ifconfig | grep tun0 > /dev/null) || status_two=$? || true
+    - if [ $status_two -ne 0 ]; then echo "VPN DOWN" && barracudavpn -p || exit 1; fi
+
+    - cd .gitlab-ci/
+    - ./ansible-wintomcat_restart.sh $CI_PROJECT_DIR naits-prod-app1
+    - cd $CI_PROJECT_DIR
+
+    - barracudavpn -p
+  when: manual
+  dependencies:
+    - 4_build_war
+    - 5_deploy_and_prep_tirglav_rest.war
+  only:
+    - master
+  tags:
+    - naits_vpn

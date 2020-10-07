@@ -1,0 +1,201 @@
+#leftWrapper {
+  background-image: url(../img/BG_MainContent.png);
+}
+
+#rightWrapper {
+  text-align: center;
+  background-image: url(../img/BG_MainContent.png);
+}
+
+#leftWrapper button {
+  width: 100%;
+  min-width: 100px;
+  border: 1px solid rgba(36, 19, 8, 0.4);
+  border-radius: 5px;
+  min-height: 40px;
+  background-color: rgba(36, 19, 8, 0.9);
+  color: #dad8d3;
+  font-weight: 100;
+  -webkit-transition: background-color 600ms ease, color 600ms ease;
+  -ms-transition: background-color 600ms ease, color 600ms ease;
+  -moz-transition: background-color 600ms ease, color 600ms ease;
+  transition: background-color 600ms ease, color 600ms ease;
+  margin-bottom: 5px;
+  background-image: none;
+}
+
+#leftWrapper button:hover {
+  background-color: rgba(224, 171, 16, 0.6);
+  color: black;
+}
+
+#leftWrapper div {
+  text-align: center;
+  display: block;
+  width: 100%;
+  border-radius: 5px;
+  padding: 5px;
+}
+
+#leftWrapper select,
+#leftWrapper input,
+#rightWrapper #createConvForm select,
+#rightWrapper #createConvForm input {
+  border: 1px solid #e9f1da;
+  padding-left: 6px;
+  width: 100%;
+  min-height: 40px;
+  border-radius: 5px;
+  background: #e9f1da;
+  margin-bottom: 10px;
+  box-shadow: 1px 1px 5px rgba(36, 19, 8, 0.8);
+}
+
+#rightWrapper #createConvForm input[type=submit],
+#rightWrapper #createConvForm input[type=button] {
+  width: auto;
+  min-width: 100px;
+  border: 1px solid rgba(36, 19, 8, 0.4);
+  border-radius: 5px;
+  min-height: 40px;
+  background-color: rgba(36, 19, 8, 0.8);
+  color: #dad8d3;
+  font-weight: 100;
+  -webkit-transition: background-color 600ms ease, color 600ms ease;
+  -ms-transition: background-color 600ms ease, color 600ms ease;
+  -moz-transition: background-color 600ms ease, color 600ms ease;
+  transition: background-color 600ms ease, color 600ms ease;
+  margin-bottom: 5px;
+  background-image: none;
+  margin-bottom: 10px;
+  margin-right: 10px;
+}
+
+#rightWrapper #createConvForm input[type=submit]:hover,
+#rightWrapper #createConvForm input[type=button]:hover {
+  background-color: rgba(224, 171, 16, 0.6);
+  color: black;
+}
+
+#createConvForm {
+  padding: 1%;
+  border-radius: 5px;
+  background: rgba(88, 72, 58, 0.6);
+  border: 1px solid rgb(88, 72, 58);
+  box-shadow: 1px 1px 10px rgb(88, 72, 58);
+  text-align: left;
+  color: white;
+}
+
+#createConvForm select, #createConvForm input {
+  width: 100%;
+}
+
+#conversation_header {
+  text-align: left;
+  border: 1px solid rgba(36, 19, 8, 0.5);
+  border-radius: 5px;
+  box-shadow: 1px 1px 10px rgba(36, 19, 8, 0.5);
+}
+
+#conversation_header input, #conversation_header select {
+  border: 1px solid #e9f1da;
+  padding-left: 6px;
+  min-height: 40px;
+  border-radius: 5px;
+  background: #e9f1da;
+  margin-bottom: 10px;
+  box-shadow: 1px 1px 5px rgba(36, 19, 8, 0.8);
+}
+
+#conversation_title {
+  background-color: rgba(36, 19, 8, 0.5);
+  box-shadow: 1px 1px 10px rgba(36, 19, 8, 0.5);
+  border-radius: 5px;
+}
+
+#conversation_title a {
+  color: rgb(224, 171, 16);
+  font-weight: 900;
+  letter-spacing: 1.5px;
+}
+
+#MESSAGE_TEXT {
+  background-color: none;
+  border: 1px solid #e9f1da;
+  padding-left: 6px;
+  width: auto;
+  min-height: 40px;
+  border-radius: 5px;
+  background: #e9f1da;
+}
+
+#btnHolder a {
+  background-color: #e9f1da;
+  border-radius: 5px;
+  margin-right: 5px;
+  box-shadow: 1px 1px 5px rgba(36, 19, 8, 0.8);
+  color: rgba(36, 19, 8, 0.8);
+  -webkit-transition: color 600ms ease, color 600ms ease;
+  -ms-transition: color 600ms ease, color 600ms ease;
+  -moz-transition: color 600ms ease, color 600ms ease;
+  transition: color 600ms ease, color 600ms ease;
+}
+
+#newMsgBtnHolder a {
+  color: rgba(36, 19, 8, 0.8);
+  -webkit-transition: color 600ms ease, color 600ms ease;
+  -ms-transition: color 600ms ease, color 600ms ease;
+  -moz-transition: color 600ms ease, color 600ms ease;
+  transition: color 600ms ease, color 600ms ease;
+}
+
+#btnHolder a:hover, #newMsgBtnHolder a:hover {
+  color: #8f6e0a;
+}
+
+#btnHolder a:nth-child(1), #btnHolder a:nth-child(2) {
+    float: left;
+}
+
+#editConv, #cancelEdit, #saveEdit {
+  color: rgba(36, 19, 8, 0.8);
+  border: none;
+  font-size: 1em;
+  -webkit-transition: color 600ms ease, color 600ms ease;
+  -ms-transition: color 600ms ease, color 600ms ease;
+  -moz-transition: color 600ms ease, color 600ms ease;
+  transition: color 600ms ease, color 600ms ease;
+}
+
+#editConv:hover, #cancelEdit:hover, #saveEdit:hover {
+  color: #8f6e0a !important;
+}
+
+#message {
+  color: black;
+  background-color: #e9f1da;
+  border-radius: 5px;
+  box-shadow: 1px 1px 5px rgba(36, 19, 8, 0.8);
+}
+
+#msg_content, #msg_content a {
+  background-color: transparent;
+  color: black;
+}
+
+#msg_content textarea {
+  box-shadow: 1px 1px 5px rgba(36, 19, 8, 0.8);
+}
+
+#allMessages {
+  padding-bottom: 10px;
+}
+
+#allMessages div {
+  color: black;
+  background-color: #e9f1da;
+  border-radius: 5px;
+  box-shadow: 1px 1px 5px rgba(36, 19, 8, 0.8);
+  padding: 5px;
+}

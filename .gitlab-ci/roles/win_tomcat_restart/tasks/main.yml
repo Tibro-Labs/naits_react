@@ -1,0 +1,6 @@
+---
+- name: Stop tomcat
+  win_command: C:\naits_tomcat\stop_tomcat.bat 
+
+- name: Start tomcat
+  win_command: C:\naits_tomcat\start_tomcat.bat

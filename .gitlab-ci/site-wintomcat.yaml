@@ -1,0 +1,6 @@
+---
+- hosts: wintomcat
+  gather_facts: yes
+  connection: local
+  roles:
+    - win_tomcat

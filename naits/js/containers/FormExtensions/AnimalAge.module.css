@@ -1,0 +1,22 @@
+.input {
+  float: left;
+  width: auto;
+  margin-right: 10px;
+}
+
+.button {
+  float: right;
+  height: 35px;
+  width: auto;
+  margin-right: 10px;
+}
+
+.label {
+  display: block;
+  width: 100%;
+}
+
+::placeholder {
+  opacity: .5 !important;
+  color: #666666 !important;
+}
