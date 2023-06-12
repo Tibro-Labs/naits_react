@@ -1,6 +1,6 @@
 {
   "name": "NAITS-GEORGIA",
-  "version": "1.0.1186",
+  "version": "1.0.2236",
   "appUrlPath": "naits",
   "description": "",
   "main": "webpack.config.js",
@@ -39,6 +39,7 @@
     "react-dom": "16.4.2",
     "react-file-download": "0.3.5",
     "react-ga": "2.7.0",
+    "react-google-recaptcha": "^2.1.0",
     "react-icons": "3.3.0",
     "react-idle-timer": "4.0.8",
     "react-iframe": "1.2.0",

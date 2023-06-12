@@ -30,16 +30,16 @@ export function menuConfig (requestedMenu, context) {
               REPORT_NAME: 'AR_main'
             },
             {
-              LABEL: `${config.labelBasePath}.print.slaugh_final`,
-              REPORT_NAME: 'slaugh_8in1_final_geo'
-            },
-            {
               LABEL: `${config.labelBasePath}.print.slaugh_1in1_final_geo`,
               REPORT_NAME: 'slaugh_1in1_final_geo'
             },
             {
               LABEL: `${config.labelBasePath}.print.slaugh_6in1_final_geo`,
               REPORT_NAME: 'slaugh_6in1_final_geo'
+            },
+            {
+              LABEL: `${config.labelBasePath}.print.slaugh_final`,
+              REPORT_NAME: 'slaugh_8in1_final_geo'
             }
           ]
         },
@@ -54,6 +54,10 @@ export function menuConfig (requestedMenu, context) {
             {
               LABEL: `${config.labelBasePath}.print.pet_passport_main`,
               REPORT_NAME: 'health_passport'
+            },
+            {
+              LABEL: `${config.labelBasePath}.print.pet_owner_history`,
+              REPORT_NAME: 'PetOwnershipHistory'
             },
             {
               LABEL: `${config.labelBasePath}.print.stray_pet_report`,
@@ -150,6 +154,15 @@ export function menuConfig (requestedMenu, context) {
               REPORT_NAME: 'registred_ranges'
             }
           ]
+        },
+        {
+          TABLE: 'RFID_INPUT',
+          REPORTS: [
+            {
+              LABEL: `${config.labelBasePath}.print.rfid_input_details`,
+              REPORT_NAME: 'rfid_input_module'
+            }
+          ]
         }
       ]
     },
@@ -193,11 +206,15 @@ export function menuConfig (requestedMenu, context) {
         },
         {
           TABLE: 'PET',
-          DUMMY_CRITERIA: 'PET_ID'
+          DUMMY_CRITERIA: 'PET_TAG_ID'
         },
         {
           TABLE: 'STRAY_PET',
           DUMMY_CRITERIA: 'PET_ID'
+        },
+        {
+          TABLE: 'RFID_INPUT',
+          DUMMY_CRITERIA: 'RFID_NUMBER'
         }
       ]
     },
@@ -206,12 +223,12 @@ export function menuConfig (requestedMenu, context) {
       {
         TABLE: 'HOLDING',
         LINKEDTABLE: 'HOLDING_RESPONSIBLE',
-        LINKS: ['HOLDING_KEEPER', 'HOLDING_HERDER', 'HOLDING_ASSOCIATED']
+        LINKS: ['HOLDING_KEEPER', 'HOLDING_HERDER', 'HOLDING_ASSOCIATED', 'HOLDING_MEMBER_OF']
       },
       {
         TABLE: 'HOLDING_RESPONSIBLE',
         LINKEDTABLE: 'HOLDING',
-        LINKS: ['HOLDING_KEEPER', 'HOLDING_HERDER', 'HOLDING_ASSOCIATED']
+        LINKS: ['HOLDING_KEEPER', 'HOLDING_HERDER', 'HOLDING_ASSOCIATED', 'HOLDING_MEMBER_OF']
       },
       {
         TABLE: 'QUARANTINE',
@@ -264,8 +281,7 @@ export function menuConfig (requestedMenu, context) {
       'PET',
       'STRAY_PET',
       'INVENTORY_ITEM',
-      'HOLDING',
-      'SVAROG_ORG_UNITS'
+      'HOLDING'
     ],
 
     SHOW_MAP: [
@@ -273,6 +289,11 @@ export function menuConfig (requestedMenu, context) {
       'PET',
       'HOLDING',
       'QUARANTINE'
+    ],
+
+    SHOW_QUESTIONNAIRES: [
+      'ANIMAL',
+      'HOLDING'
     ],
 
     SIMPLE_FORM_EXCLUDE: {
@@ -308,6 +329,11 @@ export function menuConfig (requestedMenu, context) {
         TABLE: 'QUARANTINE',
         SHOW_ITEMS: ['QUARANTINE_ID'],
         LINK_BY: 'QUARANTINE_ID'
+      },
+      {
+        TABLE: 'PET',
+        SHOW_ITEMS: ['PET_ID'],
+        LINK_BY: 'PET_ID'
       }
     ],
     MAIN_MENU: {
@@ -431,6 +457,12 @@ export function menuConfig (requestedMenu, context) {
   if (requestedMenu === 'MAIN_PALETTE' && store.getState().userInfoReducer.allowedObjects) {
     return store.getState().userInfoReducer.allowedObjects
   } else if (requestedMenu === 'MAIN_PALETTE' && !store.getState().userInfoReducer.allowedObjects) {
+    const empty = {}
+    empty.LIST_OF_ITEMS = []
+    return empty
+  } else if (requestedMenu === 'SIDE_MENU_PALETTE' && store.getState().userInfoReducer.allowedObjectsForSideMenu) {
+    return store.getState().userInfoReducer.allowedObjectsForSideMenu
+  } else if (requestedMenu === 'SIDE_MENU_PALETTE' && !store.getState().userInfoReducer.allowedObjectsForSideMenu) {
     const empty = {}
     empty.LIST_OF_ITEMS = []
     return empty

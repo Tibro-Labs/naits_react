@@ -15,7 +15,6 @@
   border-right-style: solid;
   border-right-color: white;
   border-right-width: 1px;
-  padding-top: 10em;
 }
 
 .columnLeft, .columnRight {
@@ -186,6 +185,16 @@
   background-size: 76%;
   background-repeat: no-repeat;
   background-image: url('img/MainPalette/21_movement_doc/movement_doc.svg');
+}
+
+.rfid_input {
+  height: inherit;
+  margin-top: 15%;
+  margin-left: 2px;
+  background-position: center;
+  background-size: 85%;
+  background-repeat: no-repeat;
+  background-image: url('img/MainPalette/22_rfid/rfid_2.svg');
 }
 
 .logoutBoxImg {

@@ -250,7 +250,7 @@ class GeoPopulationFilter extends React.Component {
             color: currentPopulationStatus === 'FINAL' ? '#66717E' : '#FFFFFF'
           }}
         >
-          <p>
+          <p style={{ marginTop: '2px' }}>
             {this.context.intl.formatMessage({
               id: `${config.labelBasePath}.main.add_geo_filter`,
               defaultMessage: `${config.labelBasePath}.main.add_geo_filter`

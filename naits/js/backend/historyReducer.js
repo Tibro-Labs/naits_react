@@ -23,7 +23,8 @@ function checkConfig (action) {
 
 export function historyReducer (state = {
   count: 0,
-  history: []
+  history: [],
+  wasClickedFromRecentTab: false
 }, action) {
   switch (action.type) {
     case checkConfig(action): {
@@ -39,7 +40,7 @@ export function historyReducer (state = {
       if (state && state.history && action && action.payload) {
         // add keys to new object (OBJECTID and TABLE) since response does not contain same keys across all tables,
         // if there are keys which are not present in every object deduplication fails
-        const payloadAndIndentifier = {...action.payload, OBJECTID: action.payload[objectIdKey], TABLE: table}
+        const payloadAndIndentifier = { ...action.payload, OBJECTID: action.payload[objectIdKey], TABLE: table }
         // combine previous state and new state
         combinedArrays = [...state.history, ...[payloadAndIndentifier]]
       }
@@ -62,7 +63,7 @@ export function historyReducer (state = {
       }
     }
     case 'CLEAR_HISTORY_DATA': {
-      return {count: 0, history: []}
+      return { count: 0, history: [] }
     }
     case 'persist/REHYDRATE': {
       let historyReducer
@@ -73,6 +74,11 @@ export function historyReducer (state = {
       }
       return { ...historyReducer }
     }
+    case 'WAS_CLICKED_FROM_RECENT_TAB':
+    case 'THE_KEEPER_HAS_BEEN_REMOVED':
+      return { ...state, wasClickedFromRecentTab: true }
+    case 'RESET_HISTORY_TAB':
+      return { ...state, wasClickedFromRecentTab: false }
   }
   return state
 }

@@ -5,7 +5,7 @@ import * as config from 'config/config'
 import UserMustChangePassword from 'components/AppComponents/Functional/UserProfile/UserMustChangePassword'
 import { alertUser } from 'tibro-components'
 import { store } from 'tibro-redux'
-import { selectObject } from 'functions/utils'
+import { userInfoAction } from 'backend/userInfoAction'
 import createHashHistory from 'history/createHashHistory'
 const hashHistory = createHashHistory()
 
@@ -20,10 +20,16 @@ class EnforcePasswordChange extends React.Component {
   }
 
   componentDidMount () {
-    // Get linked holding/s for the current user, if any
-    this.getLinkedHoldingsForCurrentUser()
     // Check if it's the current user's first login
-    this.checkIfFirstLogin()
+    if (!this.props.theWsForPasswordChangeWasCalledAlready) {
+      this.checkIfFirstLogin()
+    } else {
+      this.setState({ component: this.props.children, freeze: false })
+    }
+    // Get the current user's basic data
+    if (!this.props.userInfo.userObjId) {
+      this.props.userInfoAction(this.props.svSession, 'GET_BASIC')
+    }
   }
 
   componentWillUnmount () {
@@ -32,32 +38,11 @@ class EnforcePasswordChange extends React.Component {
     }
   }
 
-  getLinkedHoldingsForCurrentUser = async () => {
-    const server = config.svConfig.restSvcBaseUrl
-    const verbPath = config.svConfig.triglavRestVerbs.GET_LINKED_HOLDINGS_PER_USER
-    let url = `${server}${verbPath}`
-    url = url.replace('%session', this.props.svSession)
-    try {
-      const res = await axios.get(url)
-      if (res.data && res.data.length === 1) {
-        store.dispatch({ type: 'USER_IS_LINKED_TO_ONE_HOLDING' })
-        selectObject('HOLDING', res.data[0])
-        hashHistory.push('/main/data/holding')
-      } else if (res.data && res.data.length > 1) {
-        store.dispatch({ type: 'USER_IS_LINKED_TO_TWO_OR_MORE_HOLDINGS' })
-        hashHistory.push('/main/dynamic/holding')
-      } else if (res.data.length === 0) {
-        store.dispatch({ type: 'USER_IS_NOT_LINKED_TO_ANY_HOLDINGS' })
-      }
-    } catch (err) {
-      console.error(err)
-    }
-  }
-
   checkIfFirstLogin = async () => {
     const server = config.svConfig.restSvcBaseUrl
     const webService = config.svConfig.triglavRestVerbs.CHECK_IF_FIRST_LOGIN
     let restUrl = `${server}${webService}/${this.props.svSession}`
+    store.dispatch({ type: 'THE_WS_FOR_PASSWORD_CHANGE_WAS_CALLED_ALREADY' })
     try {
       const res = await axios.get(restUrl)
       if (res.data) {
@@ -97,7 +82,15 @@ class EnforcePasswordChange extends React.Component {
 }
 
 const mapStateToProps = state => ({
-  svSession: state.security.svSession
+  svSession: state.security.svSession,
+  userInfo: state.userInfoReducer,
+  theWsForPasswordChangeWasCalledAlready: state.userInfoReducer.theWsForPasswordChangeWasCalledAlready
 })
 
-export default connect(mapStateToProps)(EnforcePasswordChange)
+const mapDispatchToProps = dispatch => ({
+  userInfoAction: (svSession, actionType, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) => {
+    dispatch(userInfoAction(svSession, actionType, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12))
+  }
+})
+
+export default connect(mapStateToProps, mapDispatchToProps)(EnforcePasswordChange)

@@ -1,9 +1,9 @@
 import React from 'react'
 import { Route, Switch } from 'react-router-dom'
-
-import { NotFound } from 'containers/ContainersIndex'
+import { Loading } from 'components/ComponentsIndex'
 import { menuConfig } from 'config/menuConfig.js'
 import { userInfoAction } from 'backend/userInfoAction.js'
+import { strcmp } from 'functions/utils'
 import { connect } from 'react-redux'
 import createHashHistory from 'history/createHashHistory'
 import PropTypes from 'prop-types'
@@ -24,7 +24,10 @@ function DynamicRoutesHOC (WrappedComponent) {
     }
 
     componentDidMount () {
-      this.props.userInfoAction(this.props.svSession, 'ALLOWED_CUSTOM_OBJECTS')
+      const navigationType = window.performance.getEntriesByType('navigation')[0]
+      if (navigationType.type && strcmp(navigationType.type, 'reload')) {
+        this.props.userInfoAction(this.props.svSession, 'ALLOWED_CUSTOM_OBJECTS')
+      }
       if (!this.props.svSession) {
         hashHistory.push('/')
       }
@@ -60,7 +63,7 @@ function DynamicRoutesHOC (WrappedComponent) {
       return (
         <Switch>
           {this.getConfigRoutes()}
-          {!this.state.isBusy && <Route component={NotFound} status={404} />}
+          {!this.state.isBusy && <Loading />}
         </Switch>
       )
     }

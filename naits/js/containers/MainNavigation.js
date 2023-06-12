@@ -11,6 +11,7 @@ import FilterByObjectType from './FilterByObjectType'
 import style from './MainNavigation.module.css'
 import * as utils from 'functions/utils'
 import AssignSampleToLab from 'components/AppComponents/ExecuteActions/AssignSampleToLab'
+import MassUndoAnimalRetirement from 'components/AppComponents/ExecuteActions/MassUndoAnimalRetirement'
 
 class MainNavigation extends React.Component {
   constructor (props) {
@@ -21,6 +22,7 @@ class MainNavigation extends React.Component {
       toggleCustomButton: false,
       formFieldsToBeEcluded: [],
       renderGrid: false,
+      callbackSearchData: undefined,
       searchValue: undefined,
       searchCriteria: undefined,
       altSearchCriteria: undefined,
@@ -90,6 +92,18 @@ class MainNavigation extends React.Component {
     } else if (utils.strcmp(callbackSearchData.criteria, 'OLD_EAR_TAG')) {
       methodType = 'SEARCH_ANIMAL_BY_OLD_EAR_TAG'
       gridType = 'CUSTOM'
+    } else if (utils.strcmp(callbackSearchData.criteria, 'CUSTOM_HOLDING_SEARCH')) {
+      methodType = 'GET_HOLDINGS_BY_CRITERIA'
+      gridType = 'CUSTOM'
+    } else if (utils.strcmp(callbackSearchData.criteria, 'CUSTOM_HOLDING_RESPONSIBLE_SEARCH')) {
+      methodType = 'GET_HOLDING_RESPONSIBLES_BY_CRITERIA'
+      gridType = 'CUSTOM'
+    } else if (utils.strcmp(callbackSearchData.criteria, 'CUSTOM_ANIMAL_SEARCH')) {
+      methodType = 'GET_ANIMALS_BY_CRITERIA'
+      gridType = 'CUSTOM'
+    } else if (utils.strcmp(callbackSearchData.criteria, 'CUSTOM_FLOCK_SEARCH')) {
+      methodType = 'GET_FLOCKS_BY_CRITERIA'
+      gridType = 'CUSTOM'
     }
     if (callbackSearchData.filterType === 'EQUAL') {
       // use EQUAL filter for codelists
@@ -101,6 +115,7 @@ class MainNavigation extends React.Component {
     dataToRedux(null, 'componentIndex', this.props.gridToDisplay, '')
     localStorage.removeItem(`reduxPersist:${this.props.gridToDisplay}`)
     this.setState({
+      callbackSearchData,
       searchValue: callbackSearchData.value,
       searchCriteria: callbackSearchData.criteria,
       altSearchCriteria: callbackSearchData.altCriteria,
@@ -112,6 +127,9 @@ class MainNavigation extends React.Component {
   }
   // Show all data in grid
   showAll = () => {
+    if (this.props.gridToDisplay === 'LABORATORY') {
+      this.setState({ methodType: 'GET_BYLINK' })
+    }
     this.setState({ renderGrid: true, searchValue: undefined, searchCriteria: undefined, customValue: null })
     // Following two lines reset redux state
     removeAsyncReducer(store, this.props.gridToDisplay)
@@ -193,16 +211,19 @@ class MainNavigation extends React.Component {
   }
 
   render () {
-    const { gridToDisplay, parentId, className } = this.props
+    const { gridToDisplay, parentId, className, searchFor } = this.props
     const gridConfig = menuConfig('GRID_CONFIG', this.context.intl)
     return (
       <div className={className}>
         {gridToDisplay &&
           <div style={{ height: '100%', overflow: 'auto', display: 'flex', flexDirection: 'row' }} >
             <div id='sideDiv' className='sideDiv'>
-              <RecordInfo configuration={recordConfig} menuType={gridToDisplay} />
+              <RecordInfo
+                configuration={recordConfig}
+                menuType={gridToDisplay === 'SEARCH' ? searchFor : gridToDisplay}
+              />
               <SearchAndLoadGrid
-                gridToDisplay={gridToDisplay}
+                gridToDisplay={gridToDisplay === 'SEARCH' ? searchFor : gridToDisplay}
                 showAll={this.showAll}
                 waitForSearch={this.waitForSearch}
                 showEmpty={this.showEmpty}
@@ -216,12 +237,16 @@ class MainNavigation extends React.Component {
               {gridToDisplay.includes('LAB_SAMPLE') &&
                 <AssignSampleToLab gridType={gridToDisplay} />
               }
+              {gridToDisplay.includes('ANIMAL') &&
+                <MassUndoAnimalRetirement gridType={gridToDisplay} />
+              }
               {this.state.renderGrid && <MainContent
                 methodType={this.state.methodType}
+                callbackSearchData={this.state.callbackSearchData}
                 toggleCustomButton={this.state.toggleCustomButton}
                 formFieldsToBeEcluded={this.state.formFieldsToBeEcluded}
                 key={gridToDisplay + this.state.searchCriteria + this.state.searchValue}
-                gridToDisplay={gridToDisplay}
+                gridToDisplay={gridToDisplay === 'SEARCH' ? searchFor : gridToDisplay}
                 filterBy={this.state.searchCriteria}
                 filterVals={this.state.searchValue}
                 altFilterBy={this.state.altSearchCriteria}
@@ -248,7 +273,8 @@ class MainNavigation extends React.Component {
 
 const mapStateToProps = state => ({
   petCriteria: state.customSearchCriteria.petCriteria,
-  movementDocCriteria: state.customSearchCriteria.movementDocCriteria
+  movementDocCriteria: state.customSearchCriteria.movementDocCriteria,
+  searchFor: state.groupedSearch.searchFor
 })
 
 export default connect(mapStateToProps)(MainNavigation)

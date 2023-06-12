@@ -157,7 +157,7 @@ module.exports = {
         NODE_ENV: JSON.stringify('production')
       }
     }),
-      new webpack.ContextReplacementPlugin(/moment[\/\\]locale$/, /mk/), // eslint-disable-line
+      new webpack.ContextReplacementPlugin(/moment[\/\\]locale$/, /mk|ka/), // eslint-disable-line
     new HtmlWebpackPlugin({
       filename: 'index.html',
       template: 'js/index.template.html'

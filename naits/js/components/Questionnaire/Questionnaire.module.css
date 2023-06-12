@@ -1,0 +1,173 @@
+.color-white {
+  color: #ffffff;
+}
+
+.width-10 {
+  width: 10%;
+}
+
+.width-15 {
+  width: 15%;
+}
+
+.width-30 {
+  width: 30%;
+}
+
+.width-70 {
+  width: 70%;
+}
+
+.width-100 {
+  width: 100%;
+}
+
+.questionnaire-data-holder {
+  overflow: auto;
+}
+
+.questionnaire-form {
+  font-size: larger;
+}
+
+.question-label {
+  font-size: larger;
+}
+
+.answers {
+  padding-left: 1rem;
+}
+
+.answer-label {
+  margin-top: 5px;
+  font-size: smaller;
+}
+
+.answer-input {
+  width: 75%;
+  margin-right: 0;
+}
+
+.submit-questionnaire-btn {
+  float: initial;
+  margin-top: 3rem;
+  margin-bottom: 3rem;
+  font-size: larger;
+  width: 20%;
+  padding: 6px;
+}
+
+.single-question-or-answer-input {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+
+.icon {
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 2.5rem;
+}
+
+.trash-icon {
+  margin-left: 10px;
+}
+
+.disabled-trash-icon {
+  cursor: not-allowed !important;
+}
+
+.disabled-trash-icon:hover {
+  color: #ffffff !important;
+}
+
+.add-answer-icon {
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-right: 20rem;
+}
+
+.icon:hover,
+.add-answer-icon:hover {
+  color: #e5b010;
+  transition: all ease-in-out 0.3s;
+}
+
+.export-labels-icon,
+.trash-icon,
+.edit-icon {
+  font-size: 2.5vh;
+  color: #ffffff;
+}
+
+.export-labels-icon:hover,
+.trash-icon:hover,
+.edit-icon:hover {
+  color: #000000;
+}
+
+.no-questionnaires {
+  color: #ffffff;
+  text-align: center;
+  font-weight: 700;
+  font-size: 3rem;
+}
+
+.questionnaire-container {
+  padding: 1rem;
+  overflow: hidden auto;
+  max-height: 700px;
+}
+
+.questionnaire-container form {
+  height: 100% !important;
+}
+
+.questionnaires-container {
+  display: grid;
+  grid-template-columns: 30% 70%;
+  width: 100%;
+  margin-top: 2rem;
+  color: #ffffff;
+}
+
+.questionnaires-container-secondary {
+  width: 100%;
+  max-height: 700px;
+  border-radius: 5px;
+  padding: 1rem;
+  overflow: hidden auto;
+}
+
+.single-questionnaire-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #00000075;
+  padding: 1rem;
+}
+
+.single-questionnaire {
+  display: flex;
+  align-items: center;
+  width: auto;
+  margin-left: 6rem;
+  margin-right: 6rem;
+  padding: 1rem 1.5rem;
+  background-color: rgb(38, 48, 56);
+  color: #ffffff;
+  border-bottom: 2px solid #e0ab10;
+}
+
+.single-questionnaire-button {
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.single-questionnaire-button:hover {
+  color: #e0ab10;
+  transition: all ease-in 0.3s;
+}

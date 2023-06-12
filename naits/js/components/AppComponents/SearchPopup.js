@@ -13,6 +13,7 @@ export default class SearchPopup extends React.Component {
       toggleCustomButton: false,
       formFieldsToBeEcluded: [],
       renderGrid: false,
+      gridType: undefined,
       searchValue: undefined,
       searchCriteria: undefined,
       altSearchCriteria: undefined,
@@ -33,6 +34,7 @@ export default class SearchPopup extends React.Component {
     dataToRedux(null, 'componentIndex', this.searchGridId, '')
     localStorage.removeItem(`reduxPersist:${this.searchGridId}`)
     this.setState({
+      gridType: callbackSearchData.filterType,
       searchValue: callbackSearchData.value,
       searchCriteria: callbackSearchData.criteria,
       altSearchCriteria: callbackSearchData.altCriteria,
@@ -96,7 +98,7 @@ export default class SearchPopup extends React.Component {
                 filterVals={this.state.searchValue}
                 altFilterBy={this.state.altSearchCriteria}
                 altFilterVals={this.state.altSearchValue}
-                gridType='LIKE'
+                gridType={this.state.gridType || 'LIKE'}
                 filterType={100000}
                 gridConfig={gridConfig}
                 dontMakeSelection

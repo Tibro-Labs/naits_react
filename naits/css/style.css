@@ -404,7 +404,6 @@ label {
   color: #cccccc;
   font-size: 3rem;
   font-weight: bold;
-  opacity: 0.6;
   margin-top: 5rem;
 }
 
@@ -638,4 +637,59 @@ label {
 
 .leftmost {
   float: left;
+}
+
+.custom_li_item_people {
+  background-color: #5B4620;
+  transition: background-color 1s;
+}
+
+.custom_li_item_people:hover {
+  background-color: #795D2A;
+  color: #EBEBEB;
+  transition: all 1s;
+}
+
+.custom_li_item_movements {
+  background-color: #735030;
+  transition: background-color 1s;
+}
+
+.custom_li_item_movements:hover {
+  background-color: #90653C;
+  color: #EBEBEB;
+  transition: all 1s;
+}
+
+.custom_li_item_inventory {
+  background-color: #7D6B4F;
+  color: #D6D6D6;
+  transition: all 1s;
+}
+
+.custom_li_item_inventory:hover {
+  background-color: #97815E;
+  color: #EBEBEB;
+  transition: all 1s;
+}
+
+.custom_li_item_other {
+  background-color: #887F6D;
+  transition: background-color 1s;
+}
+
+.custom_li_item_other:hover {
+  background-color: #9B9382;
+  color: #EBEBEB;
+  transition: all 1s;
+}
+
+.pets-in-quarantine-grid-container .react-grid-Container,
+.pets-in-quarantine-grid-container .react-grid-HeaderRow,
+.pets-in-quarantine-grid-container .react-grid-Canvas {
+  width: 100% !important;
+}
+
+.pets-in-quarantine-grid-container .pets-in-quarantine-remove-btn:hover {
+  color: #000000;
 }

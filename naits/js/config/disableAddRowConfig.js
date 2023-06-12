@@ -1,8 +1,10 @@
-export function disableAddRowConfig (table, context) {
+export function disableAddRowConfig (table) {
   const tableTypes = {
     DISABLE_ADD_ROW_FOR_TABLE_FIRST_LEVEL: {
       LIST_OF_ITEMS: [
         { TABLE: 'ANIMAL' },
+        { TABLE: 'FLOCK' },
+        { TABLE: 'PET' },
         { TABLE: 'SVAROG_CODES' },
         { TABLE: 'SVAROG_USERS' },
         { TABLE: 'EXPORT_CERT' },
@@ -12,6 +14,7 @@ export function disableAddRowConfig (table, context) {
         { TABLE: 'LAB_TEST_RESULT' },
         { TABLE: 'ANIMAL_MOVEMENT' },
         { TABLE: 'FLOCK_MOVEMENT' },
+        { TABLE: 'HERD_MOVEMENT' },
         { TABLE: 'MOVEMENT_DOC' },
         { TABLE: 'MOVEMENT_DOC_BLOCK' }
       ]
@@ -22,6 +25,7 @@ export function disableAddRowConfig (table, context) {
         { TABLE: 'SVAROG_USER_GROUPS' },
         { TABLE: 'ANIMAL_MOVEMENT' },
         { TABLE: 'FLOCK_MOVEMENT' },
+        { TABLE: 'HERD_MOVEMENT' },
         {
           TABLE: 'SVAROG_ORG_UNITS',
           PARENT_TYPE: 'SVAROG_USERS'
@@ -67,6 +71,10 @@ export function disableAddRowConfig (table, context) {
           PARENT_TYPE: 'QUARANTINE',
           PARENT_SUBTYPE: ' '
         }, {
+          TABLE: 'ANIMAL',
+          PARENT_TYPE: 'HOLDING',
+          PARENT_SUBTYPE: '7'
+        }, {
           TABLE: 'FLOCK',
           PARENT_TYPE: 'HOLDING',
           PARENT_SUBTYPE: '7'
@@ -78,7 +86,9 @@ export function disableAddRowConfig (table, context) {
         },
         { TABLE: 'LAB_TEST_RESULT' },
         { TABLE: 'MOVEMENT_DOC' },
-        { TABLE: 'MOVEMENT_DOC_BLOCK' }
+        { TABLE: 'MOVEMENT_DOC_BLOCK' },
+        { TABLE: 'RFID_INPUT_STATE' },
+        { TABLE: 'RFID_INPUT_RESULT' }
       ]
     },
 

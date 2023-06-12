@@ -2,12 +2,13 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
 import { alertUser } from 'tibro-components'
-import { store, removeAsyncReducer } from 'tibro-redux'
+import { store, removeAsyncReducer, updateSelectedRows } from 'tibro-redux'
 import { ComponentManager, FormManager, GridManager, Loading } from 'components/ComponentsIndex'
+import { CustomPetCollectFormWrapper } from 'containers/InputWrappers'
 import * as config from 'config/config'
 import { menuConfig } from 'config/menuConfig.js'
 import { disableAddRowConfig } from 'config/disableAddRowConfig.js'
-import { selectObject, customDelete, handleRowSelectionChange } from 'functions/utils'
+import { strcmp, selectObject, customDelete, handleRowSelectionChange } from 'functions/utils'
 
 class MultiGrid extends React.Component {
   static propTypes = {
@@ -24,7 +25,9 @@ class MultiGrid extends React.Component {
       popUpForm: undefined,
       renderGrid: [],
       formId: null,
-      recObjId: null
+      recObjId: null,
+      showCollectionDetailsForm: false,
+      collectionDetailsForm: undefined
     }
     this.generateGrid = this.generateGrid.bind(this)
     this.generateForm = this.generateForm.bind(this)
@@ -42,9 +45,6 @@ class MultiGrid extends React.Component {
   }
 
   componentDidUpdate (prevProps) {
-    window.setTimeout(this.disableCheckbox, 300)
-    window.setTimeout(this.mutateCheckbox, 300)
-
     if (prevProps.customId !== this.props.customId &&
       (prevProps.customId === 'TRANSFER_INCOME' || prevProps.customId === 'TRANSFER_OUTCOME' ||
         prevProps.customId === 'INCOMING_MOVEMENT' || prevProps.customId === 'OUTGOING_MOVEMENT')) {
@@ -54,7 +54,7 @@ class MultiGrid extends React.Component {
   }
 
   componentWillReceiveProps (nextProps) {
-    nextProps.isLoading ? this.setState({ loading: true }) : this.setState({ loading: false })
+    this.setState({ loading: nextProps.isLoading })
     if (nextProps.showGrid !== this.props.showGrid ||
       nextProps.parentId !== this.props.parentId ||
       nextProps.linkName !== this.props.linkName ||
@@ -71,11 +71,64 @@ class MultiGrid extends React.Component {
         this.generateMultipleGrids(nextProps)
       }
     }
+
+    if (this.props.customId !== nextProps.customId) {
+      this.props.updateSelectedRows([], null)
+    }
+
+    if (this.props.selectedGridRows.gridId !== nextProps.selectedGridRows.gridId) {
+      const { customId, parentType, parentId, showGrid } = this.props
+      let gridIdPrime, gridIdSec
+      if (customId && customId === 'TRANSFER_INCOME' &&
+        (parentType === 'SVAROG_ORG_UNITS' || parentType === 'HOLDING')) {
+        gridIdPrime = `${customId}_${parentId}_1`
+        gridIdSec = `${customId}_${parentId}_2`
+
+        if (nextProps.selectedGridRows.gridId === gridIdPrime) {
+          ComponentManager.setStateForComponent(gridIdSec, null, {
+            selectedIndexes: []
+          })
+        } else if (nextProps.selectedGridRows.gridId === gridIdSec) {
+          ComponentManager.setStateForComponent(gridIdPrime, null, {
+            selectedIndexes: []
+          })
+        }
+      } else if (customId && customId === 'TRANSFER_OUTCOME' &&
+        (parentType === 'SVAROG_ORG_UNITS' || parentType === 'HOLDING')) {
+        gridIdPrime = `${customId}_${parentId}_1`
+        gridIdSec = `${customId}_${parentId}_2`
+
+        if (nextProps.selectedGridRows.gridId === gridIdPrime) {
+          ComponentManager.setStateForComponent(gridIdSec, null, {
+            selectedIndexes: []
+          })
+        } else if (nextProps.selectedGridRows.gridId === gridIdSec) {
+          ComponentManager.setStateForComponent(gridIdPrime, null, {
+            selectedIndexes: []
+          })
+        }
+      }
+
+      if (parentType === 'HOLDING' && (showGrid === 'ANIMAL' || showGrid === 'FLOCK' || showGrid === 'HERD')) {
+        gridIdPrime = `${showGrid}_${parentId}1`
+        gridIdSec = `${showGrid}_${parentId}2`
+
+        if (nextProps.selectedGridRows.gridId === gridIdPrime) {
+          ComponentManager.setStateForComponent(gridIdSec, null, {
+            selectedIndexes: []
+          })
+        } else if (nextProps.selectedGridRows.gridId === gridIdSec) {
+          ComponentManager.setStateForComponent(gridIdPrime, null, {
+            selectedIndexes: []
+          })
+        }
+      }
+    }
   }
 
   componentWillUnmount () {
     const { showGrid, parentId, linkName, customId } = this.props
-    if (showGrid === 'ANIMAL' || showGrid === 'FLOCK' || showGrid === 'MOVEMENT_DOC' || showGrid === 'ANIMAL_MOVEMENT' ||
+    if (showGrid === 'ANIMAL' || showGrid === 'FLOCK' || showGrid === 'HERD' || showGrid === 'MOVEMENT_DOC' || showGrid === 'ANIMAL_MOVEMENT' ||
       showGrid === 'FLOCK_MOVEMENT' || showGrid === 'LAB_SAMPLE' || showGrid === 'PET' || showGrid === 'HEALTH_PASSPORT') {
       ComponentManager.cleanComponentReducerState(`${showGrid}_${parentId}1`)
       ComponentManager.cleanComponentReducerState(`${showGrid}_${parentId}2`)
@@ -90,36 +143,6 @@ class MultiGrid extends React.Component {
       customId === 'OUTGOING_MOVEMENT') {
       ComponentManager.cleanComponentReducerState(`${customId}_${parentId}_1`)
       ComponentManager.cleanComponentReducerState(`${customId}_${parentId}_2`)
-    }
-  }
-
-  mutateCheckbox = () => {
-    if (this.props.enableMultiSelect) {
-      // Separate the multiple checkbox select all inputs
-      const checkboxContainer = document.getElementById('select-all-checkbox')
-      if (checkboxContainer) {
-        const checkboxLabels = checkboxContainer.labels
-        let checkboxLabelsArr = Array.from(checkboxLabels)
-        checkboxLabelsArr.map((label, index) => {
-          label.parentElement.firstChild.id += `-${index}`
-          let forAttr = label.htmlFor
-          forAttr += `-${index}`
-          label.htmlFor = forAttr
-        })
-      }
-    }
-  }
-
-  disableCheckbox = () => {
-    if (this.props.customId === 'TRANSFER_INCOME') {
-      const checkboxSelectAll = document.querySelectorAll('#select-all-checkbox')
-      let checkboxArr = Array.from(checkboxSelectAll)
-      checkboxArr.map(checkbox => {
-        // Set the attribute disabled to all the select all checkbox inputs
-        checkbox.setAttribute('disabled', true)
-        // Set the pointer-events property of the container div to none
-        checkbox.parentElement.style.pointerEvents = 'none'
-      })
     }
   }
 
@@ -279,7 +302,7 @@ class MultiGrid extends React.Component {
         )
         gridId = `${showGrid}_${parentId}_${linkName}${position}`
       }
-      if (props.customWs === 'GET_TABLE_WITH_MULTIPLE_FILTERS') {
+      if (props.customWs === 'GET_TABLE_WITH_MULTIPLE_FILTERS' || props.customWs === 'GET_TABLE_WITH_MULTIPLE_FILTERS_SORTED') {
         methodType = props.customWs
         let gridType, mainVal
         for (let i = 0; i < props.selectedObjects.length; i++) {
@@ -299,6 +322,16 @@ class MultiGrid extends React.Component {
           filterByCol = `${filterByCol},${altCriteria}`
           multipleCriteria = conjunction
         }
+
+        if (strcmp(props.showGrid, 'ANIMAL') && strcmp(props.parentType, 'HOLDING') && props.holdingType && strcmp(props.holdingType, '7')) {
+          if (filterValue.includes('NOTIN')) {
+            filterValue = 'NOTIN-VALID-PREMORTEM-POSTMORTEM-DESTROYED'
+          }
+        }
+
+        // if (props.showGrid === 'ANIMAL' && props.parentType === 'HOLDING') {
+        //   multipleCriteria = 'AND,AND'
+        // }
         if (mainVal) {
           if (props.customId === 'RELEASE_LOCATION') {
             params = []
@@ -396,6 +429,9 @@ class MultiGrid extends React.Component {
               PARAM_NAME: 'no_rec',
               PARAM_VALUE: 10000
             }, {
+              PARAM_NAME: 'sortOrder',
+              PARAM_VALUE: 'DESC'
+            }, {
               PARAM_NAME: 'criterumConjuction',
               PARAM_VALUE: multipleCriteria
             })
@@ -465,7 +501,9 @@ class MultiGrid extends React.Component {
     selectObject(gridId, row)
     if ((this.props.showGrid === 'ANIMAL' && this.props.parentType === 'HOLDING') ||
       (this.props.showGrid === 'PET' && this.props.parentType === 'HOLDING') ||
-      (this.props.showGrid === 'LAB_SAMPLE' && this.props.parentType === 'ANIMAL')) {
+      (this.props.showGrid === 'HEALTH_PASSPORT' && this.props.parentType === 'PET') ||
+      (this.props.showGrid === 'LAB_SAMPLE' && this.props.parentType === 'ANIMAL') ||
+      (this.props.showGrid === 'LAB_SAMPLE' && this.props.parentType === 'HERD')) {
       setTimeout(selectObject(gridId, row), 300)
     }
   }
@@ -485,6 +523,9 @@ class MultiGrid extends React.Component {
     let formId = `${formWeWant}_FORM_${props.parentId}`
     if (enableExcludedFields) {
       formId = `${formWeWant}_EXCLUDED_FORM_${props.parentId}`
+    }
+    if (strcmp(props.parentType, 'HOLDING') && strcmp(props.showGrid, 'PET')) {
+      formId = `${formWeWant}_FORM`
     }
     if (props.linkName) {
       params.push({
@@ -554,10 +595,65 @@ class MultiGrid extends React.Component {
       this.setState({ popUpForm: undefined, showPopup: false, formId: null })
       GridManager.reloadGridData(gridId)
       GridManager.reloadGridData(secondGridId)
+    } else if (strcmp(this.props.parentType, 'HOLDING') && strcmp(this.props.showGrid, 'PET')) {
+      if (strcmp(this.props.isStrayPet, '1')) {
+        this.setState({ popUpForm: undefined, showPopup: false, formId: null })
+        store.dispatch({ type: 'RESET_IS_STRAY_PET_SELECTION' })
+        this.displayCollectionLocationForm(this.props.createdPetObjId)
+      } else {
+        let secondGridId = `${gridId.slice(0, -1)}2`
+        this.setState({ popUpForm: undefined, showPopup: false, formId: null })
+        GridManager.reloadGridData(gridId)
+        GridManager.reloadGridData(secondGridId)
+        store.dispatch({ type: 'RESET_IS_STRAY_PET_SELECTION' })
+      }
     } else {
       this.setState({ popUpForm: undefined, showPopup: false, formId: null })
       GridManager.reloadGridData(gridId)
     }
+  }
+
+  displayCollectionLocationForm = petObjId => {
+    const formId = 'STRAY_PET_LOCATION_ADDITIONAL_FORM'
+    const params = []
+    params.push({
+      PARAM_NAME: 'formWeWant',
+      PARAM_VALUE: 'STRAY_PET_LOCATION'
+    }, {
+      PARAM_NAME: 'session',
+      PARAM_VALUE: this.props.svSession
+    }, {
+      PARAM_NAME: 'table_name',
+      PARAM_VALUE: 'STRAY_PET_LOCATION'
+    }, {
+      PARAM_NAME: 'object_id',
+      PARAM_VALUE: '0'
+    }, {
+      PARAM_NAME: 'parent_id',
+      PARAM_VALUE: petObjId
+    }, {
+      PARAM_NAME: 'locationReason',
+      PARAM_VALUE: '1'
+    })
+
+    const collectionDetailsForm = FormManager.generateForm(
+      formId, formId, params, 'formData',
+      'GET_FORM_BUILDER', 'GET_UISCHEMA', 'CUSTOM_GET_TABLE_FORMDATA',
+      this.closeCollectionDetailsForm, null, null, null, null, null, 'closeAndDelete',
+      () => this.closeCollectionDetailsForm(), undefined, undefined,
+      undefined, CustomPetCollectFormWrapper
+    )
+
+    this.setState({ showCollectionDetailsForm: true, collectionDetailsForm })
+  }
+
+  closeCollectionDetailsForm = () => {
+    const firstGridId = `PET_${this.props.parentId}1`
+    const secondGridId = `PET_${this.props.parentId}2`
+    GridManager.reloadGridData(firstGridId)
+    GridManager.reloadGridData(secondGridId)
+    store.dispatch({ type: 'RESET_PET_FORM_AFTER_SAVE' })
+    this.setState({ showCollectionDetailsForm: false, collectionDetailsForm: undefined })
   }
 
   initiateDelete = () => {
@@ -618,6 +714,15 @@ class MultiGrid extends React.Component {
           </div>
         }
         {this.state.gridInModal}
+        {this.state.showCollectionDetailsForm &&
+          <div id='form_modal' className='modal' style={{ display: 'block' }}>
+            <div id='form_modal_content' className='modal-content'>
+              <div id='form_modal_body' className='modal-body' style={{ marginTop: '1rem' }}>
+                {this.state.collectionDetailsForm}
+              </div>
+            </div>
+          </div>
+        }
       </div>
     )
   }
@@ -627,10 +732,19 @@ MultiGrid.contextTypes = {
   intl: PropTypes.object.isRequired
 }
 
+const mapDispatchToProps = dispatch => ({
+  updateSelectedRows: (...params) => {
+    dispatch(updateSelectedRows(...params))
+  }
+})
+
 const mapStateToProps = state => ({
   svSession: state.security.svSession,
   selectedObjects: state.gridConfig.gridHierarchy,
-  isLoading: state.massActionResult.loading
+  isLoading: state.massActionResult.loading,
+  selectedGridRows: state.selectedGridRows,
+  isStrayPet: state.petForm.isStrayPet,
+  createdPetObjId: state.petForm.createdPetObjId
 })
 
-export default connect(mapStateToProps)(MultiGrid)
+export default connect(mapStateToProps, mapDispatchToProps)(MultiGrid)

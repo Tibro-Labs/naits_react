@@ -20,7 +20,8 @@ export default class ReleaseLocation extends React.Component {
           generateGrid({
             varType: 'STRAY_PET_LOCATION',
             customWs: 'GET_TABLE_WITH_MULTIPLE_FILTERS',
-            customId: 'RELEASE_LOCATION'
+            customId: 'RELEASE_LOCATION',
+            disableFormEdit: 'delete'
           })
         }}
       >

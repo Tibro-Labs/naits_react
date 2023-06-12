@@ -14,7 +14,7 @@ export function changeStatus (session, status, objectId, tableName, objectArray)
     axios({
       method: 'post',
       url: restUrl,
-      data: objectArray !== null ? JSON.stringify({objectArray}) : JSON.stringify({'objectId': objectId, 'tableName': tableName}),
+      data: objectArray !== null ? JSON.stringify({ objectArray }) : JSON.stringify({ 'objectId': objectId, 'tableName': tableName }),
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     })
       .then((response) => {
@@ -27,18 +27,21 @@ export function changeStatus (session, status, objectId, tableName, objectArray)
 
 export function updateStatus (session, tableName, status, objectArray) {
   return function (dispatch) {
+    const actionType = 'CHANGE_STATUS'
+    dispatch({ type: `${actionType}_PENDING` })
+
     const verbPath = config.svConfig.triglavRestVerbs.UPDATE_STATUS
     const restUrl = `${config.svConfig.restSvcBaseUrl}${verbPath}/${session}/${tableName}/${status}`
     axios({
       method: 'post',
       url: restUrl,
-      data: JSON.stringify({objectArray}),
+      data: JSON.stringify({ objectArray }),
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     })
       .then((response) => {
-        dispatch({ type: 'CHANGE_STATUS_FULFILLED', payload: response })
+        dispatch({ type: `${actionType}_FULFILLED`, payload: response })
       }).catch((error) => {
-        dispatch({ type: 'CHANGE_STATUS_REJECTED', payload: error })
+        dispatch({ type: `${actionType}_REJECTED`, payload: error })
       })
   }
 }

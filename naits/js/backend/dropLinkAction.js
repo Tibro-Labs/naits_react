@@ -25,6 +25,9 @@ export function dropLinkAction (session) {
     if (componentToDisplay.length > 0) {
       linkName = componentToDisplay[0].props.gridProps.linkName
     }
+    if (linkName && linkName === 'HOLDING_KEEPER') {
+      store.dispatch({ type: 'THE_KEEPER_HAS_BEEN_REMOVED' })
+    }
     for (let i = 0; i < selectedGridRows.length; i++) {
       if (selectedGridRows.length > 0) {
         objectId1 = selectedGridRows[i]['HOLDING_RESPONSIBLE.OBJECT_ID']

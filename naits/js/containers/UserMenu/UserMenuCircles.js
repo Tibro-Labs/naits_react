@@ -6,8 +6,6 @@ import componentStyle from './main.module.css'
 import createHashHistory from 'history/createHashHistory'
 import styles from './UserMenuStyle.module.css'
 import CSSModules from 'react-css-modules'
-import { store } from 'tibro-redux'
-import { userInfoAction } from 'backend/userInfoAction.js'
 import * as config from 'config/config.js'
 
 const hashHistory = createHashHistory()
@@ -23,11 +21,6 @@ class UserMenuCircles extends React.Component {
       hover: false,
       activeMenu: ''
     }
-  }
-
-  componentDidMount () {
-    const session = store.getState().security.svSession
-    store.dispatch(userInfoAction(session, 'ALLOWED_CUSTOM_OBJECTS'))
   }
 
   toggleMenu = () => {

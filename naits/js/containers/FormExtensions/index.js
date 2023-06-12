@@ -1,5 +1,7 @@
 import AnimalAge from './AnimalAge.js'
+import PetAge from './PetAge.js'
 
 module.exports = {
-  AnimalAge: AnimalAge
+  AnimalAge: AnimalAge,
+  PetAge: PetAge
 }

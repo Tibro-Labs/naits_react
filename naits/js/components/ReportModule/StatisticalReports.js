@@ -1,9 +1,12 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { store } from 'tibro-redux'
 import { connect } from 'react-redux'
+import axios from 'axios'
+import { format } from 'date-fns'
+import { enUS, ka } from 'date-fns/locale'
+import { store } from 'tibro-redux'
 import { DependencyDropdowns, alertUser } from 'tibro-components'
-import { GridInModalLinkObjects } from 'components/ComponentsIndex'
+import { GridInModalLinkObjects, Loading } from 'components/ComponentsIndex'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import 'react-datepicker/dist/react-datepicker-cssmodules.css'
@@ -11,22 +14,28 @@ import * as config from 'config/config.js'
 import sideMenuStyle from 'modulesCSS/SideMenu.module.css'
 import consoleStyle from 'components/AppComponents/Functional/AdminConsole/AdminConsole.module.css'
 import containerStyle from 'components/ReportModule/Invoice.module.css'
-import { convertToShortDate, gaEventTracker } from 'functions/utils'
+import { strcmp, isValidArray, convertToShortDate, gaEventTracker } from 'functions/utils'
 
 class StatisticalReports extends React.Component {
   constructor (props) {
     super(props)
     this.state = {
+      loading: false,
       reportsArr: [
-        'STAT_ACBV', 'STAT_ACBM', 'STAT_ACBH', 'STAT_ASBV', 'STAT_AEBV', 'STAT_AEBC', 'STAT_IABC', 'STAT_ECBC',
-        'STAT_SABC', 'STAT_CMPV', 'STAT_FCBC', 'STAT_FCBV', 'STAT_HTBC', 'STAT_HTBV', 'STAT_HTGT', 'STAT_SABD',
-        'STAT_TAG_REPLACEMENT'
+        'STAT_ANIMAL_COUNT', 'STAT_AEBV', 'STAT_AEBC', 'STAT_IABC', 'STAT_ECBC',
+        'STAT_SABC', 'STAT_CMPV', 'STAT_CMPF', 'STAT_FCBC', 'STAT_FCBV', 'STAT_HTBC', 'STAT_HTBV', 'STAT_HTGT',
+        'STAT_SABD', 'STAT_TAG_REPLACEMENT'
       ],
       reportsAbbrArr: [
-        'acbv', 'acbm', 'acbh', 'asbv', 'aebv', 'aebc', 'iabc', 'ecbc',
-        'sabc', 'cmpv', 'fcbc', 'fcbv', 'htbc', 'htbv', 'htgt', 'sabd',
-        'ear_tag_replc'
+        'animal_count', 'aebv', 'aebc', 'iabc', 'ecbc',
+        'sabc', 'cmpv', 'cmpf', 'fcbc', 'fcbv', 'htbc', 'htbv', 'htgt',
+        'sabd', 'ear_tag_replc'
       ],
+      animalCountOptions: ['species', 'statuses', 'ages', 'flocks'],
+      animalCountOption: '',
+      datesForAnimalCount: [],
+      datesForAnimalCountDropdown: null,
+      dateForAnimalCount: '',
       alert: null,
       showCampaignModal: false,
       showHoldingModal: false,
@@ -42,8 +51,14 @@ class StatisticalReports extends React.Component {
       holdingObjId: '',
       holdingPic: '',
       campaignObjId: '',
-      campaignName: ''
+      campaignName: '',
+      dateLocale: undefined
     }
+  }
+
+  componentDidMount () {
+    const { locale } = this.props
+    this.setDateLocale(locale)
   }
 
   componentDidUpdate (nextProps, nextState) {
@@ -55,9 +70,74 @@ class StatisticalReports extends React.Component {
         holdingObjId: '',
         holdingPic: '',
         campaignObjId: '',
-        campaignName: ''
+        campaignName: '',
+        animalCountOption: '',
+        datesForAnimalCount: [],
+        dateForAnimalCount: '',
+        datesForAnimalCountDropdown: null
       })
     }
+  }
+
+  setDateLocale = locale => strcmp(locale, 'en-US') ? this.setState({ dateLocale: enUS }) : this.setState({ dateLocale: ka })
+
+  handleAnimalCountOptionChange = e => {
+    this.setState({ [e.target.name]: e.target.value }, () => this.getDatesForAnimalCountReport())
+  }
+
+  handleDateForAnimalCountSelection = e => {
+    this.setState({ [e.target.name]: e.target.value })
+  }
+
+  generateDatesForAnimalCountDropdown = () => {
+    const { datesForAnimalCount } = this.state
+
+    const datesForAnimalCountDropdown = (
+      <select name='dateForAnimalCount' id='dateForAnimalCount' className='form-control' onChange={this.handleDateForAnimalCountSelection}>
+        <option id='blankPlaceholder' key='blankPlaceholder' value='' selected disabled hidden>
+          {this.context.intl.formatMessage({
+            id: config.labelBasePath + '.main.select_animal_count_date',
+            defaultMessage: config.labelBasePath + '.main.select_animal_count_date'
+          })}
+        </option>
+        {datesForAnimalCount.map((date, i) => {
+          return <option key={i + 1} value={date.date}>{date.formattedDate}</option>
+        })}
+      </select>
+    )
+
+    this.setState({ datesForAnimalCountDropdown })
+  }
+
+  getDatesForAnimalCountReport = () => {
+    this.setState({ loading: true })
+    const { session } = this.props
+    const { animalCountOption, dateLocale } = this.state
+    const wsPath = `naits_triglav_plugin/ApplicationServices/getDatesForStatisticalReports/${session}/${animalCountOption}/ASC`
+    const url = `${config.svConfig.restSvcBaseUrl}/${wsPath}`
+    axios.get(url).then(res => {
+      this.setState({ loading: false, datesForAnimalCountDropdown: null, dateForAnimalCount: '' })
+      if (res.data && isValidArray(res.data, 1)) {
+        let datesForAnimalCount = []
+        res.data.map(date => {
+          const formattedDate = format(new Date(date), 'do MMMM yyyy', { locale: dateLocale })
+          const dateForAnimalCount = { date, formattedDate, reportType: animalCountOption }
+          datesForAnimalCount.push(dateForAnimalCount)
+        })
+
+        this.setState({ datesForAnimalCount }, () => this.generateDatesForAnimalCountDropdown())
+      } else {
+        const noDataFoundLabel = this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.main.no_data_found`,
+          defaultMessage: `${config.labelBasePath}.main.no_data_found`
+        })
+        alertUser(true, 'info', noDataFoundLabel)
+      }
+    }).catch(err => {
+      console.error(err)
+      this.setState({ loading: false, datesForAnimalCountDropdown: null, dateForAnimalCount: '' })
+      alertUser(true, 'error', err)
+    })
   }
 
   setActiveElementId = elementId => this.setState({ isActive: true, activeElementId: elementId, displayReport: elementId })
@@ -104,6 +184,10 @@ class StatisticalReports extends React.Component {
       id: `${config.labelBasePath}.alert.parameters_missing`,
       defaultMessage: `${config.labelBasePath}.alert.parameters_missing`
     })
+    const noRegionSelectedLabel = this.context.intl.formatMessage({
+      id: `${config.labelBasePath}.alert.no_region_selected`,
+      defaultMessage: `${config.labelBasePath}.alert.no_region_selected`
+    })
     const noVillageSelectedLabel = this.context.intl.formatMessage({
       id: `${config.labelBasePath}.alert.no_village_selected`,
       defaultMessage: `${config.labelBasePath}.alert.no_village_selected`
@@ -144,8 +228,8 @@ class StatisticalReports extends React.Component {
     let village = null
 
     if (printName === 'STAT_ACBV' || printName === 'STAT_ACBM' || printName === 'STAT_ASBV' ||
-      printName === 'STAT_AEBV' || printName === 'STAT_CMPV' || printName === 'STAT_FCBV' ||
-      printName === 'STAT_HTBV' || printName === 'STAT_TAG_REPLACEMENT') {
+      printName === 'STAT_AEBV' || printName === 'STAT_CMPV' || printName === 'STAT_CMPF' ||
+      printName === 'STAT_FCBV' || printName === 'STAT_HTBV' || printName === 'STAT_TAG_REPLACEMENT') {
       regionElement = document.getElementById('root_holding.location.info_REGION_CODE')
       region = regionElement.options[regionElement.selectedIndex].value
       municipalityElement = document.getElementById('root_holding.location.info_MUNIC_CODE')
@@ -264,9 +348,10 @@ class StatisticalReports extends React.Component {
         }
         break
       case 'STAT_CMPV':
-        if (!village) {
+      case 'STAT_CMPF':
+        if (!region) {
           return this.setState({
-            alert: alertUser(true, 'warning', missingParamsLabel, noVillageSelectedLabel,
+            alert: alertUser(true, 'warning', missingParamsLabel, noRegionSelectedLabel,
               () => this.setState({ alert: alertUser(false, 'info', '') }))
           })
         }
@@ -301,8 +386,16 @@ class StatisticalReports extends React.Component {
       printName === 'STAT_FCBV' || printName === 'STAT_HTBV' || printName === 'STAT_TAG_REPLACEMENT') {
       url = url.replace('%objectId', village)
       url = url.replace('%campaignId', null)
-    } else if (printName === 'STAT_CMPV') {
-      url = url.replace('%objectId', village)
+    } else if (printName === 'STAT_CMPV' || printName === 'STAT_CMPF') {
+      if (region && !municipality && !community && !village) {
+        url = url.replace('%objectId', region)
+      } else if (region && municipality && !community && !village) {
+        url = url.replace('%objectId', municipality)
+      } else if (region && municipality && community && !village) {
+        url = url.replace('%objectId', community)
+      } else if (region && municipality && community && village) {
+        url = url.replace('%objectId', village)
+      }
       url = url.replace('%campaignId', campaignObjId)
     } else if (printName === 'STAT_ACBM') {
       url = url.replace('%objectId', municipality)
@@ -321,7 +414,7 @@ class StatisticalReports extends React.Component {
       printName === 'STAT_SABC' || printName === 'STAT_SABD' || printName === 'STAT_TAG_REPLACEMENT') {
       url = url.replace('%customDate', shortDateFrom)
       url = url.replace('%campaignId', null)
-    } else if (printName === 'STAT_CMPV') {
+    } else if (printName === 'STAT_CMPV' || printName === 'STAT_CMPF') {
       url = url.replace('%customDate', shortDateFrom)
       url = url.replace('%customDate2', shortDateTo)
     } else {
@@ -356,11 +449,132 @@ class StatisticalReports extends React.Component {
     })
   }
 
+  downloadAnimalCountPdfOrExcel = printType => {
+    const { session } = this.props
+    const { animalCountOption, dateForAnimalCount } = this.state
+    const missingParamsLabel = this.context.intl.formatMessage({
+      id: `${config.labelBasePath}.alert.parameters_missing`,
+      defaultMessage: `${config.labelBasePath}.alert.parameters_missing`
+    })
+    const noReportSelectedLabel = this.context.intl.formatMessage({
+      id: `${config.labelBasePath}.alert.no_report_selected`,
+      defaultMessage: `${config.labelBasePath}.alert.no_report_selected`
+    })
+    const noVillageSelectedLabel = this.context.intl.formatMessage({
+      id: `${config.labelBasePath}.alert.no_village_selected`,
+      defaultMessage: `${config.labelBasePath}.alert.no_village_selected`
+    })
+    const noDateForAnimalCountSelectedLabel = this.context.intl.formatMessage({
+      id: `${config.labelBasePath}.alert.no_date_for_animal_count_report_selected`,
+      defaultMessage: `${config.labelBasePath}.alert.no_date_for_animal_count_report_selected`
+    })
+
+    let regionElement = null
+    let municipalityElement = null
+    let communityElement = null
+    let villageElement = null
+    // eslint-disable-next-line no-unused-vars
+    let region = null
+    let municipality = null
+    // eslint-disable-next-line no-unused-vars
+    let community = null
+    let village = null
+
+    regionElement = document.getElementById('root_holding.location.info_REGION_CODE')
+    region = regionElement.options[regionElement.selectedIndex].value
+    municipalityElement = document.getElementById('root_holding.location.info_MUNIC_CODE')
+    if (!municipalityElement) {
+      municipality = null
+    } else {
+      municipality = municipalityElement.options[municipalityElement.selectedIndex].value
+    }
+    communityElement = document.getElementById('root_holding.location.info_COMMUN_CODE')
+    if (!communityElement) {
+      community = null
+    } else {
+      community = communityElement.options[communityElement.selectedIndex].value
+    }
+    villageElement = document.getElementById('root_holding.location.info_VILLAGE_CODE')
+    if (!villageElement) {
+      village = null
+    } else {
+      village = villageElement.options[villageElement.selectedIndex].value
+    }
+
+    let reportName = ''
+    switch (animalCountOption) {
+      case 'species':
+        if (strcmp(printType, 'DETAILED_EXCEL')) {
+          reportName = 'STAT2_AC'
+        } else {
+          reportName = 'STAT3_AC'
+        }
+        break
+      case 'statuses':
+        if (strcmp(printType, 'DETAILED_EXCEL')) {
+          reportName = 'STAT2_AS'
+        } else {
+          reportName = 'STAT3_AS'
+        }
+        break
+      case 'ages':
+        if (strcmp(printType, 'DETAILED_EXCEL')) {
+          reportName = 'STAT2_AA'
+        } else {
+          reportName = 'STAT3_AA'
+        }
+        break
+      case 'flocks':
+        if (strcmp(printType, 'DETAILED_EXCEL')) {
+          reportName = 'STAT2_AF'
+        } else {
+          reportName = 'STAT3_AF'
+        }
+        break
+      default:
+        break
+    }
+
+    let location = '0'
+    if (region && !municipality && !community && !village) {
+      location = region
+    } else if (region && municipality && !community && !village) {
+      location = municipality
+    } else if (region && municipality && community && !village) {
+      location = community
+    } else if (region && municipality && community && village) {
+      location = village
+    }
+
+    if (strcmp(printType, 'DETAILED_EXCEL')) {
+      if (!animalCountOption) {
+        alertUser(true, 'warning', missingParamsLabel, noReportSelectedLabel)
+      } else if (!dateForAnimalCount) {
+        alertUser(true, 'warning', missingParamsLabel, noDateForAnimalCountSelectedLabel)
+      } else if (!village) {
+        alertUser(true, 'warning', missingParamsLabel, noVillageSelectedLabel)
+      } else {
+        const wsPath = `naits_triglav_plugin/report/generatePdfOrExcel/${session}/${reportName}/EXCEL/${location}/${dateForAnimalCount}`
+        const url = `${config.svConfig.restSvcBaseUrl}/${wsPath}`
+        window.open(url, '_blank')
+      }
+    } else {
+      if (!animalCountOption) {
+        alertUser(true, 'warning', missingParamsLabel, noReportSelectedLabel)
+      } else if (!dateForAnimalCount) {
+        alertUser(true, 'warning', missingParamsLabel, noDateForAnimalCountSelectedLabel)
+      } else {
+        const wsPath = `naits_triglav_plugin/report/generatePdfOrExcel/${session}/${reportName}/EXCEL/${location}/${dateForAnimalCount}`
+        const url = `${config.svConfig.restSvcBaseUrl}/${wsPath}`
+        window.open(url, '_blank')
+      }
+    }
+  }
+
   render () {
     const {
-      reportsArr, reportsAbbrArr, date, dateFrom, dateTo, isActive, abbr,
-      activeElementId, displayReport, holdingPic, campaignName, gridToDisplay,
-      altGridToDisplay, showHoldingModal, showCampaignModal
+      reportsArr, reportsAbbrArr, animalCountOptions, date, dateFrom, dateTo, isActive, abbr,
+      activeElementId, displayReport, campaignName, altGridToDisplay, showCampaignModal, loading, datesForAnimalCountDropdown
     } = this.state
     const nowBtnText = this.context.intl.formatMessage({
       id: `${config.labelBasePath}.main.now`,
@@ -504,7 +718,98 @@ class StatisticalReports extends React.Component {
         }
       </button>
     </React.Fragment>
+    const animalCountDownloadBtns = (
+      <React.Fragment>
+        <button
+          id='excel_download'
+          className={`btn-success buttonNowInline ${containerStyle['invoice-button']}`}
+          style={{ marginTop: '1.5rem' }}
+          key='excel_download'
+          onClick={() => {
+            this.downloadAnimalCountPdfOrExcel('EXCEL')
+            gaEventTracker(
+              'DOWNLOAD_EXCEL',
+              `Clicked the Download as .xls button for the ${displayReport} report`,
+              `STATISTICAL_REPORTS | ${config.version} (${config.currentEnv})`
+            )
+          }}
+        >
+          {this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.main.download_as_xls`,
+            defaultMessage: `${config.labelBasePath}.main.download_as_xls`
+          })}
+        </button>
+        <button
+          id='detailed_excel_download'
+          className={`btn-success buttonNowInline ${containerStyle['invoice-button']}`}
+          style={{ marginTop: '1.5rem' }}
+          key='detailed_excel_download'
+          onClick={() => {
+            this.downloadAnimalCountPdfOrExcel('DETAILED_EXCEL')
+            gaEventTracker(
+              'DOWNLOAD_EXCEL',
+              `Clicked the Download as detailed .xls button for the ${displayReport} report`,
+              `STATISTICAL_REPORTS | ${config.version} (${config.currentEnv})`
+            )
+          }}
+        >
+          {this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.main.download_as_detailed_xls`,
+            defaultMessage: `${config.labelBasePath}.main.download_as_detailed_xls`
+          })}
+        </button>
+      </React.Fragment>
+    )
     // Report containers
+    const animalCountContainer = (
+      <div id='animalCountContainer' className={`displayContent ${containerStyle['invoice-container']}`}>
+        {reportHeading}
+        <div className='form-group' style={{ display: 'inline-table', marginBottom: '1rem' }}>
+          <span className={containerStyle['invoice-date-label']} style={{ padding: '0.9rem 2px' }}>
+            {this.context.intl.formatMessage({
+              id: `${config.labelBasePath}.main.select_report`,
+              defaultMessage: `${config.labelBasePath}.main.select_report`
+            })}
+          </span>
+          <select id='animalCountOption' name='animalCountOption' className='form-control' onChange={this.handleAnimalCountOptionChange}>
+            <option id='blankPlaceholder' key='blankPlaceholder' value='' selected disabled hidden>
+              {this.context.intl.formatMessage({
+                id: config.labelBasePath + '.main.select_animal_count_report',
+                defaultMessage: config.labelBasePath + '.main.select_animal_count_report'
+              })}
+            </option>
+            {animalCountOptions.map(option => {
+              return (
+                <option key={option} value={option}>
+                  {this.context.intl.formatMessage({
+                    id: `${config.labelBasePath}.stat_reports.${option}`,
+                    defaultMessage: `${config.labelBasePath}.stat_reports.${option}`
+                  })}
+                </option>
+              )
+            })}
+          </select>
+        </div>
+        {datesForAnimalCountDropdown && (
+          <React.Fragment>
+            <br />
+            <div className='form-group' style={{ display: 'inline-table', marginBottom: '1rem' }}>
+              <span className={containerStyle['invoice-date-label']} style={{ padding: '0.9rem 2px' }}>
+                {this.context.intl.formatMessage({
+                  id: `${config.labelBasePath}.main.select_date_form_animal_count_report`,
+                  defaultMessage: `${config.labelBasePath}.main.select_date_form_animal_count_report`
+                })}
+              </span>
+              {datesForAnimalCountDropdown}
+            </div>
+          </React.Fragment>
+        )}
+        <br />
+        {dependencyDropdown}
+        <br />
+        {animalCountDownloadBtns}
+      </div>
+    )
     const oneDateParamContainer = (
       <div id='oneDateParamContainer' className={`displayContent ${containerStyle['invoice-container']}`}>
         {reportHeading}
@@ -523,42 +828,6 @@ class StatisticalReports extends React.Component {
       <div id='oneDateParamContainerWithoutDepDropdown' className={`displayContent ${containerStyle['invoice-container']}`}>
         {reportHeading}
         <div className={`form-group ${containerStyle.flexMargin}`}>
-          {selectDateLabelEl}
-          {setDateDatePicker}
-          {dateNowBtn}
-        </div>
-        <br />
-        {downloadBtns}
-      </div>
-    )
-    const oneDateParamContainerWithHoldingSelector = (
-      <div id='oneDateParamContainerWithHoldingSelector' className={`displayContent ${containerStyle['invoice-container']}`}>
-        {reportHeading}
-        <input
-          type='text'
-          name='selectHolding'
-          id='selectHolding'
-          value={holdingPic}
-          className={consoleStyle.dropdown}
-          onClick={this.showHoldingModal}
-          placeholder={
-            this.context.intl.formatMessage({
-              id: `${config.labelBasePath}.grid_labels.holding.pic`,
-              defaultMessage: `${config.labelBasePath}.grid_labels.holding.pic`
-            })
-          }
-        />
-        <br />
-        {showHoldingModal &&
-          <GridInModalLinkObjects
-            loadFromParent
-            linkedTable={gridToDisplay}
-            onRowSelect={this.chooseHolding}
-            key={gridToDisplay}
-            closeModal={this.closeHoldingModal}
-          />
-        }
-        <div className='form-group' style={{ display: 'inline-flex', marginTop: '1.5rem' }}>
           {selectDateLabelEl}
           {setDateDatePicker}
           {dateNowBtn}
@@ -695,16 +964,14 @@ class StatisticalReports extends React.Component {
             })}
           </ul>
         </div>
-        {displayReport === 'STAT_ACBV' && oneDateParamContainer}
-        {displayReport === 'STAT_ACBM' && oneDateParamContainer}
-        {displayReport === 'STAT_ACBH' && oneDateParamContainerWithHoldingSelector}
-        {displayReport === 'STAT_ASBV' && oneDateParamContainer}
+        {displayReport === 'STAT_ANIMAL_COUNT' && animalCountContainer}
         {displayReport === 'STAT_AEBV' && twoDateParamsContainer}
         {displayReport === 'STAT_AEBC' && twoDateParamsContainerWithoutDepDropdown}
         {displayReport === 'STAT_IABC' && twoDateParamsContainerWithoutDepDropdown}
         {displayReport === 'STAT_ECBC' && oneDateParamContainerWithoutDepDropdown}
         {displayReport === 'STAT_SABC' && twoDateParamsContainerWithoutDepDropdown}
         {displayReport === 'STAT_CMPV' && twoDateParamsContainerWithCampaignSelector}
+        {displayReport === 'STAT_CMPF' && twoDateParamsContainerWithCampaignSelector}
         {displayReport === 'STAT_FCBC' && oneDateParamContainerWithoutDepDropdown}
         {displayReport === 'STAT_FCBV' && oneDateParamContainer}
         {displayReport === 'STAT_HTBC' && oneDateParamContainerWithoutDepDropdown}
@@ -712,6 +979,7 @@ class StatisticalReports extends React.Component {
         {displayReport === 'STAT_HTGT' && oneDateParamContainerWithoutDepDropdown}
         {displayReport === 'STAT_SABD' && twoDateParamsContainerWithoutDepDropdown}
         {displayReport === 'STAT_TAG_REPLACEMENT' && twoDateParamsContainer}
+        {loading && <Loading />}
       </div>
     )
   }
@@ -722,7 +990,8 @@ StatisticalReports.contextTypes = {
 }
 
 const mapStateToProps = state => ({
-  session: state.security.svSession
+  session: state.security.svSession,
+  locale: state.intl.locale
 })
 
 export default connect(mapStateToProps)(StatisticalReports)

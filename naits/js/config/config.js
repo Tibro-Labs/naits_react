@@ -5,6 +5,8 @@ if (window.location.hostname === 'localhost' && window.location.port === '8080')
   // server = 'http://192.168.99.194:9090/triglav_rest'
   // server = 'https://naits.tibrolabs.com/triglav_rest'
   // server = 'http://localhost:9091/triglav_rest'
+} else if (window.location.hostname === '127.0.0.1' && window.location.port === '8080') {
+  server = 'http://192.168.100.160:8030/triglav_rest'
 } else if (window.location.hostname === 'localhost' && window.location.port === '9090') {
   server = 'http://192.168.9.134:8080/triglav_rest'
 } else {
@@ -20,6 +22,10 @@ export const currentEnv = process.env.NODE_ENV
 
 // Google Analytics tracking code
 export const gaTrackingCode = 'UA-154699639-1'
+
+// Google reCAPTCHA keys
+export const captchaSiteKey = '6LdVGAoaAAAAAPmYkIzFE8vw7axMU8T1DeMzReR5'
+export const captchaSecretKey = '6LdVGAoaAAAAABuGgBl-PFB72M-35e2slctG_41C'
 
 // This flag should be enabled if you are using custom plugins.
 export const hasCustom = true
@@ -77,14 +83,19 @@ export const svConfig = {
     /* Datagrid configuration and data */
     BASE: '/ReactElements/getTableFieldList/%session/%gridName',
     BASE_DATA: '/ReactElements/getTableData/%session/%gridName/100000',
+    BASE_DATA_SECONDARY: '/ReactElements/getTableData/%session/%objectName/100000',
     GET_BYOBJECTID: '/ReactElements/getRowDataByObjectId/%session/%objectId/%objectName',
     GET_BYPARENTID: '/ReactElements/getObjectsByParentId/%session/%parentId/%objectType/%rowlimit',
+    GET_BYPARENTID_2: '/naits_triglav_plugin/ApplicationServices/getObjectsByParentId/%session/%parentId/%tableName/%orderByField/%orderAscDesc',
     GET_BYPARENTID_SYNC: '/ReactElements/getObjectsByParentId/%s1/%s2/%s3/%s4',
     GET_BYPARENTID_SYNC_WITH_ORDER: '/ReactElements/getObjectsByParentId/%s1/%s2/%s3/%s4/%order',
+    GET_BY_PARENTID_ASC_OR_DESC: '/naits_triglav_plugin/ApplicationServices/getObjectsByParentId/%session/%parentId/%objectType/%orderByField/%ascOrDesc',
     GET_BYLINK: '/ReactElements/getObjectByLink/%session/%parentId/%objectType/%linkName/%rowlimit',
     GET_BYLINK_PER_STATUSES: '/ReactElements/getObjectsByLinkPerStatuses/%session/%objectId/%statuses/%table_name/%linkName/%rowlimit/%link_status',
+    GET_BYLINK_PER_STATUSES_SORTED: '/ReactElements/getObjectsByLinkPerStatuses/%session/%objectId/%statuses/%table_name/%linkName/%link_status/%rowlimit/%sortOrder',
     SHOW_LABORATORY_PER_USER: '/ApplicationServices/customShowLaboratoryGrid/%session',
     GET_TABLE_WITH_MULTIPLE_FILTERS: '/ReactElements/getTableWithMultipleFilters/%session/%table_name/%fieldNames/%criterumConjuction/%fieldValues/%no_rec',
+    GET_TABLE_WITH_MULTIPLE_FILTERS_SORTED: '/ReactElements/getTableWithMultipleFilters/%session/%table_name/%fieldNames/%criterumConjuction/%fieldValues/%no_rec/%sortOrder',
     CUSTOM_GRID: '/ReactElements/getTableFieldList/%session/%gridConfigWeWant',
     GET_HISTORY: '/ReactElements/getHistoryObjectsByObjectId/%session/%parentId/%objectType/%rowlimit',
 
@@ -92,6 +103,8 @@ export const svConfig = {
     GET_FORM_BUILDER: '/ReactElements/getTableJSONSchema/%session/%formWeWant',
     GET_UISCHEMA: '/ReactElements/getTableUISchema/%session/%formWeWant',
     GET_TABLE_FORMDATA: '/ReactElements/getTableFormData/%session/%object_id/%table_name',
+    CUSTOM_GET_TABLE_FORMDATA: '/naits_triglav_plugin/ApplicationServices/getCustomTableFormDataPerStrayPetLocation/%session/%parent_id/%locationReason',
+    EXTENDED_CUSTOM_GET_TABLE_FORMDATA: '/naits_triglav_plugin/ApplicationServices/getCustomTableFormDataPerStrayPetLocation/%session/%parent_id/%locationReason/%currentHoldingObjId',
 
     /* Json schema form documents */
     GET_DOC_BUILDER: '/ReactElements/getFormJSONSchema/%session/%formWeWant',
@@ -116,6 +129,7 @@ export const svConfig = {
 
     /* Search tables with equal and like operators */
     GET_TABLE_WITH_FILTER: '/ReactElements/getTableWithFilter/%session/%objectName/%searchBy/%searchForValue/%parentColumn/%parentId/%criterumConjuction/%rowlimit',
+    GET_TABLE_WITH_FILTER_2: '/ReactElements/getTableWithFilter/%session/%table_name/%searchBy/%searchForValue/%no_rec',
     GET_TABLE_WITH_LIKE_FILTER: '/ReactElements/getTableWithILike/%svSession/%objectName/%searchBy/%searchForValue/%rowlimit',
     GET_TABLE_WITH_LIKE_FILTER_2: '/naits_triglav_plugin/ApplicationServices/getTableWithILike/%svSession/%objectName/%searchBy/%searchForValue/%rowlimit',
     GET_TABLE_WITH_LIKE_FILTER_SYNC: '/ReactElements/getTableWithILike/%s1/%s2/%s3/%s4/%s5',
@@ -126,6 +140,7 @@ export const svConfig = {
     GET_TABLE_DATA: '/ReactElements/getTableData/%session/%tableName/%noRec/%doTranslate',
     GET_HOLDING_PIC: '/naits_triglav_plugin/ApplicationServices/getPicPerHolding/%svSession/%holdingId',
     GET_LINKED_HOLDINGS_PER_USER: '/naits_triglav_plugin/ApplicationServices/getLinkedHoldingsPerUser/%session',
+    GET_LINKED_HOLDINGS_PER_USER_2: '/naits_triglav_plugin/ApplicationServices/getLinkedHoldingsPerUser/%svSession',
     TRANSLATE_CODE_ITEM: '/naits_triglav_plugin/ApplicationServices/translateCodeItem/%svSession/%typeId/%fieldName/%fieldValue/%locale',
     GET_HOLDING_PER_EXP_QUARANTINE: '/naits_triglav_plugin/ApplicationServices/getHoldingPerExportQuarantine/%svSession/%quarantineObjId',
 
@@ -190,7 +205,7 @@ export const svConfig = {
     SEARCH_ANIMAL_BY_OLD_EAR_TAG: '/naits_triglav_plugin/ApplicationServices/getAnimalByReplacedTagId/%svSession/%searchForValue',
     IS_ANIMAL_IN_SLAUGHTERHOUSE: '/naits_triglav_plugin/ApplicationServices/checkIfAnimalBelongsToSlaughterhouse',
     HOLDING_STATUS: '/naits_triglav_plugin/ApplicationServices/changeAppropriateColor',
-    MOVE_INV_ITEM_TO_ORG_UNIT: '/naits_triglav_plugin/ApplicationServices/moveInventoryItemToOrgUnit',
+    MOVE_INV_ITEM_TO_ORG_UNIT: '/naits_triglav_plugin/ApplicationServices/moveGroupOfIndividualInventoryItems',
     VALIDATE_RANGE: '/naits_triglav_plugin/ApplicationServices/checkIfRangesOverlap',
     GET_VALID_ORG_UNITS: '/naits_triglav_plugin/ApplicationServices/getValidOrgUnitsDependOnParentOrgUnit/%svSession/%externalId',
     GET_OBJECTS_BY_LOCATION: '/naits_triglav_plugin/ApplicationServices/getObjectsByLocation/%session/%objectType/%value',
@@ -212,13 +227,94 @@ export const svConfig = {
     CHECK_IF_PET_HAS_VALID_PASSPORT: '/naits_triglav_plugin/ApplicationServices/checkIfPetHasValidPassport/%sessionId/%objectId',
     CHECK_IF_PET_HAS_INVENTORY_ITEM: '/naits_triglav_plugin/ApplicationServices/checkIfPetHasInventoryItem/%sessionId/%objectId',
     UPDATE_PET_ID: '/naits_triglav_plugin/ApplicationServices/updatePetId/%sessionId/%objectId/%updatedPetId',
-    CHECK_IF_USER_CAN_USE_STATISTICAL_REPORT_TOOL: '/naits_triglav_plugin/ApplicationServices/checkIfUserCanUseStatisticalReportTool/%sessionId',
+    CHECK_IF_USER_CAN_USE_REPORT_TOOL: '/naits_triglav_plugin/ApplicationServices/hasReportToolPermission/%session/%permissionType',
     CHECK_IF_FILE_EXISTS: '/naits_triglav_plugin/ApplicationServices/checkIfSvFileExists/%sessionId/%fileName',
     DELETE_ANIMAL_ADM_CONSOLE: '/naits_triglav_plugin/ApplicationServices/deleteAnimalObject/%sessionId/%animalId/%animalClass',
     GET_MOVEMENT_DOC_BY_ANIMAL_OR_FLOCK_ID: '/naits_triglav_plugin/ApplicationServices/getMovementDocumentByAnimalOrFlockId/%session/%value/%movementType',
-    GET_INVENTORY_ITEMS_BY_RANGE: '/naits_triglav_plugin/ApplicationServices/getInventoryItemByRange/%session/%parentId/%rangeFrom/%rangeTo',
+    GET_INVENTORY_ITEMS_BY_RANGE: '/naits_triglav_plugin/ApplicationServices/getInventoryItemByRange/%session/%parentId/%rangeFrom/%rangeTo/%tagType/%order',
     GET_MOVEMENT_DOC_BY_TRANSPORTER_LICENSE: '/naits_triglav_plugin/ApplicationServices/getMovementDocumentByTransporterLicense/%session/%value',
     GET_LINKED_USER_GROUPS_PER_USER: '/naits_triglav_plugin/ApplicationServices/getAllLinkedUserGroupsPerUser/%session/%userObjectId',
+    PRECHECK_MOVE_ITEMS_BY_RANGE: '/naits_triglav_plugin/ApplicationServices/preCheckMoveInventoryItemByRange/%session',
+    MOVE_ITEMS_BY_RANGE: '/naits_triglav_plugin/ApplicationServices/moveInventoryItemByRange/%session/true',
+    GENERATE_RFID_RESULT: '/naits_triglav_plugin/ApplicationServices/generateRFIDResultObjects',
+    FILE_UPLOAD: '/naits_triglav_plugin/ApplicationServices/uploadRFIDTags/%session/%objectId',
+    DISPLAY_EXPORT_CERT_PRINT_BADGE: '/naits_triglav_plugin/ApplicationServices/displayExportCertificateReportButton/%session/%objectId',
+    GET_SV_FILE_PER_DBO: '/naits_triglav_plugin/ApplicationServices/getSvFilePerDbo/%session/%objectId/%objectType',
+    DOWNLOAD_FILE: '/naits_triglav_plugin/ApplicationServices/downloadSvFile/%session/%objectId/%objectType/%fileName/%fileNotes',
+    CUSTOM_CREATE_RFID_INPUT: '/naits_triglav_plugin/ApplicationServices/createCustomRfidInput',
+    GET_ANIMALS_BY_STATUS: '/naits_triglav_plugin/ApplicationServices/getAnimalsByStatus/%session/%value',
+    INACTIVATE_PET_OWNER: '/naits_triglav_plugin/ApplicationServices/inactivateLinkBetweenPetAndOwner/%sessionId/%ownerObjId/%petObjId',
+    CHECK_IF_PET_ALREADY_EXISTS_IN_ANOTHER_HOLDING: '/naits_triglav_plugin/ApplicationServices/checkIfPetBelongsToAnimalShelter/%sessionId/%petId',
+    GET_TRANSFER_BY_RANGE: '/naits_triglav_plugin/ApplicationServices/getTransferByRange/%session/%parentId/%rangeFrom/%rangeTo/%transferType/%skipCheck',
+    DOWNLOAD_ATTACHED_FILE: '/naits_triglav_plugin/ApplicationServices/downloadAttachedFilePerDbObject/%session/%objectId/%objectType/%fieldName/%fileName',
+    CHECK_RANGE_VALIDITY: '/naits_triglav_plugin/ApplicationServices/checkRangeValidity/%session/%orgUnitId/%startTagId/%endTagId/%tagType',
+    GET_LAST_PET_MOVEMENT: '/naits_triglav_plugin/ApplicationServices/getLastPetMovement/%session/%objectId',
+    CUSTOM_CREATE_MESSAGE: '/naits_triglav_plugin/MsgServices/createNewMessage/%session',
+    SEARCH_MESSAGES: '/naits_triglav_plugin/MsgServices/searchMessage/%session',
+    SEARCH_SUBJECTS: '/naits_triglav_plugin/MsgServices/searchSubjects/%session',
+    GET_INBOX_MESSAGES: '/naits_triglav_plugin/MsgServices/getInboxMessages/%session',
+    GET_INBOX_SUBJECTS: '/naits_triglav_plugin/MsgServices/getInboxSubjects/%session',
+    GET_SENT_MESSAGES: '/naits_triglav_plugin/MsgServices/getSentMessages/%session',
+    GET_SENT_SUBJECTS: '/naits_triglav_plugin/MsgServices/getSentSubjects/%session',
+    GET_ARCHIVED_MESSAGES: '/naits_triglav_plugin/MsgServices/getArchivedMessages/%session',
+    GET_ARCHIVED_SUBJECTS: '/naits_triglav_plugin/MsgServices/getArchivedSubjects/%session',
+    GET_ADDITIONAL_MESSAGE_INFO: '/naits_triglav_plugin/MsgServices/getAdditionalMessageInfo/%session/%msgObjId',
+    CHANGE_MESSAGE_STATUS: '/naits_triglav_plugin/MsgServices/changeMessageStatus/%session/%msgObjId',
+    ARCHIVE_SUBJECT: '/naits_triglav_plugin/MsgServices/archiveSubject/%session/%subjectObjId',
+    UNARCHIVE_SUBJECT: '/naits_triglav_plugin/MsgServices/unArchiveSubject/%session/%subjectObjId',
+    GET_TRANSLATED_OBJECT_TYPE: '/naits_triglav_plugin/ApplicationServices/getTranslatedTableObjectType/%session/%objectTypeId',
+    GET_NUMBER_OF_UNREAD_OF_MSGS_PER_USER: '/naits_triglav_plugin/MsgServices/getNumberOfUnreadMessagesPerUser/%session',
+    GET_NUM_OF_UNREAD_INBOX_AND_ARCHIVED_MSGS: '/naits_triglav_plugin/MsgServices/getNumberOfUnreadInboxAndArchivedMessagesPerUser',
+    UPDATE_MSG_LINK_STATUS: '/naits_triglav_plugin/MsgServices/updateStatusOfLinkBetweenMessageAndUser/%session/%messageObjId',
+    GET_REGIONAL_ORG_UNITS: '/naits_triglav_plugin/MsgServices/getOrgUnitPerOrgUnitType/%session/REGIONAL_OFFICE',
+    GET_MUNICIPAL_ORG_UNITS: '/naits_triglav_plugin/MsgServices/getOrgUnitPerOrgUnitType/%session/MUNICIPALITY_OFFICE',
+    GET_HOLDING_KEEPER_HISTORY: '/naits_triglav_plugin/ApplicationServices/getAllKeepersByHoldingByObjId/%session/%parentId',
+    GET_HERDS_PER_HOLDING: '/ReactElements/getObjectsByParentId/%session/%parentId/HERD/10000',
+    GET_ANIMALS_PER_HERD: '/ReactElements/getObjectByLink/%session/%parentId/ANIMAL/ANIMAL_HERD/10000',
+    ADD_ANIMAL_TO_HERD: '/naits_triglav_plugin/HerdServices/addAnimalToHerd',
+    REMOVE_ANIMAL_FROM_HERD: '/naits_triglav_plugin/HerdServices/removeAnimalFromHerd',
+    HERD_MASS_ACTION: '/naits_triglav_plugin/HerdServices/herdMassActions',
+    INVIDIUAL_HERD_MOVEMENT_MASS_ACTION: '/naits_triglav_plugin/HerdServices/finishIndividualMovement',
+    GET_AVAILABLE_ANIMALS_PER_TYPE: '/naits_triglav_plugin/HerdServices/getAllAvailableAnimalsPerSelectedType/%session/%herdObjId/%animalType',
+    GET_RESPONSIBLES_PER_HERD: '/naits_triglav_plugin/HerdServices/getAllHoldingResponsiblesPerHerd/%session/%parentId',
+    CHANGE_HERD_MOVEMENT_DOC_STATUS: '/naits_triglav_plugin/HerdServices/updateStatusOfMovementDocument',
+    ASSIGN_HERD_LAB_SAMPLE_TO_LABORATORY: '/naits_triglav_plugin/HerdServices/assignHerdLabSampleToLaboratory',
+    MASS_INV_ITEM_STATUS_CHANGE: '/naits_triglav_plugin/ApplicationServices/massTagChangeStatus',
+    GET_TERMINATED_ANIMALS: '/naits_triglav_plugin/ApplicationServices/getTerminatedAnimals/%session/%objectId/%dateFrom/%dateTo/%rowlimit',
+    GET_FINISHED_MOVEMENTS: '/naits_triglav_plugin/ApplicationServices/getFinishedAnimalMovements/%session/%objectId/%dateFrom/%dateTo/%rowlimit',
+    GET_FINISHED_MOVEMENT_DOCS: '/naits_triglav_plugin/ApplicationServices/getFinishedMovementDocuments/%session/%destinationHoldingPic/%dateFrom/%dateTo/%rowlimit',
+    GET_HOLDINGS_BY_CRITERIA: '/naits_triglav_plugin/ApplicationServices/getHoldingsByCriteria/%session/%type/%name/%pic/%keeperId/%geoCode/%address/%rowlimit',
+    GET_HOLDING_RESPONSIBLES_BY_CRITERIA: '/naits_triglav_plugin/ApplicationServices/getPersonsByCriteria/%session/%idNo/%firstName/%lastName/%fullName/%geoCode/%phoneNumber/%rowlimit',
+    GET_ANIMALS_BY_CRITERIA: '/naits_triglav_plugin/ApplicationServices/getAnimalsByCriteria/%session/%animalId/%status/%animalClass/%breed/%color/%country/%rowlimit',
+    GET_FLOCKS_BY_CRITERIA: '/naits_triglav_plugin/ApplicationServices/getFlocksByCriteria/%session/%flockId/%status/%animalClass/%color/%rowlimit',
+    GET_OUTGOING_TRANSFERS_PER_ORG_UNIT: '/naits_triglav_plugin/ApplicationServices/getOutgoingTransfersPerOrgUnit/%session/%parentId/%tagType/%startTagId/%endTagId/%dateFrom/%dateTo/%rowlimit',
+    GET_INCOMING_TRANSFERS_PER_ORG_UNIT: '/naits_triglav_plugin/ApplicationServices/getIncomingTransfersPerOrgUnit/%session/%parentId/%tagType/%startTagId/%endTagId/%dateFrom/%dateTo/%rowlimit',
+    MANAGE_PET_QUARANTINE: '/naits_triglav_plugin/PetServices/managePetQuarantine',
+    GET_TERMINATED_PETS: '/naits_triglav_plugin/ApplicationServices/getTerminatedPets/%session/%objectId/%dateFrom/%dateTo/%rowlimit',
+    GET_RELEASED_PETS: '/naits_triglav_plugin/ApplicationServices/getReleasedPets/%session/%objectId/%dateFrom/%dateTo/%rowlimit',
+    SEND_EMAIL_IF_HOLDING_RESP_EXISTS: '/naits_triglav_plugin/BankInsuranceCompanies/sendEmailIfHoldingResponsibleExists',
+    GET_HOLDINGS_BY_HOLDING_RESPONSIBLE_ID: '/naits_triglav_plugin/BankInsuranceCompanies/getHoldingsByHoldingResponsibleId/%session/%holdingResponsibleId',
+    GET_ANIMALS_BY_HOLDINGS: '/naits_triglav_plugin/BankInsuranceCompanies/getAnimalsByHoldings/%session/%holdingObjIds',
+
+    /* SVAROG FORMS SERVICES */
+    CREATE_NEW_SVAROG_FORM_TYPE: '/naits_triglav_plugin/SvFormsServices/createNewQuestionnaireAndQuiestions',
+    GET_QUESTIONNAIRES: '/naits_triglav_plugin/SvFormsServices/getQuestionnairesData',
+    GET_QUESTIONNAIRES_HISTORY: '/naits_triglav_plugin/SvFormsServices/getAllQuestionnaireAnswers',
+    GET_QUESTIONNAIRES_PER_OBJECT: '/naits_triglav_plugin/SvFormsServices/getQuestionnairesByParentTypeId',
+    GET_EDIT_QUESTIONNAIRE_JSON_SCHEMA: '/naits_triglav_plugin/SvFormsServices/getJsonSchemaForEditedQuestionnaires/%session/%labelCode',
+    GET_EDIT_QUESTIONNAIRE_UI_SCHEMA: '/naits_triglav_plugin/SvFormsServices/getCustomFormTypeUISchema/%session/%labelCode1',
+    EDIT_QUESTIONS_IN_QUESTIONNAIRE: '/naits_triglav_plugin/SvFormsServices/editQuestionsInQuestionnaire',
+    GET_QUESTIONNAIRE_JSON_SCHEMA: '/naits_triglav_plugin/SvFormsServices/getSVFormTypeJsonSchema/%session/%labelCode',
+    GET_QUESTIONNAIRE_UI_SCHEMA: '/naits_triglav_plugin/SvFormsServices/getCustomFormTypeUISchema/%session/%labelCode',
+    GET_QUESTIONNAIRE_FORM_DATA: '/naits_triglav_plugin/SvFormsServices/getQuestionsAndAnswersFormData/%session/%objectId/%parentId',
+    SUBMIT_QUESTIONNAIRE: '/naits_triglav_plugin/SvFormsServices/answerQuestionsInQuestionnaire',
+    EXPORT_QUESTIONNAIRE: '/naits_triglav_plugin/SvFormsServices/exportQuestionnaire',
+    IMPORT_QUESTIONNAIRE: '/naits_triglav_plugin/SvFormsServices/importQuestionnaire',
+    DELETE_QUESTIONNAIRE: '/naits_triglav_plugin/SvFormsServices/deleteQuestionnaire',
+
+    /* PUBLIC SERVICES */
+    PUBLIC_ANIMAL_SEARCH: '/naits_triglav_plugin/PublicServices/searchAnimalById',
+    PUBLIC_ANIMAL_ADDITIONAL_DATA: '/naits_triglav_plugin/PublicServices/getAnimalMovementHistoryAndLastVaccineByAnimalObjId',
 
     /* TICKET/MESSAGING SUBSYSTEM */
     /* BEGIN */
@@ -226,7 +322,7 @@ export const svConfig = {
     GET_CONVERSATION_HEADER: '/ReactElements/getConversationHeader/',
     GET_CONVERSATION_DATA: '/ReactElements/getConversationData/',
     CREATE_MSGS: '/ReactElements/createTableRecord/',
-    DELETE_CONVERSATION_MSGS: '/svWriter/deleteObject/',
+    DELETE_CONVERSATION_MSGS: '/naits_triglav_plugin/ApplicationServices/deleteObject/',
     GET_MESSAGES: '/ReactElements/getMessagesForConversation/',
     UPDATE_CONV_STATE: '/ReactElements/updateSvConversationState/%session/%object_id',
     COUNT_UNREAD_MSGS: '/naits_triglav_plugin/ApplicationServices/countUnreadMessages/%session',

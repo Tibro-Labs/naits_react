@@ -1,13 +1,14 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 import PropTypes from 'prop-types'
+import { connect } from 'react-redux'
 import { ComponentManager, ResultsGrid } from 'components/ComponentsIndex'
 import { alertUser } from 'tibro-components'
 import { store } from 'tibro-redux'
 import { menuConfig } from 'config/menuConfig'
 import * as config from 'config/config'
 
-export default class InputCampaignWrapper extends React.Component {
+class InputCampaignWrapper extends React.Component {
   constructor (props) {
     super(props)
     this.state = {
@@ -26,11 +27,26 @@ export default class InputCampaignWrapper extends React.Component {
   }
 
   componentDidMount () {
+    store.dispatch({ type: 'CAMPAIGN_FORM_IS_ACTIVE' })
     const testTypeInput = document.getElementById(this.state.testTypeFieldName)
     if (testTypeInput) {
       testTypeInput.onclick = this.displayModal
       testTypeInput.addEventListener('keydown', e => {
         e.preventDefault()
+      })
+    }
+  }
+
+  componentWillReceiveProps (nextProps) {
+    if (nextProps.noResults) {
+      document.getElementById('closeTestTypesModal') && document.getElementById('closeTestTypesModal').click()
+      this.setState({
+        alert: alertUser(true, 'warning',
+          this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.alert.no_test_types_found`,
+            defaultMessage: `${config.labelBasePath}.alert.no_test_types_found`
+          }), null, () => this.setState({ alert: false })
+        )
       })
     }
   }
@@ -120,15 +136,18 @@ export default class InputCampaignWrapper extends React.Component {
     const activityTypeDropdown = document.getElementById('root_campaign.info_ACTIVITY_TYPE')
     const diseaseDropdown = document.getElementById('root_campaign.info_DISEASE')
     const activitySubTypeDropdown = document.getElementById('root_campaign.info_ACTIVITY_SUBTYPE')
-    if (activityTypeDropdown && diseaseDropdown && activitySubTypeDropdown) {
+    const scopeDropdown = document.getElementById('root_campaign.info_CAMPAIGN_SCOPE')
+    if (activityTypeDropdown && diseaseDropdown && activitySubTypeDropdown && scopeDropdown) {
       activityTypeDropdown.setAttribute('disabled', '')
       diseaseDropdown.setAttribute('disabled', '')
       activitySubTypeDropdown.setAttribute('disabled', '')
+      scopeDropdown.setAttribute('disabled', '')
     }
     this.closeModal()
   }
 
   closeModal = () => {
+    store.dispatch({ type: 'CLOSED_THE_TEST_TYPES_MODAL' })
     this.setState({ displayModal: false, activityType: '', activitySubType: '', disease: '' })
     ComponentManager.cleanComponentReducerState(`${this.state.gridToDisplay}_CUSTOM`)
   }
@@ -153,7 +172,7 @@ export default class InputCampaignWrapper extends React.Component {
           />
         </div>
       </div>
-      <div id='modal_close_btn' type='button' className='js-components-AppComponents-Functional-GridInModalLinkObjects-module-close'
+      <div id='closeTestTypesModal' type='button' className='js-components-AppComponents-Functional-GridInModalLinkObjects-module-close'
         style={{
           position: 'absolute',
           right: 'calc(11% - 9px)',
@@ -176,3 +195,9 @@ export default class InputCampaignWrapper extends React.Component {
 InputCampaignWrapper.contextTypes = {
   intl: PropTypes.object.isRequired
 }
+
+const mapStateToProps = state => ({
+  noResults: state.searchAndLoad.noResults
+})
+
+export default connect(mapStateToProps)(InputCampaignWrapper)

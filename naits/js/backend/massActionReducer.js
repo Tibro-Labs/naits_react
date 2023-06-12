@@ -1,7 +1,15 @@
 export function massActionReducer (state = {
-  result: null
+  result: null,
+  isLoading: false
 }, action) {
   switch (action.type) {
+    case 'MOVE_INVENTORY_ITEM_PENDING':
+    case 'CHANGE_STATUS_PENDING':
+    case 'CHANGE_MOVEMENT_DOC_STATUS_PENDING':
+      return {
+        ...state, isLoading: true
+      }
+
     case 'RESET_STANDALONE_ACTION':
     case 'RESET_GENERATE_INVENTORY_ITEM':
     case 'RESET_LAB_SAMPLE_ACTION':
@@ -11,7 +19,7 @@ export function massActionReducer (state = {
     case 'RESET_CREATE_TRANSFER':
     case 'RESET_ANIMAL': {
       return {
-        ...state, result: null
+        ...state, result: null, isLoading: false
       }
     }
 
@@ -34,7 +42,7 @@ export function massActionReducer (state = {
     case 'MOVE_TO_ORG_UNIT_FULFILLED':
     case 'MOVE_TO_ORG_UNIT_REJECTED': {
       return {
-        ...state, result: action.payload.data
+        ...state, result: action.payload.data, isLoading: false
       }
     }
   }

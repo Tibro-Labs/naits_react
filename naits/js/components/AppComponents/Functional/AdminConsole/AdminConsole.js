@@ -310,6 +310,20 @@ class AdminConsole extends React.Component {
               })}
             </li>
             <li
+              id='consoleQuestionnaires'
+              key='consoleQuestionnaires'
+              {...this.state.activeItem === 'consoleQuestionnaires'
+                ? { className: `list-group-item ${sideMenuStyle.li_item} ${sideMenuStyle.li_item_clicked}` }
+                : { className: `list-group-item ${sideMenuStyle.li_item}` }
+              }
+              onClick={() => hashHistory.push('/questionnaires')}
+            >
+              {this.context.intl.formatMessage({
+                id: config.labelBasePath + '.main.questionnaire.list',
+                defaultMessage: config.labelBasePath + '.main.questionnaire.list'
+              })}
+            </li>
+            <li
               id='registerUser'
               key='registerUser'
               {...this.state.activeItem === 'registerUser'

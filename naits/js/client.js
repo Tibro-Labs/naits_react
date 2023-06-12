@@ -6,8 +6,6 @@ import { persistStore } from 'redux-persist'
 import { addLocaleData } from 'react-intl'
 import { IntlProvider, updateIntl } from 'react-intl-redux'
 import { store, dataToRedux, injectAsyncReducer } from 'tibro-redux'
-import { checkIfUserHasAdmGroup } from 'backend/checkIfUserHasAdmGroup'
-import { getUserGroups } from 'backend/getUserGroups'
 
 import en from 'react-intl/locale-data/en'
 import ka from 'react-intl/locale-data/ka'
@@ -54,6 +52,22 @@ import { messagesReducer } from 'backend/messagesReducer'
 import { getOrgUnitByObjectIdReducer } from 'backend/getOrgUnitByObjectIdReducer'
 import { searchAndLoadReducer } from 'backend/searchAndLoadReducer'
 import { moveToOrgUnitReducer } from 'backend/moveToOrgUnitReducer'
+import { rfidSecondLevelFormReducer } from 'backend/rfidSecondLevelFormReducer'
+import { rfidFileReducer } from 'backend/rfidFileReducer'
+import { rfidStatusReducer } from 'backend/rfidStatusReducer'
+import { groupedSearchReducer } from 'backend/groupedSearchReducer'
+import { petFormCustomReducer } from 'backend/petFormCustomReducer'
+import { lastPetMovementReducer } from 'backend/lastPetMovementReducer'
+import { unreadMessagesAlertReducer } from 'backend/unreadMessagesAlertReducer'
+import { unreadMessagesNumberReducer } from 'backend/unreadMessagesNumberReducer'
+import { questionnaireReducer } from 'backend/questionnaireReducer'
+import { terminatedAnimalsReducer } from 'backend/terminatedAnimalsReducer'
+import { finishedMovementDocumentsReducer } from 'backend/finishedMovementDocumentsReducer'
+import { finishedMovementsReducer } from 'backend/finishedMovementsReducer'
+import { outgoingTransferFilterReducer } from 'backend/outgoingTransferFilterReducer'
+import { incomingTransferFilterReducer } from 'backend/incomingTransferFilterReducer'
+import { terminatedPetsReducer } from 'backend/terminatedPetsReducer'
+import { releasedPetsReducer } from 'backend/releasedPetsReducer'
 import { security } from 'backend/security'
 
 import IdleTimer from 'react-idle-timer'
@@ -81,7 +95,8 @@ const persistConfig = {
     'intl',
     'security',
     'stateTooltip',
-    'selectedObjects'
+    'selectedObjects',
+    'linkedHolding'
   ]
 }
 
@@ -196,14 +211,22 @@ function loadApplication () {
   injectAsyncReducer(store, 'getOrgUnitByObjectId', getOrgUnitByObjectIdReducer)
   injectAsyncReducer(store, 'searchAndLoad', searchAndLoadReducer)
   injectAsyncReducer(store, 'moveToOrgUnit', moveToOrgUnitReducer)
-
-  const server = `${config.svConfig.restSvcBaseUrl}${config.svConfig.triglavRestVerbs.IS_USER_ADMIN}`
-  const session = store.getState().security.svSession
-  const params = `/${session}`
-  store.dispatch(checkIfUserHasAdmGroup(server + params))
-
-  const verbPath = `${config.svConfig.restSvcBaseUrl}${config.svConfig.triglavRestVerbs.GET_USER_GROUPS}`
-  store.dispatch(getUserGroups(verbPath + params))
+  injectAsyncReducer(store, 'rfidSecondLevelForm', rfidSecondLevelFormReducer)
+  injectAsyncReducer(store, 'rfidFile', rfidFileReducer)
+  injectAsyncReducer(store, 'rfidStatus', rfidStatusReducer)
+  injectAsyncReducer(store, 'groupedSearch', groupedSearchReducer)
+  injectAsyncReducer(store, 'petForm', petFormCustomReducer)
+  injectAsyncReducer(store, 'lastPetMovement', lastPetMovementReducer)
+  injectAsyncReducer(store, 'unreadMessagesAlert', unreadMessagesAlertReducer)
+  injectAsyncReducer(store, 'unreadMessages', unreadMessagesNumberReducer)
+  injectAsyncReducer(store, 'questionnaire', questionnaireReducer)
+  injectAsyncReducer(store, 'terminatedAnimals', terminatedAnimalsReducer)
+  injectAsyncReducer(store, 'finishedMovementDocuments', finishedMovementDocumentsReducer)
+  injectAsyncReducer(store, 'finishedMovements', finishedMovementsReducer)
+  injectAsyncReducer(store, 'outgoingTransferFilter', outgoingTransferFilterReducer)
+  injectAsyncReducer(store, 'incomingTransferFilter', incomingTransferFilterReducer)
+  injectAsyncReducer(store, 'terminatedPets', terminatedPetsReducer)
+  injectAsyncReducer(store, 'releasedPets', releasedPetsReducer)
 
   // Initialize Google Analytics
   initGA()

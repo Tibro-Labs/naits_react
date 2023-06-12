@@ -24,6 +24,10 @@ class GetAdditionalData extends React.Component {
     if (this.props.populationStatusHasBeenUpdated !== nextProps.populationStatusHasBeenUpdated) {
       this.fetchData(nextProps)
     }
+
+    if (nextProps.shouldRefreshPrintBadgeAndSummaryInfo) {
+      this.fetchData(nextProps)
+    }
   }
 
   fetchData (props) {
@@ -52,7 +56,8 @@ const mapStateToProps = (state) => ({
   gridHierarchy: state.gridConfig.gridHierarchy,
   linkedOwnerToPet: state.linkedObjects.linkedOwnerToPet,
   populationHasBeenUpdated: state.additionalData.populationHasBeenUpdated,
-  populationStatusHasBeenUpdated: state.updatePopulationStatus.populationStatusHasBeenUpdated
+  populationStatusHasBeenUpdated: state.updatePopulationStatus.populationStatusHasBeenUpdated,
+  shouldRefreshPrintBadgeAndSummaryInfo: state.changeStatus.shouldRefreshPrintBadgeAndSummaryInfo
 })
 
 export default connect(mapStateToProps)(GetAdditionalData)

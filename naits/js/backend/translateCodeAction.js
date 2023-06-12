@@ -48,6 +48,8 @@ export function translateCodeAction (argsObject) {
         if (callback instanceof Function && !(response.data instanceof Error)) {
           // give callback response data from axios
           callback(response.data)
+          store.dispatch({ type: 'RESET_HOLDING_SIDE_MENU_CHANGE' })
+          store.dispatch({ type: 'CLOSE_QUESTIONNAIRES' })
         }
       }).catch((err) => {
         dispatch({ type: `${tempVar}_DATA_REJECTED`, payload: err })

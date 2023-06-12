@@ -37,20 +37,20 @@ class StandAloneAction extends React.Component {
     }
   }
 
-    reloadData = (props) => {
-      let gridId, key
-      let { componentToDisplay } = this.props
-      if (componentToDisplay.length > 0) {
-        for (let i = 0; i < componentToDisplay.length; i++) {
-          key = componentToDisplay[i].key
-          if (key) {
-            gridId = key
-          }
+  reloadData = (props) => {
+    let gridId, key
+    let { componentToDisplay } = this.props
+    if (componentToDisplay.length > 0) {
+      for (let i = 0; i < componentToDisplay.length; i++) {
+        key = componentToDisplay[i].key
+        if (key) {
+          gridId = key
         }
       }
-      ComponentManager.setStateForComponent(gridId, 'selectedIndexes', [])
-      GridManager.reloadGridData(gridId)
     }
+    ComponentManager.setStateForComponent(gridId, 'selectedIndexes', [])
+    GridManager.reloadGridData(gridId)
+  }
 
   executeAction = () => {
     const areAnyRowsSelected = isValidArray(this.props.selectedGridRows, 1)
@@ -62,7 +62,7 @@ class StandAloneAction extends React.Component {
             id: `${config.labelBasePath}.alert.empty_selection`,
             defaultMessage: `${config.labelBasePath}.alert.empty_selection`
           }), null,
-          () => this.setState({alert: alertUser(false, 'info', '')})
+          () => this.setState({ alert: alertUser(false, 'info', '') })
         )
       })
       return
@@ -85,7 +85,7 @@ class StandAloneAction extends React.Component {
             defaultMessage: this.props.promptMessage || ' '
           }),
           () => store.dispatch(standAloneAction(actionParams)),
-          () => this.setState({alert: alertUser(false, 'info', '')}),
+          () => this.setState({ alert: alertUser(false, 'info', '') }),
           true,
           this.context.intl.formatMessage({
             id: `${config.labelBasePath}.actions.execute`,
@@ -111,10 +111,10 @@ class StandAloneAction extends React.Component {
       <div
         id={actionParams.urlCode}
         className={style.menuActivator}
-        style={{width: 'auto'}}
+        style={{ width: 'auto' }}
         onClick={this.executeAction}>
         {this.state.alert}
-        <span id='undo_text' className={style.actionText} style={{width: '100px'}}>
+        <span id='undo_text' className={style.actionText} style={{ width: '100px', marginTop: '2px', marginLeft: '-2px' }}>
           {this.context.intl.formatMessage({
             id: actionParams.nameLabel,
             defaultMessage: actionParams.nameLabel

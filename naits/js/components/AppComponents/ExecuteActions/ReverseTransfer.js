@@ -1,133 +1,108 @@
 import React from 'react'
-import ReactDOM from 'react-dom'
 import { connect } from 'react-redux'
 import PropTypes from 'prop-types'
+import axios from 'axios'
 import * as config from 'config/config.js'
 import style from './ExecuteActionOnSelectedRows.module.css'
 import { alertUser } from 'tibro-components'
-import { createReverseTransfer } from 'backend/createReverseTransfer'
 import { store, updateSelectedRows } from 'tibro-redux'
-import { isValidArray } from 'functions/utils'
-import { ComponentManager, GridManager } from 'components/ComponentsIndex'
+import { strcmp, isValidArray, formatAlertType } from 'functions/utils'
+import { ComponentManager, GridManager, Loading } from 'components/ComponentsIndex'
 import styles from 'components/AppComponents/Presentational/Badges/Badges.module.css'
 
 class ReverseTransfer extends React.Component {
   constructor (props) {
     super(props)
     this.state = {
-      alert: null
+      alert: undefined,
+      loading: false
     }
   }
 
-  reloadData = (props) => {
-    let gridIdPrime = props.selectedGrid.gridId.slice(0, -1) + '1'
-    let gridIdSec = props.selectedGrid.gridId.slice(0, -1) + '2'
-
-    ComponentManager.setStateForComponent(gridIdPrime)
-    ComponentManager.setStateForComponent(gridIdPrime, null, {
-      selectedIndexes: []
-    })
-    GridManager.reloadGridData(gridIdPrime)
-    ComponentManager.setStateForComponent(gridIdSec)
-    ComponentManager.setStateForComponent(gridIdSec, null, {
-      selectedIndexes: []
-    })
-    GridManager.reloadGridData(gridIdSec)
-  }
-
   componentWillUnmount () {
-    this.props.updateSelectedRows([], null)
+    updateSelectedRows([], null)
     store.dispatch({ type: 'CLEAN_ACTION_STATE', payload: null })
   }
 
-  close = () => {
-    this.setState({ popup: false })
-  }
+  close = () => this.setState({ alert: alertUser(false, 'info', '') })
 
-  reverseTransfer = () => {
-    const { selectedGridRows, selectedObject } = this.props
+  reverseTransferPrompt = () => {
+    const { selectedGridRows } = this.props
     if (!isValidArray(selectedGridRows, 1)) {
       return this.setState({
         alert: alertUser(true, 'warning',
           this.context.intl.formatMessage({
             id: `${config.labelBasePath}.alert.empty_selection`,
             defaultMessage: `${config.labelBasePath}.alert.empty_selection`
-          }), null,
-          () => this.setState({ alert: alertUser(false, 'info', '') })
+          }), null, () => this.setState({ alert: alertUser(false, 'info', '') })
+        )
+      })
+    } else if (isValidArray(selectedGridRows, 2)) {
+      this.setState({
+        alert: alertUser(true, 'warning',
+          this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.error.pleaseSelectOneTransferToUseReverseAction`,
+            defaultMessage: `${config.labelBasePath}.error.pleaseSelectOneTransferToUseReverseAction`
+          }), null, () => this.setState({ alert: alertUser(false, 'info', '') })
+        )
+      })
+    } else {
+      this.setState({
+        alert: alertUser(
+          true, 'warning', this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.main.reverse_transfer_prompt`,
+            defaultMessage: `${config.labelBasePath}.main.reverse_transfer_prompt`
+          }), null, () => this.reverseTransfer(), () => this.close(),
+          true, this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.actions.execute`,
+            defaultMessage: `${config.labelBasePath}.actions.execute`
+          }), this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.main.forms.cancel`,
+            defaultMessage: `${config.labelBasePath}.main.forms.cancel`
+          }), true, null, true
         )
       })
     }
+  }
 
-    let wrapper = document.createElement('div')
-    ReactDOM.render(
-      <div style={{ marginLeft: '12px' }}>
-        <label htmlFor='rangeFrom'>{this.context.intl.formatMessage({
-          id: `${config.labelBasePath}.main.range_from`,
-          defaultMessage: `${config.labelBasePath}.main.range_from`
-        })}</label>
-        <input
-          type='number'
-          id='rangeFrom'
-          className={'form-control ' + style.input}
-          defaultValue={selectedGridRows[0][selectedObject + '.START_TAG_ID']}
-        />
-        <label htmlFor='rangeTo'>{this.context.intl.formatMessage({
-          id: `${config.labelBasePath}.main.range_to`,
-          defaultMessage: `${config.labelBasePath}.main.range_to`
-        })}</label>
-        <input
-          type='number'
-          id='rangeTo'
-          className={'form-control ' + style.input}
-          defaultValue={selectedGridRows[0][selectedObject + '.END_TAG_ID']}
-        />
-        <br />
-      </div>,
-      wrapper
-    )
+  reverseTransfer = () => {
+    this.setState({ loading: true })
+    const selectedTransferObjId = this.props.selectedGridRows[0]['TRANSFER.OBJECT_ID']
+    const verbPath = config.svConfig.triglavRestVerbs.CREATE_REVERSE_TRANSFER
+    const restUrl = `${config.svConfig.restSvcBaseUrl}${verbPath}/${this.props.session}/${selectedTransferObjId}`
+    axios.get(restUrl).then(res => {
+      if (res.data) {
+        const responseType = formatAlertType(res.data)
+        this.setState({
+          alert: alertUser(
+            true, responseType, this.context.intl.formatMessage({
+              id: res.data,
+              defaultMessage: res.data
+            }), null, () => this.close()
+          ),
+          loading: false
+        })
 
-    this.setState({
-      alert: alertUser(
-        true,
-        'info',
-        this.context.intl.formatMessage({
-          id: `${config.labelBasePath}.main.reverse_transfer`,
-          defaultMessage: `${config.labelBasePath}.main.reverse_transfer`
-        }),
-        null,
-        () => {
-          if (this.props.selectedGridRows.length > 0) {
-            const rangeFrom = document.getElementById('rangeFrom').value
-            const rangeTo = document.getElementById('rangeTo').value
-            if (!rangeFrom && !rangeTo) {
-
-            } else {
-              this.props.createReverseTransfer(
-                this.props.svSession,
-                rangeFrom,
-                rangeTo,
-                this.props.selectedGridRows
-              )
-              this.close()
-            }
-          }
-        },
-        this.close,
-        true,
-        this.context.intl.formatMessage({
-          id: `${config.labelBasePath}.actions.execute`,
-          defaultMessage: `${config.labelBasePath}.actions.execute`
-        }),
-        this.context.intl.formatMessage({
-          id: `${config.labelBasePath}.main.forms.cancel`,
-          defaultMessage: `${config.labelBasePath}.main.forms.cancel`
-        }),
-        true,
-        null,
-        true,
-        wrapper
-      )
+        if (strcmp(responseType, 'success')) {
+          this.reloadData()
+        }
+      }
+    }).catch(err => {
+      console.error(err)
+      this.setState({ alert: alertUser(true, 'error', err), loading: false })
     })
+  }
+
+  reloadData = () => {
+    const { selectedObject, parentId, customGridId } = this.props
+    const gridId = `${selectedObject}_${parentId}_${customGridId}`
+
+    updateSelectedRows([], null)
+    store.dispatch({ type: 'CLEAN_ACTION_STATE', payload: null })
+    ComponentManager.setStateForComponent(gridId, null, {
+      selectedIndexes: []
+    })
+    GridManager.reloadGridData(gridId)
   }
 
   render () {
@@ -146,9 +121,9 @@ class ReverseTransfer extends React.Component {
             component = <div
               id='reverse_transfer'
               className={styles.container} style={{ cursor: 'pointer', marginRight: '7px', color: 'white' }}
-              onClick={this.reverseTransfer}
+              onClick={this.reverseTransferPrompt}
             >
-              <p>
+              <p style={{ marginTop: '2px' }}>
                 {this.context.intl.formatMessage({
                   id: `${config.labelBasePath}.reverse_transfer`,
                   defaultMessage: `${config.labelBasePath}.reverse_transfer`
@@ -164,9 +139,10 @@ class ReverseTransfer extends React.Component {
       })
     }
     return (
-      <div>
+      <React.Fragment>
         {component}
-      </div>
+        {this.state.loading && <Loading />}
+      </React.Fragment>
     )
   }
 }
@@ -175,24 +151,10 @@ ReverseTransfer.contextTypes = {
   intl: PropTypes.object.isRequired
 }
 
-ReverseTransfer.propTypes = {
-  gridType: PropTypes.string.isRequired
-}
-
-const mapDispatchToProps = dispatch => ({
-  updateSelectedRows: (...params) => {
-    dispatch(updateSelectedRows(...params))
-  },
-  createReverseTransfer: (...params) => {
-    dispatch(createReverseTransfer(...params))
-  }
-})
-
 const mapStateToProps = state => ({
-  svSession: state.security.svSession,
+  session: state.security.svSession,
   selectedObjects: state.gridConfig.gridHierarchy,
-  selectedGridRows: state.selectedGridRows.selectedGridRows,
-  massActionResult: state.massActionResult.result
+  selectedGridRows: state.selectedGridRows.selectedGridRows
 })
 
-export default connect(mapStateToProps, mapDispatchToProps)(ReverseTransfer)
+export default connect(mapStateToProps)(ReverseTransfer)

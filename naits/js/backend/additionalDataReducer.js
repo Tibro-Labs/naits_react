@@ -1,5 +1,6 @@
 export function additionalDataReducer (state = {
   populationHasBeenUpdated: false,
+  undoAnimalRetirementWasExecuted: false,
   HOLDING_KEEPER: null,
   HOLDING_VILLAGE: null,
   HOLDING: {},
@@ -52,6 +53,14 @@ export function additionalDataReducer (state = {
     case 'RESET_STATE_AFTER_POPULATION_FORM_UPDATE':
       return {
         ...state, populationHasBeenUpdated: false
+      }
+    case 'UNDO_ANIMAL_RETIREMENT_FULFILLED':
+      return {
+        ...state, undoAnimalRetirementWasExecuted: true
+      }
+    case 'RESET_UNDO_ANIMAL_RETIREMENT':
+      return {
+        ...state, undoAnimalRetirementWasExecuted: false
       }
     default: {
       return state

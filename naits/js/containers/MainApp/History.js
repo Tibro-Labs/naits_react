@@ -149,6 +149,8 @@ class History extends React.Component {
             this.dispatchNewQuarantineState(element)
           } else if ((element.TABLE === 'ANIMAL') && (this.props.location.pathname === `/main/data/${element.TABLE.toLowerCase()}`)) {
             this.dispatchNewAnimalState(element)
+          } else if ((element.TABLE === 'PET') && (this.props.location.pathname === `/main/data/${element.TABLE.toLowerCase()}`)) {
+            this.dispatchNewPetState(element)
           } else {
             hashHistory.push(
               `/main/dynamic/${element.TABLE.toLowerCase()}?c=${linkBy}&v=${linkValue}`
@@ -189,7 +191,7 @@ class History extends React.Component {
     this.props.hoverCallback()
   }
 
-  dropdown = (state) => (<div>
+  dropdown = (state) => (<React.Fragment>
     {
       this.props.toggleHistory &&
       <div
@@ -206,9 +208,15 @@ class History extends React.Component {
         }}
       >
         {state.historyItems}
-
         <div
-          onClick={this.clearHistory}
+          onClick={() => {
+            this.clearHistory()
+            gaEventTracker(
+              'CLEAR',
+              'Clicked the clear button on the recent dropdown',
+              `MAIN_MENU | ${config.version} (${config.currentEnv})`
+            )
+          }}
           style={{
             position: 'absolute',
             height: '6%',
@@ -220,20 +228,16 @@ class History extends React.Component {
             id='delete_form_btn'
             className='btn-danger btn_delete_form'
             style={{ position: 'fixed' }}
-            onClick={
-              gaEventTracker(
-                'CLEAR',
-                'Clicked the clear button on the recent dropdown',
-                `MAIN_MENU | ${config.version} (${config.currentEnv})`
-              )
-            }
           >
-            Clear
+            {this.context.intl.formatMessage({
+              id: `${config.labelBasePath}.main.clear`,
+              defaultMessage: `${config.labelBasePath}.main.clear`
+            })}
           </button>
         </div>
       </div>
     }
-  </div>)
+  </React.Fragment>)
 
   historyBadge = () => (<NotificationBadge
     containerStyle={{ position: 'relative', width: 'auto', height: 'auto' }}
@@ -276,6 +280,8 @@ class History extends React.Component {
       }
     )
     selectObject('HOLDING')
+    store.dispatch({ type: 'WAS_CLICKED_FROM_RECENT_TAB' })
+    store.dispatch({ type: 'CLOSE_QUESTIONNAIRES' })
     store.dispatch(getAdditionalHoldingData(this.props.svSession, responseObject.OBJECTID))
     store.dispatch(getObjectSummary(this.props.svSession, 'HOLDING', responseObject.OBJECTID))
     document.getElementById('clearReturnedComponentSideMenu') && document.getElementById('clearReturnedComponentSideMenu').click()
@@ -350,6 +356,42 @@ class History extends React.Component {
     )
     selectObject('ANIMAL')
     store.dispatch(getObjectSummary(this.props.svSession, 'ANIMAL', responseObject.OBJECTID))
+    document.getElementById('clearReturnedComponentSideMenu') && document.getElementById('clearReturnedComponentSideMenu').click()
+  }
+
+  dispatchNewPetState = (responseObject) => {
+    document.getElementById('link_nav_PET') && document.getElementById('link_nav_PET').click()
+    store.dispatch(
+      {
+        id: 'PET',
+        type: 'PET/ROW_CLICKED',
+        payload: responseObject
+      }
+    )
+    store.dispatch(
+      {
+        type: 'REPLACE_ALL_SELECTED_ITEMS',
+        payload: [
+          {
+            gridId: 'PET',
+            gridType: 'PET',
+            row: responseObject,
+            active: true
+          }
+        ]
+      }
+    )
+    store.dispatch(
+      {
+        type: 'ADD_LAST_SELECTED_ITEM',
+        payload: [
+          'PET',
+          responseObject
+        ]
+      }
+    )
+    selectObject('PET')
+    store.dispatch(getObjectSummary(this.props.svSession, 'PET', responseObject.OBJECTID))
     document.getElementById('clearReturnedComponentSideMenu') && document.getElementById('clearReturnedComponentSideMenu').click()
   }
 

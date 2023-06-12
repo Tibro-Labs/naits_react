@@ -222,6 +222,80 @@ fieldset {
     position: relative;
 }
 
+.questionnaire-form {
+    text-align: center;
+}
+
+.questionnaire-form .field-number,
+.questionnaire-form .field-string,
+.questionnaire-form .field-array {
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-content: center;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+}
+
+.questionnaire-form .radio-inline {
+    padding-left: 36px;
+    margin-left: 1rem;
+    margin-top: -5px;
+}
+
+.questionnaire-form .radio-inline+.radio-inline {
+    margin-top: -5px;
+}
+
+.questionnaire-form input[type=radio] {
+    margin-top: 6px;
+}
+
+.questionnaire-form .checkboxes .checkbox-inline {
+    padding-right: 15px;
+    padding-left: 20px;
+    margin-left: 20px;
+}
+
+.questionnaire-form input[type=checkbox] {
+    opacity: 1;
+    z-index: 2;
+    margin-top: 6px;
+}
+
+.questionnaire-form textarea {
+    max-width: 35%;
+}
+
+.questionnaire-form input[type=text] {
+    width: 35%;
+}
+
+.questionnaire-form #root_totalScore {
+    width: 10%;
+    font-size: larger;
+    text-align: center;
+}
+
+.questionnaire-form #btnSeparator {
+    margin-right: 1rem;
+    margin-top: -3rem;
+}
+
+.questionnaire-form-modal-body #form {
+    height: fit-content;
+}
+
+.questionnaire-form-modal-body button {
+    margin-top: -4rem;
+    margin-bottom: 3rem;
+}
+
+.edit-questionnaire-form-modal-body button {
+    margin-bottom: 3rem;
+}
+
 textarea {
     min-width: 500px;
 }

@@ -205,7 +205,7 @@ class ReplacePetId extends React.Component {
         >
           <span
             id='replace_ear_tag'
-            className={style.actionText} style={{ padding: '4px', marginLeft: '-5%' }}
+            className={style.actionText} style={{ padding: '4px', marginLeft: '-5%', marginTop: '5px' }}
           >
             {this.context.intl.formatMessage({
               id: `${config.labelBasePath}.main.replace_pet_id`,

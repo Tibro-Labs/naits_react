@@ -1,6 +1,6 @@
 import * as config from 'config/config.js'
 
-export function searchCriteriaConfig (requestedCriteria, context) {
+export function searchCriteriaConfig (requestedCriteria) {
   const criteriaTypes = {
     // Global search refers only to the serach field in the main screen - radial menu
     GLOBAL_SEARCH: [
@@ -19,6 +19,10 @@ export function searchCriteriaConfig (requestedCriteria, context) {
       {
         TABLE: 'QUARANTINE',
         CRITERIA: ['REASON', 'QUARANTINE_ID', 'QUARANTINE_TYPE']
+      },
+      {
+        TABLE: 'PET',
+        CRITERIA: ['PET_ID']
       }
     ],
 
@@ -30,6 +34,7 @@ export function searchCriteriaConfig (requestedCriteria, context) {
             { CODE: 'ANIMAL_ID', LABEL: `${config.labelBasePath}.main.search.by_animal_id` },
             { CODE: 'BAR_CODE_ID', LABEL: `${config.labelBasePath}.main.search.by_bar_code` },
             { CODE: 'OLD_EAR_TAG', LABEL: `${config.labelBasePath}.main.search.by_old_ear_tag` },
+            { CODE: 'ANIMAL_STATUS', LABEL: `${config.labelBasePath}.main.animal_status` },
             { CODE: 'ANIMAL_CLASS', LABEL: `${config.labelBasePath}.main.search.by_animal_class` },
             { CODE: 'ANIMAL_RACE', LABEL: `${config.labelBasePath}.main.search.by_animal_breed` },
             { CODE: 'COLOR', LABEL: `${config.labelBasePath}.main.search.by_color` },
@@ -41,13 +46,14 @@ export function searchCriteriaConfig (requestedCriteria, context) {
         {
           TABLE: 'PET',
           CRITERIA: [
+            { CODE: 'PET_TAG_ID', LABEL: `${config.labelBasePath}.main.search.by_pet_tag_id` },
             { CODE: 'PET_ID', LABEL: `${config.labelBasePath}.main.search.by_pet_id` },
             { CODE: 'BADGE_NUMBER', LABEL: `${config.labelBasePath}.main.search.pet_badge_number` },
             { CODE: 'PEDIGREE_NUMBER', LABEL: `${config.labelBasePath}.main.search.pet_pedigree_number` },
             { CODE: 'TATTOO_NUMBER', LABEL: `${config.labelBasePath}.main.search.pet_tattoo_number` },
             { CODE: 'PET_TYPE', LABEL: `${config.labelBasePath}.main.search.pet_type` }
           ],
-          SELECTED: 'PET_ID'
+          SELECTED: 'PET_TAG_ID'
         },
         {
           TABLE: 'STRAY_PET',
@@ -101,7 +107,8 @@ export function searchCriteriaConfig (requestedCriteria, context) {
           TABLE: 'SVAROG_ORG_UNITS',
           CRITERIA: [
             { CODE: 'ORG_UNIT_TYPE', LABEL: `${config.labelBasePath}.main.search.by_org_unit_type` },
-            { CODE: 'NAME', LABEL: `${config.labelBasePath}.main.search.by_name` }
+            { CODE: 'NAME', LABEL: `${config.labelBasePath}.main.search.by_name` },
+            { CODE: 'VILLAGE_CODE', LABEL: `${config.labelBasePath}.main.search.by_geoastat_code` }
           ],
           SELECTED: 'ORG_UNIT_TYPE'
         },
@@ -238,6 +245,14 @@ export function searchCriteriaConfig (requestedCriteria, context) {
             { CODE: 'TRANSPORTER_LICENSE', LABEL: `${config.labelBasePath}.main.transporter_license` }
           ],
           SELECTED: 'MOVEMENT_DOC_ID'
+        },
+        {
+          TABLE: 'RFID_INPUT',
+          CRITERIA: [
+            { CODE: 'RFID_NUMBER', LABEL: `${config.labelBasePath}.grid_labels.rfid_input.rfid_number` },
+            { CODE: 'IMPORT_TYPE', LABEL: `${config.labelBasePath}.grid_labels.rfid_input.import_type` }
+          ],
+          SELECTED: 'RFID_NUMBER'
         }
       ]
     },
@@ -308,6 +323,11 @@ export function searchCriteriaConfig (requestedCriteria, context) {
         {
           TABLE: 'INVENTORY_ITEM',
           CRITERIA: ['TAG_TYPE']
+        },
+        {
+          TABLE: 'RFID_INPUT',
+          NESTED_VALUES: ['rfid.animal_type_info'],
+          CRITERIA: ['IMPORT_TYPE']
         }
       ]
     },

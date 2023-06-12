@@ -20,7 +20,7 @@ class LinkUserWithHolding extends React.Component {
     }
   }
 
-  chooseItem = (params) => {
+  chooseItem = () => {
     const objId = store.getState()[this.state.gridToDisplay].rowClicked[this.state.gridToDisplay + '.OBJECT_ID']
     const objName = store.getState()[this.state.gridToDisplay].rowClicked[this.state.gridToDisplay + '.PIC']
     this.setState({ chosenValue: String(objId), objectName: String(objName) })
@@ -28,16 +28,11 @@ class LinkUserWithHolding extends React.Component {
   }
 
   showModal = () => {
-    this.setState({
-      showSearchPopup: true
-    })
+    this.setState({ showSearchPopup: true })
   }
 
   closeModal = () => {
-    this.setState({
-      showSearchPopup: false
-    })
-    document.getElementById('objId').blur()
+    this.setState({ showSearchPopup: false })
   }
 
   linkObjects = (webService, actionName) => {
@@ -96,7 +91,7 @@ class LinkUserWithHolding extends React.Component {
         type='text'
         value={objectName}
         className={consoleStyle.dropdown}
-        onFocus={this.showModal}
+        onClick={this.showModal}
         placeholder={this.context.intl.formatMessage({
           id: `${config.labelBasePath}.grid_labels.holding.pic`,
           defaultMessage: `${config.labelBasePath}.grid_labels.holding.pic`

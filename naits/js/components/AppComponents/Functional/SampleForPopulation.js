@@ -131,7 +131,7 @@ class SampleForPopulation extends React.Component {
           id='download_initial_population_sample_container'
           className={styles.container}
         >
-          <p>
+          <p style={{ marginTop: '2px' }}>
             {this.context.intl.formatMessage({
               id: `${config.labelBasePath}.main.sample_for_population`,
               defaultMessage: `${config.labelBasePath}.main.sample_for_population`

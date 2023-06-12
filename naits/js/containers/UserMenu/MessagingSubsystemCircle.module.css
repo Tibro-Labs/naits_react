@@ -11,14 +11,19 @@
   color: #ffffff;
 }
 
+.messagesTitle {
+  font-size: 1.2rem;
+}
+
 .notificationsCircle {
   position: absolute;
   top: 0;
   right: 0;
-  height: 1.5em;
-  width: 1.5em;
+  font-size: 20px;
   background-color: #992600;
-  color: #e0ab10;
-  border-radius: 50%;
-  font-weight: 900;
+}
+
+.notificationNumber {
+  position: relative;
+  color: #ffffff;
 }

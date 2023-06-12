@@ -7,6 +7,24 @@ export function resetTransferAnimal () {
   }
 }
 
+export function transferAnimalOrFlock (session, paramsArray) {
+  return function (dispatch) {
+    const actionType = 'TRANSFER_ANIMAL'
+    dispatch({ type: `${actionType}_PENDING` })
+    const verbPath = config.svConfig.triglavRestVerbs.TRANSFER_ANIMAL
+    const url = `${config.svConfig.restSvcBaseUrl}${verbPath}/${session}`
+    axios({
+      method: 'post',
+      url: url,
+      data: JSON.stringify({ paramsArray })
+    }).then((response) => {
+      dispatch({ type: `${actionType}_FULFILLED`, payload: response })
+    }).catch((error) => {
+      dispatch({ type: `${actionType}_REJECTED`, payload: error })
+    })
+  }
+}
+
 export function transferAnimal (session, animalId, animalClass, holdingId, admissionDate,
   transporterId, totalUnits, maleUnits, femaleUnits, adultsUnits) {
   return function (dispatch) {

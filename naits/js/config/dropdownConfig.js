@@ -1,33 +1,16 @@
 import * as config from 'config/config.js'
 
-export function dropdownConfig (requestedDropdown, context) {
+export function dropdownConfig (requestedDropdown) {
   const dropdownTypes = {
-    ANIMAL_CATEGORY_DROPDOWN: {
-      '1': { LABEL: `${config.labelBasePath}.main.cattle` },
-      '2': { LABEL: `${config.labelBasePath}.main.buffalo` },
-      '9': { LABEL: `${config.labelBasePath}.main.sheep` },
-      '10': { LABEL: `${config.labelBasePath}.main.goat` },
-      '11': { LABEL: `${config.labelBasePath}.main.pig` },
-      '12': { LABEL: `${config.labelBasePath}.main.horse` },
-      '400': { LABEL: `${config.labelBasePath}.main.donkey` }
-    },
-
-    GENDER_DROPDOWN: {
-      '1': { LABEL: `${config.labelBasePath}.main.female` },
-      '2': { LABEL: `${config.labelBasePath}.main.male` }
-    },
-
-    YES_NO_DROPDOWN: {
-      '1': { LABEL: `${config.labelBasePath}.main.yes` },
-      '2': { LABEL: `${config.labelBasePath}.main.no` }
-    },
-
-    TAG_TYPE_DROPDOWN: {
-      '1': { LABEL: `${config.labelBasePath}.main.cattle_ear_tag` },
-      '2': { LABEL: `${config.labelBasePath}.main.small_ruminants` },
-      '3': { LABEL: `${config.labelBasePath}.main.sheep_tag` },
-      '4': { LABEL: `${config.labelBasePath}.main.pig_tag` }
-    },
+    ANIMAL_CLASSES_DROPDOWN: [
+      { LABEL: `${config.labelBasePath}.main.cattle`, VALUE: '1' },
+      { LABEL: `${config.labelBasePath}.main.buffalo`, VALUE: '2' },
+      { LABEL: `${config.labelBasePath}.main.sheep`, VALUE: '9' },
+      { LABEL: `${config.labelBasePath}.main.goat`, VALUE: '10' },
+      { LABEL: `${config.labelBasePath}.main.pig`, VALUE: '11' },
+      { LABEL: `${config.labelBasePath}.main.horse`, VALUE: '12' },
+      { LABEL: `${config.labelBasePath}.main.donkey`, VALUE: '400' }
+    ],
 
     MONTHS_DROPDOWN: [
       { LABEL: `${config.labelBasePath}.main.month_01`, VALUE: '01' },
@@ -42,6 +25,11 @@ export function dropdownConfig (requestedDropdown, context) {
       { LABEL: `${config.labelBasePath}.main.month_10`, VALUE: '10' },
       { LABEL: `${config.labelBasePath}.main.month_11`, VALUE: '11' },
       { LABEL: `${config.labelBasePath}.main.month_12`, VALUE: '12' }
+    ],
+
+    GENDER_DROPDOWN: [
+      { LABEL: `${config.labelBasePath}.main.male`, VALUE: '1' },
+      { LABEL: `${config.labelBasePath}.main.female`, VALUE: '2' }
     ]
   }
 

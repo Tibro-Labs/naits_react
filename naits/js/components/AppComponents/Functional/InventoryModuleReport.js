@@ -21,7 +21,7 @@ class InventoryModuleReport extends React.Component {
         style={{ cursor: 'pointer', marginRight: '7px', color: 'white' }}
         onClick={this.generateInvModuleReport}
       >
-        <p>
+        <p style={{ marginTop: '2px' }}>
           {this.context.intl.formatMessage({
             id: `${config.labelBasePath}.main.inv_module_report`,
             defaultMessage: `${config.labelBasePath}.main.inv_module_report`

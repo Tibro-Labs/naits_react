@@ -7,7 +7,9 @@ import StatusBadges from 'components/AppComponents/Presentational/StatusBadges'
 import {
   LoginForm, Loading, AdminConsole, AuthorizeAccess,
   SelectedItem as WrapSelectedItem, Gis, ReportModule,
-  SideMenuHOC, ExportCertificate, GenerateMenu
+  SideMenuHOC, ExportCertificate, GenerateMenu, GroupedSearch,
+  PublicAnimalLabels, PublicAnimalDetails, MessagingHolder,
+  Questionnaires, BanksAndInsurance
 } from 'components/ComponentsIndex'
 import RegistrationForm from 'components/LogonComponents/LoginForm/RegistrationForm'
 import WrapBackground from 'components/LogonComponents/LoginForm/Background'
@@ -164,7 +166,7 @@ export default class Routes extends React.Component {
             path='/main/dynamic'
             render={
               props =>
-                (<DynamicRoutes showComponent={<MainNavigation {...props} />} jsonlist='MAIN_PALETTE' {...props} />)
+                (<DynamicRoutes showComponent={<MainNavigation {...props} />} jsonlist='SIDE_MENU_PALETTE' {...props} />)
             }
           />
 
@@ -203,7 +205,7 @@ export default class Routes extends React.Component {
                       {...props}
                     />
                   }
-                  jsonlist='MAIN_PALETTE'
+                  jsonlist='SIDE_MENU_PALETTE'
                   {...props}
                 />)
             }
@@ -232,6 +234,17 @@ export default class Routes extends React.Component {
           />
 
           <Route
+            path='/main/search'
+            render={
+              props => (
+                <MainApp {...props}>
+                  <GroupedSearch {...props} />
+                </MainApp>
+              )
+            }
+          />
+
+          <Route
             exact
             path='/messages'
             render={
@@ -241,6 +254,55 @@ export default class Routes extends React.Component {
                 </MainApp>
               )
             }
+          />
+
+          <Route
+            exact
+            path='/chats'
+            render={
+              props => (
+                <MainApp {...props}>
+                  <MessagingHolder {...props} />
+                </MainApp>
+              )
+            }
+          />
+
+          <Route
+            exact
+            path='/questionnaires'
+            render={
+              props => (
+                <MainApp {...props}>
+                  <Questionnaires {...props} />
+                </MainApp>
+              )
+            }
+          />
+
+          <Route
+            exact
+            path='/banks_and_insurance'
+            render={
+              props => (
+                <MainApp {...props}>
+                  <BanksAndInsurance {...props} />
+                </MainApp>
+              )
+            }
+          />
+
+          {/* Public routes */}
+          <Route
+            exact
+            path='/animal_labels'
+            render={props => (<PublicAnimalLabels {...props} />)}
+          />
+
+          <Route
+            exact
+            path='/animal_details'
+            render={props => (<PublicAnimalDetails {...props} />)}
           />
 
           <Route component={NotFound} status={404} />

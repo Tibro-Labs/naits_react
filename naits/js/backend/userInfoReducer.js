@@ -18,9 +18,13 @@ export function userInfoReducer (state = {
   error: undefined,
   isBusy: false,
   allowedObjects: { LIST_OF_ITEMS: [] },
+  allowedObjectsForSideMenu: { LIST_OF_ITEMS: [] },
   isAdmin: null,
   getUsers: '',
-  localeObjId: null
+  localeObjId: null,
+  theWsForPasswordChangeWasCalledAlready: false,
+  theWsForUserGroupsWasCalledAlready: false,
+  theWsForCheckingIfUserIsAdminWasCalledAlready: false
 }, action) {
   switch (action.type) {
     case String(action.type.match(/^.*_USER_DATA_PENDING/)): {
@@ -47,6 +51,7 @@ export function userInfoReducer (state = {
       const tables = []
       const labels = []
       const tempObject = { LIST_OF_ITEMS: [] }
+      const tempSideMenuObject = { LIST_OF_ITEMS: [] }
       JSON.parse(
         JSON.stringify(action.payload),
         (key, value) => {
@@ -68,31 +73,47 @@ export function userInfoReducer (state = {
         }
       )
       tables.map((element, index) => {
-        tempObject.LIST_OF_ITEMS.push({
+        tempSideMenuObject.LIST_OF_ITEMS.push({
           ID: element,
           LABEL: labels[index],
           FLOATHELPER: '',
           ROUTE: element.toLowerCase()
         })
+        if (element !== 'EXPORT_CERT' && element !== 'INVENTORY_ITEM' && element !== 'MOVEMENT_DOC') {
+          tempObject.LIST_OF_ITEMS.push({
+            ID: element,
+            LABEL: labels[index],
+            FLOATHELPER: '',
+            ROUTE: element.toLowerCase()
+          })
+        }
+      })
+
+      tempSideMenuObject.LIST_OF_ITEMS.push({
+        ID: 'FLOCK',
+        LABEL: 'flock',
+        FLOATHELPER: '',
+        ROUTE: 'flock'
       })
 
       tempObject.LIST_OF_ITEMS.sort(compareAndSort)
+      tempSideMenuObject.LIST_OF_ITEMS.sort(compareAndSort)
 
       return {
-        ...state, allowedObjects: tempObject, error: undefined, isBusy: false
+        ...state, allowedObjects: tempObject, allowedObjectsForSideMenu: tempSideMenuObject, error: undefined, isBusy: false
       }
     }
     case String(action.type.match(/^.*_USER_DATA_REJECTED/)): {
       return { ...state, error: action.payload, isBusy: false }
     }
     case 'IS_USER_ADMIN_FULFILLED': {
-      return { ...state, isAdmin: action.payload }
+      return { ...state, isAdmin: action.payload, theWsForUserGroupsWasCalledAlready: true }
     }
     case 'IS_USER_ADMIN_REJECTED': {
       return { ...state, isAdmin: null }
     }
     case 'GET_USER_GROUPS_FULFILLED': {
-      return { ...state, getUsers: action.payload }
+      return { ...state, getUsers: action.payload, theWsForCheckingIfUserIsAdminWasCalledAlready: true }
     }
     case 'GET_USER_GROUPS_REJECTED': {
       return { ...state, getUsers: null }
@@ -102,6 +123,9 @@ export function userInfoReducer (state = {
     }
     case 'GET_LOCALE_OBJ_ID_REJECTED': {
       return { ...state, localeObjId: null }
+    }
+    case 'THE_WS_FOR_PASSWORD_CHANGE_WAS_CALLED_ALREADY': {
+      return { ...state, theWsForPasswordChangeWasCalledAlready: true }
     }
   }
   return state

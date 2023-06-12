@@ -116,6 +116,7 @@ class InputArrivalWrapper extends React.Component {
         <div id='search_modal_body' className='modal-body'>
           <GridInModalLinkObjects
             loadFromParent
+            gridTypeCall='GET_TABLE_WITH_LIKE_FILTER_2'
             linkedTable={this.state.gridToDisplay}
             onRowSelect={this.chooseItem}
             key={this.state.gridToDisplay + '_' + this.state.fieldIdName}

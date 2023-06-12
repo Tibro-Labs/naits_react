@@ -130,7 +130,7 @@ class ExportCertifiedAnimals extends React.Component {
             className={style.menuActivator}
             onClick={() => this.exportCertifiedAnimals()}>
             {this.state.alert}
-            <span id='selected_object_text' className={style.actionText}>
+            <span id='selected_object_text' style={{ marginTop: '2px' }} className={style.actionText}>
               {this.context.intl.formatMessage({
                 id: `${config.labelBasePath}.actions.export_certified_animals`,
                 defaultMessage: `${config.labelBasePath}.actions.export_certified_animals`

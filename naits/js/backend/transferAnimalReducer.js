@@ -12,11 +12,8 @@ export function transferAnimalReducer (state = {
       return { ...state, result: action.payload, loading: true }
     }
     case 'TRANSFER_ANIMAL_FULFILLED':
-    case 'TRANSFER_ANIMAL_REJECTED':
-    {
-      return {
-        ...state, result: action.payload.data, loading: false
-      }
+    case 'TRANSFER_ANIMAL_REJECTED': {
+      return { ...state, result: action.payload.data, loading: false }
     }
   }
   return state

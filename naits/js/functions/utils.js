@@ -212,6 +212,36 @@ export function calcDifference (number1, number2) {
 }
 
 /**
+ * Flattens a nested object
+ * @param  {object} obj The object that needs to be flattened
+ */
+export function flattenObject (obj) {
+  const flattened = {}
+  Object.keys(obj).forEach((key) => {
+    if (typeof obj[key] === 'object' && obj[key] !== null) {
+      Object.assign(flattened, flattenObject(obj[key]))
+    } else {
+      flattened[key] = obj[key]
+    }
+  })
+  return flattened
+}
+
+/**
+ * Converts a JSON object to an encoded URI string
+ * @param  {object} json The JSON object that needs to be converted
+ */
+export function jsonToURI (json) {
+  let arr = []
+  for (let property in json) {
+    if (Object.prototype.hasOwnProperty.call(json, property) && json[property] !== undefined) {
+      arr.push(encodeURIComponent(property) + '=' + encodeURIComponent(json[property]))
+    }
+  }
+  return arr.join('&')
+}
+
+/**
  * A function used for restricting the type of value a user can enter in an
  * input of type 'text' (example: only a numeric value or a numeric value in
  * a certain range)
@@ -234,6 +264,15 @@ export function setInputFilter (input, inputFilter) {
       }
     })
   })
+}
+
+/**
+ * A function used for disabling a group of events on a given input field
+ * @param  {HTMLInputElement} input The input on which we want to disable the events
+ */
+export function disableEvents (input) {
+  const events = ['input', 'keydown', 'keyup', 'mousedown', 'mouseup', 'select', 'contextmenu', 'drop']
+  events.forEach(function (event) { input.addEventListener(event, function (e) { e.preventDefault() }) })
 }
 
 /**

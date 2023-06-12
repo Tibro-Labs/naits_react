@@ -134,6 +134,7 @@ class GenerateMenu extends React.Component {
                   menuType={this.state.displayGrid}
                   svSession={this.props.svSession}
                   objectId={this.state.parentId}
+                  isFromExportCert
                 />
               }
               {this.state.renderGrid && <GridContent

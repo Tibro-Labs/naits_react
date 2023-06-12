@@ -1,6 +1,6 @@
 .absolute-center, .menu .btn.trigger .line, .menu .btn .fa, .menu {
   position: relative;
-  top: 34%;
+  top: 33%;
   left: 50%;
   transform: translateX(-50%) translateY(-50%);
 }

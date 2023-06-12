@@ -21,12 +21,6 @@ class BrowseHoldings extends React.Component {
     }
   }
 
-  componentDidMount () {
-    if (!this.props.userIsLinkedToOneHolding && !this.props.userIsLinkedToTwoOrMoreHoldings) {
-      this.getLinkedHoldingsForCurrentUser()
-    }
-  }
-
   getLinkedHoldingsForCurrentUser = async () => {
     const server = config.svConfig.restSvcBaseUrl
     const session = this.props.svSession
@@ -35,13 +29,17 @@ class BrowseHoldings extends React.Component {
     url = url.replace('%session', session)
     try {
       const res = await axios.get(url)
-      if (res.data && res.data.length === 1) {
-        store.dispatch({ type: 'USER_IS_LINKED_TO_ONE_HOLDING' })
-        this.setState({ userIsLinkedToOneHolding: true, userIsLinkedToTwoOrMoreHoldings: false })
-      } else if (res.data && res.data.length > 1) {
-        store.dispatch({ type: 'USER_IS_LINKED_TO_TWO_OR_MORE_HOLDINGS' })
-        this.setState({ userIsLinkedToOneHolding: false, userIsLinkedToTwoOrMoreHoldings: true })
-      } else if (res.data.length === 0) {
+      if (res.data && res.data instanceof Array) {
+        if (res.data && res.data.length === 1) {
+          store.dispatch({ type: 'USER_IS_LINKED_TO_ONE_HOLDING' })
+          this.setState({ userIsLinkedToOneHolding: true, userIsLinkedToTwoOrMoreHoldings: false })
+        } else if (res.data && res.data.length > 1) {
+          store.dispatch({ type: 'USER_IS_LINKED_TO_TWO_OR_MORE_HOLDINGS' })
+          this.setState({ userIsLinkedToOneHolding: false, userIsLinkedToTwoOrMoreHoldings: true })
+        } else if (res.data.length === 0) {
+          store.dispatch({ type: 'USER_IS_NOT_LINKED_TO_ANY_HOLDINGS' })
+        }
+      } else {
         store.dispatch({ type: 'USER_IS_NOT_LINKED_TO_ANY_HOLDINGS' })
       }
     } catch (err) {
@@ -56,6 +54,7 @@ class BrowseHoldings extends React.Component {
       callback: this.getRowDataBasedOnPIC
     }
     store.dispatch(holdingBookAction(actionArguments))
+    store.dispatch({ type: 'CLOSE_QUESTIONNAIRES' })
     this.setState({ loading: true })
   }
 
@@ -67,7 +66,8 @@ class BrowseHoldings extends React.Component {
         'PIC',
         picArgument,
         10000,
-        (response) => this.dispatchNewState(response[0])
+        (response) => this.dispatchNewState(response[0]),
+        true
       )
     )
   }

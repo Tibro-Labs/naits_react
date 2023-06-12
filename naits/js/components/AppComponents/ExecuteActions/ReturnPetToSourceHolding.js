@@ -5,15 +5,17 @@ import { connect } from 'react-redux'
 import { store } from 'tibro-redux'
 import { alertUser } from 'tibro-components'
 import * as config from 'config/config.js'
-import { GridManager, ComponentManager } from 'components/ComponentsIndex'
+import { GridManager, ComponentManager, Loading } from 'components/ComponentsIndex'
 import style from 'components/AppComponents/ExecuteActions/ExecuteActionOnSelectedRows.module.css'
+import styles from 'components/AppComponents/Presentational/Badges/Badges.module.css'
 import { formatAlertType, isValidArray } from 'functions/utils'
 
 class ReturnPetToSourceHolding extends React.Component {
   constructor (props) {
     super(props)
     this.state = {
-      alert: null
+      alert: null,
+      loading: false
     }
   }
 
@@ -35,7 +37,7 @@ class ReturnPetToSourceHolding extends React.Component {
     }
   }
 
-  returnPetPrompt () {
+  returnPetPrompt = () => {
     if (isValidArray(this.props.selectedGridRows, 1)) {
       this.setState({
         alert: alertUser(
@@ -44,7 +46,7 @@ class ReturnPetToSourceHolding extends React.Component {
           this.context.intl.formatMessage({
             id: `${config.labelBasePath}.actions.return_pet_to_source_holding_prompt`,
             defaultMessage: `${config.labelBasePath}.actions.return_pet_to_source_holding_prompt`
-          }) + ' ' + ' ? ',
+          }) + ' ' + '?',
           null,
           () => this.returnPetToSourceHolding(),
           () => this.setState({
@@ -78,6 +80,7 @@ class ReturnPetToSourceHolding extends React.Component {
   }
 
   returnPetToSourceHolding = async () => {
+    this.setState({ loading: true })
     const objectArray = this.props.selectedGridRows
     const tableName = 'PET_MOVEMENT'
     const actionType = 'RETRUN_PET'
@@ -111,7 +114,8 @@ class ReturnPetToSourceHolding extends React.Component {
             defaultMessage: res.data
           }),
           null
-        )
+        ),
+        loading: false
       })
     } catch (err) {
       this.setState({
@@ -126,56 +130,38 @@ class ReturnPetToSourceHolding extends React.Component {
           () => {
             this.setState({ alert: false })
           }
-        )
+        ),
+        loading: false
       })
     }
   }
 
   close = () => {
-    this.setState({ alert: false, showAlert: false })
+    this.setState({ alert: false })
   }
 
   render () {
     return (
-      <div id='activateMenu' className={style.menuActivator}>
-        <div id='activateImgHolder' className={style.imgTxtHolder}>
-          <span id='move_text' className={style.actionText}>
-            {this.context.intl.formatMessage({
-              id: `${config.labelBasePath}.form_labels.flock.actions`,
-              defaultMessage: `${config.labelBasePath}.form_labels.flock.actions`
-            })}
-          </span>
-          <img id='move_img' className={style.actionImg}
-            src='/naits/img/massActionsIcons/actions_general.png' />
+      <div
+        id='collect_pets_container'
+        className={styles.container}
+        style={{ cursor: 'pointer', marginRight: '7px', color: 'white' }}
+        onClick={this.returnPetPrompt}
+      >
+        <p style={{ marginTop: '9px', marginLeft: '7px' }}>
+          {this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.main.collect_pets`,
+            defaultMessage: `${config.labelBasePath}.main.collect_pets`
+          })}
+        </p>
+        <div id='collect_pets' className={styles['gauge-container']} style={{ width: '59px' }}>
+          <img
+            id='change_status_img' className={style.actionImg}
+            style={{ height: '45px', marginTop: '7%', marginLeft: '14px' }}
+            src='/naits/img/massActionsIcons/undo.png'
+          />
         </div>
-        <ul id='actionMenu' className={'list-group ' + style.ul_item} >
-          <li id='return_pet_to_source_holding' key='return_pet_to_source_holding' className={style.li_item}>
-            <div className={style.imgTxtHolder}>
-              <span id='activity_text' className={style.actionText}>
-                {this.context.intl.formatMessage({
-                  id: `${config.labelBasePath}.actions.return_pet`,
-                  defaultMessage: `${config.labelBasePath}.actions.return_pet`
-                })}
-              </span>
-              <img id='activity_img' className={style.actionImg}
-                src='/naits/img/massActionsIcons/undo.png' />
-            </div>
-            <ul
-              id='return_pet_to_source_holding_sublist'
-              key='return_pet_to_source_holding_sublist'
-            >
-              <li id='sublist_item_0'
-                key='sublist_item_0'
-                {... { onClick: () => this.returnPetPrompt() }}
-              >
-                {this.context.intl.formatMessage({
-                  id: `${config.labelBasePath}.actions.return_pet_to_source_holding`,
-                  defaultMessage: `${config.labelBasePath}.actions.return_pet_to_source_holding`
-                })}
-              </li>
-            </ul>
-          </li>
-        </ul>
+        {this.state.loading && <Loading />}
       </div>
     )
   }

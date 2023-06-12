@@ -1,12 +1,14 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 import PropTypes from 'prop-types'
+import Loading from 'components/Loading'
 import axios from 'axios'
 import { connect } from 'react-redux'
 import { store } from 'tibro-redux'
 import { alertUser } from 'tibro-components'
 import * as config from 'config/config.js'
-import { GridManager, ComponentManager, GridInModalLinkObjects } from 'components/ComponentsIndex'
+import { GridManager, FormManager, ComponentManager, GridInModalLinkObjects } from 'components/ComponentsIndex'
+import { CustomPetCollectFormWrapper } from 'containers/InputWrappers'
 import style from 'components/AppComponents/ExecuteActions/ExecuteActionOnSelectedRows.module.css'
 import styles from 'components/AppComponents/Presentational/Badges/Badges.module.css'
 import { formatAlertType, convertToShortDate } from 'functions/utils'
@@ -16,32 +18,28 @@ class PetDirectMovement extends React.Component {
     super(props)
     this.state = {
       alert: null,
-      showAlert: false,
-      showSearchPopup: false,
+      loading: false,
+      displayDirectMovementModal: false,
       activityDate: null,
       gridToDisplay: 'PET',
       inputElementId: 'selectPet',
       holdingObjectId: '',
       selectedPetId: '',
       selectedPetObjId: '',
-      currentHolding: []
+      currentHolding: [],
+      petCollectionForm: undefined,
+      strayPetAddressInput: '',
+      strayPetWeightInput: '',
+      strayPetResponsibleNameInput: '',
+      strayPetResponsibleSurnameInput: '',
+      strayPetResponsibleNatRegNumInput: '',
+      collectionType: ''
     }
-
-    this.displayPopupOnClick = this.displayPopupOnClick.bind(this)
   }
 
   componentDidMount () {
     // Get the currently selected holding's data & its object id
     this.getCurrentHoldingDataAndObjId()
-  }
-
-  componentDidUpdate (nextProps, nextState) {
-    if (this.state.showAlert !== nextState.showAlert) {
-      const petInput = document.getElementById(this.state.inputElementId)
-      if (petInput) {
-        petInput.onclick = this.displayPopupOnClick
-      }
-    }
   }
 
   getCurrentHoldingDataAndObjId = () => {
@@ -61,86 +59,11 @@ class PetDirectMovement extends React.Component {
     this.setState({ activityDate: event.target.value })
   }
 
-  petDirectMovementPrompt () {
-    this.setState({ showAlert: true })
-    let wrapper = document.createElement('div')
-    ReactDOM.render(
-      <div style={{ marginLeft: '12px' }}>
-        <label htmlFor='selectPet' style={{ marginRight: '8px' }}>
-          {this.context.intl.formatMessage({
-            id: `${config.labelBasePath}.main.select_pet`,
-            defaultMessage: `${config.labelBasePath}.main.select_pet`
-          })}
-        </label>
-        <br />
-        <input
-          style={{ border: 'none', height: '40px', color: '#000', backgroundColor: '#eff0f1', marginBottom: '1rem' }}
-          type='text'
-          id='selectPet'
-          name='selectPet'
-          value={this.state.selectedPetId}
-        />
-        <br />
-        <label htmlFor='setActivityDate' style={{ marginRight: '8px' }}>
-          {this.context.intl.formatMessage({
-            id: `${config.labelBasePath}.main.set_activity_date`,
-            defaultMessage: `${config.labelBasePath}.main.set_activity_date`
-          })}
-        </label>
-        <br />
-        <input
-          style={{ border: 'none', height: '40px', color: '#000', backgroundColor: '#eff0f1' }}
-          type='date'
-          name='setActivityDate'
-          onChange={this.setActivityDate}
-          value={this.state.activityDate}
-        />
-      </div>,
-      wrapper
-    )
-
-    this.setState({
-      alert: alertUser(
-        true,
-        'info',
-        this.context.intl.formatMessage({
-          id: `${config.labelBasePath}.actions.pet_direct_movement_prompt`,
-          defaultMessage: `${config.labelBasePath}.actions.pet_direct_movement_prompt`
-        }),
-        this.context.intl.formatMessage({
-          id: `${config.labelBasePath}.actions.default_date_msg`,
-          defaultMessage: `${config.labelBasePath}.actions.default_date_msg`
-        }),
-        () => this.petDirectMovementAction(),
-        () => this.close(),
-        true,
-        this.context.intl.formatMessage({
-          id: `${config.labelBasePath}.actions.move`,
-          defaultMessage: `${config.labelBasePath}.actions.move`
-        }),
-        this.context.intl.formatMessage({
-          id: `${config.labelBasePath}.main.forms.cancel`,
-          defaultMessage: `${config.labelBasePath}.main.forms.cancel`
-        }),
-        true,
-        null,
-        true,
-        wrapper
-      )
-    })
-
-    if (!this.state.selectedPetId) {
-      const submitBtn = document.getElementsByClassName('swal-button swal-button--confirm')
-      if (submitBtn) {
-        submitBtn[0].setAttribute('disabled', '')
-      }
-    }
-  }
-
   petDirectMovementAction = async () => {
     if (this.state.selectedPetObjId === '') {
       this.close()
     } else {
+      this.setState({ loading: true })
       const objectArray = this.state.currentHolding
       const tableName = 'HOLDING'
       const actionType = 'DIRECT_MOVEMENT'
@@ -184,12 +107,15 @@ class PetDirectMovement extends React.Component {
             }),
             null,
             () => {
-              this.close()
-              GridManager.reloadGridData(`${this.props.selectedObject}_${this.state.holdingObjectId}1`)
-              GridManager.reloadGridData(`${this.props.selectedObject}_${this.state.holdingObjectId}2`)
-              store.dispatch({ type: 'PET_DIRECT_MOVEMENT_ACTION_RESET' })
+              if (responseType === 'success') {
+                this.prepareCollectionLocationForm()
+              } else {
+                store.dispatch({ type: 'RESET_LAST_PET_MOVEMENT' })
+                this.close()
+              }
             }
-          )
+          ),
+          loading: false
         })
       } catch (err) {
         this.setState({
@@ -204,75 +130,249 @@ class PetDirectMovement extends React.Component {
             () => {
               this.setState({ alert: false })
             }
-          )
+          ),
+          loading: false
         })
       }
     }
   }
 
-  chooseItem = () => {
-    if (!store.getState()[`${this.state.gridToDisplay}`].rowClicked[`${this.state.gridToDisplay}.PET_ID`]) {
-      let errorMsg = `
-        <p id="errorMsg" style="color: red">
-          ${this.context.intl.formatMessage({
-        id: `${config.labelBasePath}.error.select_pet_with_valid_id`,
-        defaultMessage: `${config.labelBasePath}.error.select_pet_with_valid_id`
-      })}
-        </p>
-      `
-      const petInput = document.getElementById(this.state.inputElementId)
-      petInput.style.border = '1px solid red'
-      petInput.insertAdjacentHTML('afterend', errorMsg)
-      petInput.value = ''
-      const submitBtn = document.getElementsByClassName('swal-button swal-button--confirm')
-      submitBtn[0].setAttribute('disabled', '')
-      this.closeModal()
-    } else {
-      const selectedPetObjId = String(store.getState()[`${this.state.gridToDisplay}`].rowClicked[`${this.state.gridToDisplay}.OBJECT_ID`])
-      const selectedPetId = String(store.getState()[`${this.state.gridToDisplay}`].rowClicked[`${this.state.gridToDisplay}.PET_ID`])
-      this.setState({ selectedPetObjId, selectedPetId })
-      const petInput = document.getElementById(this.state.inputElementId)
-      petInput.style.border = 'none'
-      petInput.value = selectedPetId
-      const submitBtn = document.getElementsByClassName('swal-button swal-button--confirm')
-      submitBtn[0].removeAttribute('disabled')
-      const errorMsg = document.getElementById('errorMsg')
-      if (errorMsg) {
-        errorMsg.style.display = 'none'
-      }
-      this.closeModal()
-    }
-  }
-
-  displayPopupOnClick (event) {
-    event.preventDefault()
-    this.setState({ showSearchPopup: true })
-    const errorMsg = document.getElementById('errorMsg')
-    if (errorMsg) {
-      errorMsg.style.display = 'none'
-      const petInput = document.getElementById(this.state.inputElementId)
-      petInput.style.border = 'none'
-    }
-    event.target.blur()
-    const alertOverlay = document.getElementsByClassName('swal-overlay')
-    alertOverlay[0].style.display = 'none'
-  }
-
-  close = () => {
+  reloadData = () => {
+    GridManager.reloadGridData(`${this.props.selectedObject}_${this.state.holdingObjectId}_ALL_PETS`)
+    store.dispatch({ type: 'PET_DIRECT_MOVEMENT_ACTION_RESET' })
     this.setState({
-      alert: false,
-      showAlert: false,
-      showSearchPopup: false,
+      petCollectionForm: undefined,
       selectedPetId: '',
       selectedPetObjId: '',
       activityDate: null
     })
   }
 
+  closeCollectionDetailsForm = () => {
+    this.setState({
+      petCollectionForm: undefined,
+      strayPetAddressInput: '',
+      strayPetWeightInput: '',
+      strayPetResponsibleNameInput: '',
+      strayPetResponsibleSurnameInput: '',
+      strayPetResponsibleNatRegNumInput: '',
+      collectionType: '',
+      selectedPetId: '',
+      selectedPetObjId: ''
+    })
+  }
+
+  chooseItem = () => {
+    if (!store.getState()[`${this.state.gridToDisplay}`].rowClicked[`${this.state.gridToDisplay}.PET_ID`]) {
+      this.setState({
+        alert: alertUser(
+          true, 'error',
+          this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.error.select_pet_with_valid_id`,
+            defaultMessage: `${config.labelBasePath}.error.select_pet_with_valid_id`
+          })
+        )
+      })
+    } else {
+      const selectedPetObjId = String(store.getState()[`${this.state.gridToDisplay}`].rowClicked[`${this.state.gridToDisplay}.OBJECT_ID`])
+      const selectedPetId = String(store.getState()[`${this.state.gridToDisplay}`].rowClicked[`${this.state.gridToDisplay}.PET_ID`])
+      this.setState({ selectedPetObjId, selectedPetId })
+      const server = config.svConfig.restSvcBaseUrl
+      const verbPath = config.svConfig.triglavRestVerbs.CHECK_IF_PET_ALREADY_EXISTS_IN_ANOTHER_HOLDING
+      let url = `${server}${verbPath}`
+      url = url.replace('%sessionId', this.props.session)
+      url = url.replace('%petId', selectedPetId)
+      axios.get(url).then(res => {
+        if (res.data && res.data.LABEL_CODE) {
+          const holdingName = res.data.NAME || ''
+          const holdingPic = res.data.PIC || ''
+          let wrapper = document.createElement('div')
+          ReactDOM.render(
+            <div style={{ marginLeft: '12px' }}>
+              <label htmlFor='setActivityDate' style={{ marginRight: '8px' }}>
+                {this.context.intl.formatMessage({
+                  id: `${config.labelBasePath}.main.set_activity_date`,
+                  defaultMessage: `${config.labelBasePath}.main.set_activity_date`
+                })}
+              </label>
+              <br />
+              <input
+                style={{ border: 'none', height: '40px', color: '#000', backgroundColor: '#eff0f1' }}
+                type='date'
+                name='setActivityDate'
+                onChange={this.setActivityDate}
+                value={this.state.activityDate}
+              />
+            </div>,
+            wrapper
+          )
+
+          this.setState({
+            alert: alertUser(
+              true,
+              'info',
+              this.context.intl.formatMessage({
+                id: res.data.LABEL_CODE,
+                defaultMessage: res.data.LABEL_CODE
+              }) + ': ' + holdingName + ' ' + holdingPic + '. ' +
+              this.context.intl.formatMessage({
+                id: `${config.labelBasePath}.alert.move_pet_to_holding_prompt`,
+                defaultMessage: `${config.labelBasePath}.alert.move_pet_to_holding_prompt`
+              }),
+              this.context.intl.formatMessage({
+                id: `${config.labelBasePath}.actions.default_date_msg`,
+                defaultMessage: `${config.labelBasePath}.actions.default_date_msg`
+              }),
+              () => this.petDirectMovementAction(),
+              () => this.close(),
+              true,
+              this.context.intl.formatMessage({
+                id: `${config.labelBasePath}.actions.proceed`,
+                defaultMessage: `${config.labelBasePath}.actions.proceed`
+              }),
+              this.context.intl.formatMessage({
+                id: `${config.labelBasePath}.main.no`,
+                defaultMessage: `${config.labelBasePath}.main.no`
+              }),
+              true,
+              null,
+              true,
+              wrapper
+            )
+          })
+        } else {
+          let wrapper = document.createElement('div')
+          ReactDOM.render(
+            <div style={{ marginLeft: '12px' }}>
+              <label htmlFor='setActivityDate' style={{ marginRight: '8px' }}>
+                {this.context.intl.formatMessage({
+                  id: `${config.labelBasePath}.main.set_activity_date`,
+                  defaultMessage: `${config.labelBasePath}.main.set_activity_date`
+                })}
+              </label>
+              <br />
+              <input
+                style={{ border: 'none', height: '40px', color: '#000', backgroundColor: '#eff0f1' }}
+                type='date'
+                name='setActivityDate'
+                onChange={this.setActivityDate}
+                value={this.state.activityDate}
+              />
+            </div>,
+            wrapper
+          )
+
+          this.setState({
+            alert: alertUser(
+              true,
+              'info',
+              this.context.intl.formatMessage({
+                id: `${config.labelBasePath}.main.pet_direct_movement`,
+                defaultMessage: `${config.labelBasePath}.main.pet_direct_movement`
+              }),
+              this.context.intl.formatMessage({
+                id: `${config.labelBasePath}.actions.default_date_msg`,
+                defaultMessage: `${config.labelBasePath}.actions.default_date_msg`
+              }),
+              () => this.petDirectMovementAction(),
+              () => this.close(),
+              true,
+              this.context.intl.formatMessage({
+                id: `${config.labelBasePath}.actions.proceed`,
+                defaultMessage: `${config.labelBasePath}.actions.proceed`
+              }),
+              this.context.intl.formatMessage({
+                id: `${config.labelBasePath}.main.forms.cancel`,
+                defaultMessage: `${config.labelBasePath}.main.forms.cancel`
+              }),
+              true,
+              null,
+              true,
+              wrapper
+            )
+          })
+        }
+      }).catch(err => console.error(err))
+
+      let additionalVerbPath = config.svConfig.triglavRestVerbs.GET_LAST_PET_MOVEMENT
+      additionalVerbPath = additionalVerbPath.replace('%session', this.props.session)
+      additionalVerbPath = additionalVerbPath.replace('%objectId', selectedPetObjId)
+      const additionalUrl = `${server}${additionalVerbPath}`
+      axios.get(additionalUrl).then(res => {
+        if (res.data && typeof res.data === 'number' && res.data !== 0) {
+          store.dispatch({ type: 'LAST_PET_MOVEMENT_FULFILLED', payload: res.data })
+        }
+      }).catch(err => {
+        store.dispatch({ type: 'LAST_PET_MOVEMENT_REJECTED' })
+        console.error(err)
+      })
+    }
+  }
+
+  prepareCollectionLocationForm = () => {
+    const { selectedPetObjId, holdingObjectId } = this.state
+    this.closeModal()
+    this.setState({ loading: true })
+    this.displayCollectionLocationForm(selectedPetObjId, holdingObjectId)
+  }
+
+  displayCollectionLocationForm = (petObjId, currentHoldingObjId) => {
+    const formId = 'STRAY_PET_LOCATION_ADDITIONAL_FORM'
+    const params = []
+    params.push({
+      PARAM_NAME: 'formWeWant',
+      PARAM_VALUE: 'STRAY_PET_LOCATION'
+    }, {
+      PARAM_NAME: 'session',
+      PARAM_VALUE: this.props.session
+    }, {
+      PARAM_NAME: 'table_name',
+      PARAM_VALUE: 'STRAY_PET_LOCATION'
+    }, {
+      PARAM_NAME: 'object_id',
+      PARAM_VALUE: 0
+    }, {
+      PARAM_NAME: 'parent_id',
+      PARAM_VALUE: petObjId
+    }, {
+      PARAM_NAME: 'locationReason',
+      PARAM_VALUE: '1'
+    }, {
+      PARAM_NAME: 'currentHoldingObjId',
+      PARAM_VALUE: currentHoldingObjId
+    })
+
+    const collectionDetailsForm = FormManager.generateForm(
+      formId, formId, params, 'formData',
+      'GET_FORM_BUILDER', 'GET_UISCHEMA', 'EXTENDED_CUSTOM_GET_TABLE_FORMDATA',
+      this.closeCollectionDetailsForm, null, null, null, null, null, 'closeAndDelete',
+      () => this.closeCollectionDetailsForm(), undefined, undefined,
+      undefined, CustomPetCollectFormWrapper
+    )
+
+    this.setState({ loading: false, showCollectionDetailsForm: true, collectionDetailsForm })
+  }
+
+  closeCollectionDetailsForm = () => {
+    this.reloadData()
+    store.dispatch({ type: 'RESET_PET_FORM_AFTER_SAVE' })
+    store.dispatch({ type: 'RESET_LAST_PET_MOVEMENT' })
+    this.setState({ showCollectionDetailsForm: false, collectionDetailsForm: undefined })
+  }
+
+  displayDirectMovementModal () {
+    this.setState({ displayDirectMovementModal: true })
+  }
+
+  close = () => {
+    this.setState({ alert: false, activityDate: null })
+  }
+
   closeModal = () => {
-    this.setState({ showSearchPopup: false })
-    const alertOverlay = document.getElementsByClassName('swal-overlay')
-    alertOverlay[0].style.display = 'block'
+    this.setState({
+      alert: false,
+      displayDirectMovementModal: false
+    })
     ComponentManager.cleanComponentReducerState(`${this.state.gridToDisplay}`)
   }
 
@@ -287,21 +387,22 @@ class PetDirectMovement extends React.Component {
             onRowSelect={this.chooseItem}
             key={this.state.gridToDisplay + '_' + this.state.inputElementId}
             closeModal={this.closeModal}
+            isFromPetDirectMovement
           />
         </div>
       </div>
     </div>
 
     return (
-      <div>
+      <div id='pet_direct_movement_container'>
         <button
           id='pet_direct_movement'
-          className={styles.container} style={{ cursor: 'pointer', marginRight: '7px', color: 'white' }}
-          onClick={() => this.petDirectMovementPrompt()}
+          className={styles.container} style={{ cursor: 'pointer', width: '150px', color: 'white' }}
+          onClick={() => this.displayDirectMovementModal()}
         >
           <span
             id='pet_direct_movement_action_text'
-            className={style.actionText} style={{ padding: '4px', marginLeft: '-5%' }}
+            className={style.actionText} style={{ marginLeft: '1%', wordWrap: 'inherit' }}
           >
             {this.context.intl.formatMessage({
               id: `${config.labelBasePath}.main.pet_direct_movement`,
@@ -310,7 +411,18 @@ class PetDirectMovement extends React.Component {
           </span>
           <img id='animal_mass_img' src='/naits/img/massActionsIcons/transfer_animal.png' />
         </button>
-        {this.state.showSearchPopup && ReactDOM.createPortal(searchPopup, document.getElementById('app').parentNode)}
+        {this.state.showCollectionDetailsForm &&
+          <div id='form_modal' className='modal' style={{ display: 'block' }}>
+            <div id='form_modal_content' className='modal-content'>
+              <div id='form_modal_body' className='modal-body' style={{ marginTop: '1rem' }}>
+                {this.state.collectionDetailsForm}
+              </div>
+            </div>
+          </div>
+        }
+        {this.state.displayDirectMovementModal && ReactDOM.createPortal(searchPopup, document.getElementById('app').parentNode)}
+        {this.state.petCollectionForm && ReactDOM.createPortal(this.state.petCollectionForm, document.getElementById('app').parentNode)}
+        {this.state.loading && <Loading />}
       </div>
     )
   }

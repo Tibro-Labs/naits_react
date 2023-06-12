@@ -199,7 +199,7 @@ class SetActivityPeriod extends React.Component {
           <span
             id='set_activity_txt'
             className={style.actionText}
-            style={{ marginLeft: '-7%', marginTop: '0.5%', cursor: 'pointer' }}
+            style={{ marginLeft: '-4%', marginTop: '6.5%', cursor: 'pointer' }}
           >
             {this.context.intl.formatMessage({
               id: `${config.labelBasePath}.set_activity_period_for_${type}`,

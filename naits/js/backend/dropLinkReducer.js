@@ -1,22 +1,25 @@
 export function dropLinkReducer (state = {
-  message: null,
-  error: null,
+  isLoading: false,
+  message: undefined,
+  error: undefined,
   removedKeeperFromHolding: false
 }, action) {
   switch (action.type) {
+    case 'THE_KEEPER_HAS_BEEN_REMOVED':
+      return { ...state, isLoading: true }
     case 'RESET_DROP_LINK_OBJECTS': {
       return {
-        ...state, message: null, error: null, removedKeeperFromHolding: false
+        ...state, isLoading: false, message: undefined, error: undefined, removedKeeperFromHolding: false
       }
     }
     case 'DROP_LINK_OBJECTS_FULFILLED': {
       return {
-        ...state, message: action.payload.data, error: null, removedKeeperFromHolding: true
+        ...state, isLoading: false, message: action.payload.data, error: undefined, removedKeeperFromHolding: true
       }
     }
     case 'DROP_LINK_OBJECTS_REJECTED': {
       return {
-        ...state, message: null, error: action.payload.data, removedKeeperFromHolding: false
+        ...state, isLoading: false, message: undefined, error: action.payload.data || action.payload, removedKeeperFromHolding: false
       }
     }
   }

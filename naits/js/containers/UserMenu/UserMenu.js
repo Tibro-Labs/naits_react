@@ -1,11 +1,13 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import axios from 'axios'
 import loginStyle from 'components/LogonComponents/LoginForm/LoginFormStyle.module.css'
 import { getLabels, getLocaleId } from 'client.js'
 import { store, dataToRedux, lastSelectedItem } from 'tibro-redux'
 import UserMenuCircles from './UserMenuCircles'
 import GlobalSearch from './GlobalSearch'
 import ErrorBoundary from 'components/AppComponents/Functional/ErrorBoundary.js'
+import SearchCircle from './SearchCircle'
 import UserProfileCircle from './UserProfileCircle'
 import MessagingSubsystemCircle from './MessagingSubsystemCircle'
 import NotificationBox from './NotificationBox'
@@ -23,7 +25,7 @@ import { LoggedInAs } from 'components/ComponentsIndex'
 import { checkIfUserHasAdmGroup } from 'backend/checkIfUserHasAdmGroup'
 import { getUserGroups } from 'backend/getUserGroups'
 import { connect } from 'react-redux'
-import { gaEventTracker } from 'functions/utils'
+import { isValidArray, gaEventTracker, selectObject } from 'functions/utils'
 
 const hashHistory = createHashHistory()
 
@@ -35,24 +37,105 @@ const activeStyle = {
 }
 
 class UserMenu extends React.Component {
-  componentDidMount () {
-    const session = this.props.svSession
-    let server = config.svConfig.restSvcBaseUrl
-    let verbPath = config.svConfig.triglavRestVerbs.IS_USER_ADMIN
-    let restUrl = `${server}${verbPath}/${session}`
-    store.dispatch(checkIfUserHasAdmGroup(restUrl))
+  constructor (props) {
+    super(props)
+    this.state = {
+      allowedObjects: undefined
+    }
+  }
 
-    let userGroupsVerbPath = config.svConfig.triglavRestVerbs.GET_USER_GROUPS
-    let url = `${server}${userGroupsVerbPath}/${session}`
-    store.dispatch(getUserGroups(url))
+  componentDidMount () {
+    // Get linked holding/s for the current user, if any
+    this.getLinkedHoldingsForCurrentUser()
+    const session = this.props.svSession
+    const server = config.svConfig.restSvcBaseUrl
+    if (!this.props.theWsForCheckingIfUserIsAdminWasCalledAlready) {
+      const verbPath = config.svConfig.triglavRestVerbs.IS_USER_ADMIN
+      const restUrl = `${server}${verbPath}/${session}`
+      store.dispatch(checkIfUserHasAdmGroup(restUrl))
+    }
+
+    if (!this.props.theWsForUserGroupsWasCalledAlready) {
+      const userGroupsVerbPath = config.svConfig.triglavRestVerbs.GET_USER_GROUPS
+      const url = `${server}${userGroupsVerbPath}/${session}`
+      store.dispatch(getUserGroups(url))
+    }
+
+    this.getAllowedObjects(this.props)
 
     if (this.props.gridHierarchy.length > 0) {
       store.dispatch(lastSelectedItem('resetState'))
     }
-    getLocaleId(store.getState().intl.locale.replace('-', '_'))
+
+    if (!this.props.localeObjId) {
+      getLocaleId(store.getState().intl.locale.replace('-', '_'))
+    }
+  }
+
+  componentWillReceiveProps (nextProps) {
+    if (this.props.userInfo.allowedObjectsForSideMenu !== nextProps.userInfo.allowedObjectsForSideMenu) {
+      this.getAllowedObjects(nextProps)
+    }
+  }
+
+  getLinkedHoldingsForCurrentUser = async () => {
+    const server = config.svConfig.restSvcBaseUrl
+    const verbPath = config.svConfig.triglavRestVerbs.GET_LINKED_HOLDINGS_PER_USER
+    let url = `${server}${verbPath}`
+    url = url.replace('%session', this.props.svSession)
+    try {
+      const res = await axios.get(url)
+      if (res.data && res.data instanceof Array) {
+        if (res.data && res.data.length === 1) {
+          store.dispatch({ type: 'USER_IS_LINKED_TO_ONE_HOLDING' })
+          selectObject('HOLDING', res.data[0])
+          hashHistory.push('/main/data/holding')
+        } else if (res.data && res.data.length > 1) {
+          store.dispatch({ type: 'USER_IS_LINKED_TO_TWO_OR_MORE_HOLDINGS' })
+          hashHistory.push('/main/dynamic/holding')
+        } else if (res.data.length === 0) {
+          store.dispatch({ type: 'USER_IS_NOT_LINKED_TO_ANY_HOLDINGS' })
+        }
+      } else {
+        store.dispatch({ type: 'USER_IS_NOT_LINKED_TO_ANY_HOLDINGS' })
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  getAllowedObjects = props => {
+    const { userInfo } = props
+    if (userInfo.allowedObjectsForSideMenu && userInfo.allowedObjectsForSideMenu.LIST_OF_ITEMS && isValidArray(userInfo.allowedObjectsForSideMenu.LIST_OF_ITEMS, 1)) {
+      let allowedObjects = []
+      userInfo.allowedObjectsForSideMenu.LIST_OF_ITEMS.forEach(item => {
+        allowedObjects.push(item.ID)
+      })
+      this.setState({ allowedObjects })
+    }
   }
 
   render () {
+    let shouldFixThePadding = false
+    if (navigator.userAgent.includes('Chrome')) {
+      const currentChromeVersion = navigator.userAgent.match(/.*Chrome\/([0-9.]+)/)[1].split('.')[0]
+      if (currentChromeVersion && parseInt(currentChromeVersion) >= 87) {
+        shouldFixThePadding = true
+      }
+    }
+
+    let shouldDisplaySearchCircle = false
+    if (this.state.allowedObjects) {
+      const exportCert = this.state.allowedObjects.includes('EXPORT_CERT')
+      const inventoryItem = this.state.allowedObjects.includes('INVENTORY_ITEM')
+      const movementDoc = this.state.allowedObjects.includes('MOVEMENT_DOC')
+      if (!exportCert && !inventoryItem && !movementDoc) {
+        shouldDisplaySearchCircle = false
+      } else {
+        shouldDisplaySearchCircle = true
+      }
+    }
+
     const labels = this.context.intl
     const locale = labels.locale
     const date = new Date()
@@ -64,6 +147,7 @@ class UserMenu extends React.Component {
             <tr>
               <td id='columnLeft' className={menuStyle.columnLeft}>
                 {/* Left-hand side components */}
+                {shouldDisplaySearchCircle && <SearchCircle />}
                 <UserProfileCircle />
                 <NotificationBox />
                 <div
@@ -76,7 +160,11 @@ class UserMenu extends React.Component {
                   className={`${menuStyle.logoutBoxImg} ${menuStyle['hvr-float-shadow']} ${animations.fadeIn}`}
                 />
               </td>
-              <td id='columnCenter' className={menuStyle.columnCenter}>
+              <td
+                id='columnCenter'
+                className={menuStyle.columnCenter}
+                style={{ paddingTop: shouldFixThePadding ? '8em' : '10em', paddingBottom: shouldFixThePadding ? '25em' : null }}
+              >
                 {/* Centered components */}
                 <ErrorBoundary>
                   <GlobalSearch {...this.props} />
@@ -147,8 +235,11 @@ UserMenu.contextTypes = {
 }
 
 const mapStateToProps = (state) => ({
+  localeObjId: state.userInfoReducer.localeObjId,
   isAdmin: state.userInfoReducer.isAdmin,
-  gridHierarchy: state.gridConfig.gridHierarchy
+  gridHierarchy: state.gridConfig.gridHierarchy,
+  theWsForUserGroupsWasCalledAlready: state.userInfoReducer.theWsForUserGroupsWasCalledAlready,
+  theWsForCheckingIfUserIsAdminWasCalledAlready: state.userInfoReducer.theWsForCheckingIfUserIsAdminWasCalledAlready
 })
 
 export default connect(mapStateToProps)(UserMenu)

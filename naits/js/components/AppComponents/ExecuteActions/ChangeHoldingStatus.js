@@ -85,7 +85,12 @@ class ChangeHoldingStatus extends React.Component {
           component = <div
             id='change_status'
             className={styles.container} style={{ cursor: 'pointer', marginRight: '7px', color: 'white' }} >
-            <p>{this.context.intl.formatMessage({ id: `${config.labelBasePath}.main.change_status_of_holding`, defaultMessage: `${config.labelBasePath}.main.change_status_of_holding` })}</p>
+            <p style={{ marginTop: '2px' }}>
+              {this.context.intl.formatMessage({
+                id: `${config.labelBasePath}.main.change_status_of_holding`,
+                defaultMessage: `${config.labelBasePath}.main.change_status_of_holding`
+              })}
+            </p>
             <div id='change_status' className={styles['gauge-container']}>
               <div
                 id='create_sublist'

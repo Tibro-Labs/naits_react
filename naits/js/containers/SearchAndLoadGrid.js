@@ -10,6 +10,7 @@ import axios from 'axios'
 import { connect } from 'react-redux'
 import { store } from 'tibro-redux'
 import { Select, DependencyDropdowns, alertUser } from 'tibro-components'
+import { HoldingSearch, HoldingResponsibleSearch, AnimalSearch, FlockSearch } from './ContainersIndex'
 import Loading from 'components/Loading'
 import ReactTooltip from 'react-tooltip'
 import { withRouter } from 'react-router'
@@ -31,6 +32,7 @@ class SearchAndLoadGrid extends React.Component {
       rangeTo: '',
       customPetInputValue: '',
       customMovementDocInputValue: '',
+      customAnimalStatusCriteria: '',
       criteria: '',
       petCriteria: '',
       movementDocCriteria: '',
@@ -43,7 +45,8 @@ class SearchAndLoadGrid extends React.Component {
       filterType: 'LIKE',
       dateSearch: false,
       userIsLinkedToOneHolding: false,
-      userIsLinkedToTwoOrMoreHoldings: false
+      userIsLinkedToTwoOrMoreHoldings: false,
+      animalStatuses: []
     }
     // declare timer
     this.timer = undefined
@@ -97,28 +100,41 @@ class SearchAndLoadGrid extends React.Component {
       searchCriteriaConfig('SEARCH_CRITERIA_FOR_TABLE').LIST_OF_ITEMS.map(
         (element) => {
           if (element.TABLE === this.props.gridToDisplay) {
-            // functional setState
-            this.setState(
-              () => {
-                let options = element.CRITERIA.map(
-                  criteriaElement => {
-                    if (!this.props.customSearch && criteriaElement.CODE === 'VILLAGE_CODE') {
-                      return null
-                    } else {
-                      return <option key={element.TABLE + criteriaElement.CODE} value={criteriaElement.CODE}>
-                        {this.context.intl.formatMessage({ id: criteriaElement.LABEL, defaultMessage: criteriaElement.LABEL })}
-                      </option>
+            if (this.props.gridToDisplay === 'ANIMAL' && !this.props.isSecondary && !this.props.searchFromPopup) {
+              return null
+            } else if (this.props.gridToDisplay === 'HOLDING' && !this.props.isSecondary && !this.props.searchFromPopup) {
+              return null
+            } else if (this.props.gridToDisplay === 'HOLDING_RESPONSIBLE' && !this.props.isSecondary && !this.props.searchFromPopup) {
+              return null
+            } else if (this.props.gridToDisplay === 'FLOCK' && !this.props.isSecondary && !this.props.searchFromPopup) {
+              return null
+            } else {
+              // functional setState
+              this.setState(
+                () => {
+                  let options = element.CRITERIA.map(
+                    criteriaElement => {
+                      if (!this.props.customSearch && criteriaElement.CODE === 'VILLAGE_CODE') {
+                        return null
+                      } else if (this.props.getUserGroups.includes('ANIMAL_SEARCH_GROUP') &&
+                        this.props.gridToDisplay === 'ANIMAL' && criteriaElement.CODE !== 'ANIMAL_ID') {
+                        return null
+                      } else {
+                        return <option key={element.TABLE + criteriaElement.CODE} value={criteriaElement.CODE}>
+                          {this.context.intl.formatMessage({ id: criteriaElement.LABEL, defaultMessage: criteriaElement.LABEL })}
+                        </option>
+                      }
                     }
+                  )
+                  return {
+                    isVisible: true,
+                    dropdownOptions: options,
+                    criteria: element.SELECTED
                   }
-                )
-                return {
-                  isVisible: true,
-                  dropdownOptions: options,
-                  criteria: element.SELECTED
-                }
-              },
-              () => this.checkAndChangeInputType(element.SELECTED)
-            )
+                },
+                () => this.checkAndChangeInputType(element.SELECTED)
+              )
+            }
           }
         }
       )
@@ -143,10 +159,32 @@ class SearchAndLoadGrid extends React.Component {
         (element) => {
           if (this.props.customSearch) {
             if (element.TABLE === this.props.gridToDisplay) {
-              const criteria = element.DUMMY_CRITERIA
-              // add an unreal value so its never found and grid is empty
-              const value = 1000000000000
-              this.props.showEmpty && this.props.showEmpty({ value, criteria })
+              if (!this.props.isSecondary && !this.props.searchFromPopup) {
+                if ((this.props.userIsLinkedToOneHolding || this.props.userIsLinkedToTwoOrMoreHoldings) ||
+                  (this.state.userIsLinkedToOneHolding || this.state.userIsLinkedToTwoOrMoreHoldings)) {
+                  this.props.waitForSearch && this.props.waitForSearch({
+                    criteria: 'GET_LINKED_HOLDINGS_PER_USER_2'
+                  })
+                } else if (this.props.gridToDisplay === 'HOLDING') {
+                  this.props.waitForSearch && this.props.waitForSearch({
+                    criteria: 'CUSTOM_HOLDING_SEARCH'
+                  })
+                } else if (this.props.gridToDisplay === 'HOLDING_RESPONSIBLE') {
+                  this.props.waitForSearch && this.props.waitForSearch({
+                    criteria: 'CUSTOM_HOLDING_RESPONSIBLE_SEARCH'
+                  })
+                } else {
+                  const criteria = element.DUMMY_CRITERIA
+                  // add an unreal value so its never found and grid is empty
+                  const value = 1000000000000
+                  this.props.showEmpty && this.props.showEmpty({ value, criteria })
+                }
+              } else {
+                const criteria = element.DUMMY_CRITERIA
+                // add an unreal value so its never found and grid is empty
+                const value = 1000000000000
+                this.props.showEmpty && this.props.showEmpty({ value, criteria })
+              }
             }
           } else {
             if (element.TABLE.toLowerCase() === this.state.path) {
@@ -220,6 +258,13 @@ class SearchAndLoadGrid extends React.Component {
       this.props.waitForSearch({ value, criteria, filterType })
       this.props.formToGridResetAction('LAB_TEST_TYPE')
     }
+
+    if ((this.props.RFID_NUMBER !== nextProps.RFID_NUMBER) && nextProps.RFID_NUMBER) {
+      const value = nextProps.RFID_NUMBER
+      const criteria = 'RFID_NUMBER'
+      this.props.waitForSearch({ value, criteria })
+      this.props.formToGridResetAction('RFID_INPUT')
+    }
   }
 
   searchInputComponent = (state) => {
@@ -228,6 +273,10 @@ class SearchAndLoadGrid extends React.Component {
       value={state.value}
       minLength={this.state.criteria === 'PIC' && this.props.gridToDisplay === 'HOLDING' ? '4' : null}
       className={`${style.input} ${state.emptyInputClassName}`}
+      style={{
+        width: this.props.gridToDisplay === 'INVENTORY_ITEM' &&
+          (strcmp(this.state.criteria, 'TAG_TYPE') || strcmp(this.state.criteria, 'ORDER_NUMBER')) ? '25rem' : null
+      }}
       onChange={this.handleValueChange}
       placeholder={
         this.context.intl.formatMessage({ id: `${config.labelBasePath}.main.search`, defaultMessage: `${config.labelBasePath}.main.search` })
@@ -255,7 +304,7 @@ class SearchAndLoadGrid extends React.Component {
       }}
       {...this.state.emptyInputClassName && { 'data-for': 'SearchAndLoadTooltipemptyInputClassName' }}
       {...this.state.emptyInputClassName && { 'data-offset': "{'left': 80, 'top': -15}" }}
-
+      style={{ width: this.props.gridToDisplay === 'INVENTORY_ITEM' ? '30rem' : null }}
     >
       <Select
         className={`${style.input} ${style.dynamicSelect} ${state.emptyInputClassName}`}
@@ -265,6 +314,32 @@ class SearchAndLoadGrid extends React.Component {
         }
         options={state[state.criteria]}
         onChange={(event) => this.setState({ value: event.value, emptyInputClassName: undefined })}
+        onInputChange={() => this.setState({ emptyInputClassName: undefined })}
+        onFocus={() => this.setState({ emptyInputClassName: undefined })}
+        value={state.value}
+      />
+    </div>
+
+    const searchableAnimalStatusInput = <div id='searchAndLoadDynamicSelect'
+      {...this.state.emptyInputClassName && {
+        'data-tip': this.context.intl.formatMessage(
+          {
+            id: `${config.labelBasePath}.login.mandatory_login_empty`,
+            defaultMessage: `${config.labelBasePath}.login.mandatory_login_empty`
+          }
+        )
+      }}
+      {...this.state.emptyInputClassName && { 'data-for': 'SearchAndLoadTooltipemptyInputClassName' }}
+      {...this.state.emptyInputClassName && { 'data-offset': "{'left': 80, 'top': -15}" }}
+    >
+      <Select
+        className={`${style.input} ${style.dynamicSelect} ${state.emptyInputClassName}`}
+        clearable={false}
+        placeholder={
+          this.context.intl.formatMessage({ id: `${config.labelBasePath}.main.search`, defaultMessage: `${config.labelBasePath}.main.search` })
+        }
+        options={state.animalStatuses}
+        onChange={this.handleCustomAnimalStatusCriteriaChange}
         onInputChange={() => this.setState({ emptyInputClassName: undefined })}
         onFocus={() => this.setState({ emptyInputClassName: undefined })}
         value={state.value}
@@ -294,6 +369,8 @@ class SearchAndLoadGrid extends React.Component {
 
     if (state[state.criteria]) {
       return searchableInput
+    } else if (state.criteria === 'ANIMAL_STATUS') {
+      return searchableAnimalStatusInput
     } else if (this.state.dateSearch) {
       return <DatePicker
         required
@@ -304,6 +381,10 @@ class SearchAndLoadGrid extends React.Component {
     } else {
       return normalInput
     }
+  }
+
+  handleCustomAnimalStatusCriteriaChange = e => {
+    this.setState({ value: e.value, customAnimalStatusCriteria: e.value, emptyCriteriaClassName: undefined })
   }
 
   customSearchInputComponent () {
@@ -371,82 +452,7 @@ class SearchAndLoadGrid extends React.Component {
         {...this.state.emptyInputClassName && { 'data-for': 'SearchAndLoadTooltipemptyInputClassName' }}
         {...this.state.emptyInputClassName && { 'data-offset': "{'left': 45, 'top': 8}" }}
       />
-      <button
-        className={style.button}
-        onClick={(event) => this.handleCustomInvItemSearch(event)}
-      >
-        {this.context.intl.formatMessage({
-          id: `${config.labelBasePath}.main.search`,
-          defaultMessage: `${config.labelBasePath}.main.search`
-        })}
-      </button>
     </div>
-  }
-
-  handleCustomInvItemSearch (event) {
-    store.dispatch({ type: 'RESET_SEARCH' })
-    const { rangeFrom, rangeTo } = this.state
-    event.preventDefault()
-    this.setState({ criteria: 'EAR_TAG_NUMBER', value: '' })
-    gaEventTracker(
-      'SEARCH',
-      `Clicked the custom inventory item search by order button in the ${this.props.gridToDisplay} screen`,
-      `RECORD_INFO | ${config.version} (${config.currentEnv})`
-    )
-    if (!rangeFrom && !rangeTo) {
-      this.setState({
-        alert: alertUser(true, 'warning',
-          this.context.intl.formatMessage({
-            id: `${config.labelBasePath}.alert.no_ranges_entered`,
-            defaultMessage: `${config.labelBasePath}.alert.no_ranges_entered`
-          }), null, () => { this.setState({ alert: false }) }
-        )
-      })
-    } else if (!rangeFrom) {
-      this.setState({
-        alert: alertUser(true, 'warning',
-          this.context.intl.formatMessage({
-            id: `${config.labelBasePath}.alert.no_range_from_entered`,
-            defaultMessage: `${config.labelBasePath}.alert.no_range_from_entered`
-          }), null, () => { this.setState({ alert: false }) }
-        )
-      })
-    } else if (!rangeTo) {
-      this.setState({
-        alert: alertUser(true, 'warning',
-          this.context.intl.formatMessage({
-            id: `${config.labelBasePath}.alert.no_range_to_entered`,
-            defaultMessage: `${config.labelBasePath}.alert.no_range_to_entered`
-          }), null, () => { this.setState({ alert: false }) }
-        )
-      })
-    } else {
-      if (parseInt(rangeFrom) > parseInt(rangeTo)) {
-        this.setState({
-          alert: alertUser(true, 'warning',
-            this.context.intl.formatMessage({
-              id: `${config.labelBasePath}.alert.range_from_larger_than_range_to`,
-              defaultMessage: `${config.labelBasePath}.alert.range_from_larger_than_range_to`
-            }), null, () => { this.setState({ alert: false }) }
-          )
-        })
-      } else if (calcDifference(parseInt(rangeTo), parseInt(rangeFrom)) > 300) {
-        this.setState({
-          alert: alertUser(true, 'warning',
-            this.context.intl.formatMessage({
-              id: `${config.labelBasePath}.alert.range_difference_cannot_be_more_than_three_hundred`,
-              defaultMessage: `${config.labelBasePath}.alert.range_difference_cannot_be_more_than_three_hundred`
-            }), null, () => { this.setState({ alert: false }) }
-          )
-        })
-      } else {
-        if (this.props.isSecondary) {
-          this.props.customInvItemSearch(rangeFrom, rangeTo)
-        } else {
-          this.props.customSearch('GET_INVENTORY_ITEMS_BY_RANGE', rangeFrom, rangeTo)
-        }
-      }
-    }
   }
 
   customPetSearchInputComponent () {
@@ -733,8 +739,15 @@ class SearchAndLoadGrid extends React.Component {
     this.loadFullInitialGrid()
     this.loadEmptyInitialGrid()
     this.queryUrlAndSearch(this.props)
-    this.fetchHoldingTypes()
-    this.getLinkedHoldingsForCurrentUser()
+    if (this.props.gridToDisplay === 'HOLDING' && !this.props.isFromPetMovement) {
+      this.fetchHoldingTypes()
+    }
+    if (this.props.gridToDisplay === 'HOLDING') {
+      const navigationType = window.performance.getEntriesByType('navigation')[0]
+      if (navigationType.type && strcmp(navigationType.type, 'reload')) {
+        this.getLinkedHoldingsForCurrentUser()
+      }
+    }
 
     this.setState({ petCriteria: 'OWNER', movementDocCriteria: 'ANIMAL' })
     store.dispatch({ type: 'CHANGED_CUSTOM_PET_SEARCH_CRITERIA', payload: 'OWNER' })
@@ -743,6 +756,20 @@ class SearchAndLoadGrid extends React.Component {
     // Set an input filter on the range from & range to input fields that only accepts numeric values
     if (this.props.gridToDisplay === 'INVENTORY_ITEM') {
       this.setRangeInputFilter()
+    }
+
+    if (this.props.gridToDisplay === 'ANIMAL') {
+      let animalStatusesObjArr = [
+        {
+          label: this.context.intl.formatMessage({ id: `${config.labelBasePath}.status.lost`, defaultMessage: `${config.labelBasePath}.status.lost` }),
+          value: 'LOST'
+        },
+        {
+          label: this.context.intl.formatMessage({ id: `${config.labelBasePath}.status.transition`, defaultMessage: `${config.labelBasePath}.status.transition` }),
+          value: 'TRANSITION'
+        }
+      ]
+      this.setState({ animalStatuses: animalStatusesObjArr })
     }
   }
 
@@ -765,13 +792,17 @@ class SearchAndLoadGrid extends React.Component {
     url = url.replace('%session', session)
     try {
       const res = await axios.get(url)
-      if (res.data && res.data.length === 1) {
-        store.dispatch({ type: 'USER_IS_LINKED_TO_ONE_HOLDING' })
-        this.setState({ userIsLinkedToOneHolding: true, userIsLinkedToTwoOrMoreHoldings: false })
-      } else if (res.data && res.data.length > 1) {
-        store.dispatch({ type: 'USER_IS_LINKED_TO_TWO_OR_MORE_HOLDINGS' })
-        this.setState({ userIsLinkedToOneHolding: false, userIsLinkedToTwoOrMoreHoldings: true })
-      } else if (res.data.length === 0) {
+      if (res.data && res.data instanceof Array) {
+        if (res.data && res.data.length === 1) {
+          store.dispatch({ type: 'USER_IS_LINKED_TO_ONE_HOLDING' })
+          this.setState({ userIsLinkedToOneHolding: true, userIsLinkedToTwoOrMoreHoldings: false })
+        } else if (res.data && res.data.length > 1) {
+          store.dispatch({ type: 'USER_IS_LINKED_TO_TWO_OR_MORE_HOLDINGS' })
+          this.setState({ userIsLinkedToOneHolding: false, userIsLinkedToTwoOrMoreHoldings: true })
+        } else if (res.data.length === 0) {
+          store.dispatch({ type: 'USER_IS_NOT_LINKED_TO_ANY_HOLDINGS' })
+        }
+      } else {
         store.dispatch({ type: 'USER_IS_NOT_LINKED_TO_ANY_HOLDINGS' })
       }
     } catch (err) {
@@ -824,7 +855,7 @@ class SearchAndLoadGrid extends React.Component {
 
   handleCriteriaChange = (event) => {
     this.setState(
-      { criteria: event.target.value, emptyCriteriaClassName: undefined, dateSearch: false, date: null },
+      { criteria: event.target.value, emptyCriteriaClassName: undefined, dateSearch: false, date: null, rangeFrom: '', rangeTo: '' },
       () => this.checkAndChangeInputType(this.state.criteria)
     )
   }
@@ -845,9 +876,10 @@ class SearchAndLoadGrid extends React.Component {
 
   handleSubmit = (event) => {
     event.preventDefault()
-    this.setState({ customPetInputValue: '', customMovementDocInputValue: '', rangeFrom: '', rangeTo: '' })
+    this.setState({ customPetInputValue: '', customMovementDocInputValue: '' })
     store.dispatch({ type: 'RESET_SEARCH' })
     let { value } = this.state
+    value = value.trim()
     const { criteria, filterType, dateSearch } = this.state
     if (dateSearch) {
       value = convertToShortDate(value, 'y-m-d')
@@ -862,21 +894,97 @@ class SearchAndLoadGrid extends React.Component {
       }
     } else if (strcmp(criteria, 'TRANSPORTER_LICENSE')) {
       this.props.customSearch('GET_MOVEMENT_DOC_BY_TRANSPORTER_LICENSE', value, this.props.gridToDisplay)
+    } else if (strcmp(criteria, 'ANIMAL_STATUS')) {
+      this.props.customSearch('GET_ANIMALS_BY_STATUS', value, this.props.gridToDisplay)
+      store.dispatch({ type: 'CHANGED_CUSTOM_ANIMAL_STATUS_SEARCH_CRITERIA', payload: this.state.customAnimalStatusCriteria })
+    } else if (strcmp(criteria, 'PIC') || strcmp(criteria, 'NAME') ||
+      strcmp(criteria, 'APPROVAL_NUM') || strcmp(criteria, 'PHYSICAL_ADDRESS')
+    ) {
+      if (!value) {
+        if (this.props.isSecondary) {
+          if (this.props.isFromPetMovement) {
+            this.props.customShelterSearch({ value: '15', criteria: 'TYPE', additionalParam: 100 })
+          } else if (this.props.isFromMoveItemsByRangeAction) {
+            const { additionalParamForMoveItemsByRangeActionHoldingSearch: moveItemsByRangeAdditionalParam } = this.props
+            const finalValue = `${this.state.selectedHoldingType},${moveItemsByRangeAdditionalParam}`
+            this.props.customItemByRangeActionHoldingSearch({ value: finalValue, criteria: 'TYPE,MUNIC_CODE', additionalParam: 10000 })
+          } else {
+            this.props.customWaitForSearch({ value: this.state.selectedHoldingType, criteria: 'TYPE' })
+          }
+        } else {
+          this.props.waitForSearch({ value: this.state.selectedHoldingType, criteria: 'TYPE', filterType: 'EQUAL' })
+        }
+      } else {
+        if (this.props.isFromPetMovement) {
+          this.props.customShelterSearch({ value: `${value},15`, criteria: `${criteria},TYPE`, additionalParam: 10000 })
+        } else if (this.props.isFromMoveItemsByRangeAction) {
+          const { additionalParamForMoveItemsByRangeActionHoldingSearch: moveItemsByRangeAdditionalParam } = this.props
+          const finalValue = `${value},${moveItemsByRangeAdditionalParam}`
+          const finalCriteria = `${criteria},MUNIC_CODE`
+          this.props.customItemByRangeActionHoldingSearch({ value: finalValue, criteria: finalCriteria, additionalParam: 10000 })
+        } else {
+          this.props.waitForSearch({ value, criteria, filterType })
+        }
+      }
+    } else if (strcmp(criteria, 'TAG_TYPE') || strcmp(criteria, 'ORDER_NUMBER')) {
+      const { rangeFrom, rangeTo } = this.state
+      if (rangeFrom && rangeTo) {
+        if (parseInt(rangeFrom) > parseInt(rangeTo)) {
+          this.setState({
+            alert: alertUser(true, 'warning',
+              this.context.intl.formatMessage({
+                id: `${config.labelBasePath}.alert.range_from_larger_than_range_to`,
+                defaultMessage: `${config.labelBasePath}.alert.range_from_larger_than_range_to`
+              }), null, () => { this.setState({ alert: false }) }
+            )
+          })
+        } else if (calcDifference(parseInt(rangeTo), parseInt(rangeFrom)) > 1000) {
+          this.setState({
+            alert: alertUser(true, 'warning',
+              this.context.intl.formatMessage({
+                id: `${config.labelBasePath}.alert.range_difference_cannot_be_more_than_one_thousand`,
+                defaultMessage: `${config.labelBasePath}.alert.range_difference_cannot_be_more_than_one_thousand`
+              }), null, () => { this.setState({ alert: false }) }
+            )
+          })
+        } else {
+          this.props.customInvItemSearch(rangeFrom, rangeTo, criteria, value)
+        }
+      } else {
+        this.props.waitForSearch({ value, criteria, filterType })
+      }
     } else {
-      let altCriteria
-      let altValue
-      const altCriteriaEl = 'TYPE'
-      const altValueEl = $('altSearchValue')
-      if (altCriteriaEl && altValueEl) {
-        altCriteria = altCriteriaEl
-        altValue = altValueEl.value
-      }
-      if (this.props.gridToDisplay === 'HOLDING' && this.state.criteria === 'PIC' &&
-        value.length <= 3 && this.state.selectedHoldingType === null && this.state.selectedHoldingType === '') {
-        return
-      }
-      if (value || altValue) {
-        this.props.waitForSearch({ value, criteria, altValue, altCriteria, filterType })
+      if (this.props.isFromMoveItemsByRangeAction) {
+        const { additionalParamForMoveItemsByRangeActionHoldingSearch: moveItemsByRangeAdditionalParam } = this.props
+        const { selectedHoldingType } = this.state
+        let value = `${moveItemsByRangeAdditionalParam}`
+        let criteria = 'MUNIC_CODE'
+        if (selectedHoldingType) {
+          value += `,${selectedHoldingType}`
+          criteria += ',TYPE'
+        }
+        this.props.customItemByRangeActionHoldingSearch({ value, criteria, additionalParam: 10000 })
+      } else {
+        let altCriteria
+        let altValue
+        const altCriteriaEl = 'TYPE'
+        const altValueEl = $('altSearchValue')
+        if (altCriteriaEl && altValueEl) {
+          altCriteria = altCriteriaEl
+          altValue = altValueEl.value
+        }
+        if (this.props.gridToDisplay === 'HOLDING' && this.state.criteria === 'PIC' &&
+          value.length <= 3 && this.state.selectedHoldingType === null && this.state.selectedHoldingType === '') {
+          return
+        }
+
+        if (this.props.gridToDisplay === 'ANIMAL' && !strcmp(criteria, 'ANIMAL_STATUS')) {
+          store.dispatch({ type: 'RESET_ANIMAL_SEARCH' })
+        }
+
+        if (value || altValue) {
+          this.props.waitForSearch({ value, criteria, altValue, altCriteria, filterType })
+        }
       }
     }
   }
@@ -888,11 +996,61 @@ class SearchAndLoadGrid extends React.Component {
       form = <form
         id='searchAndLoadForm'
         className={style.search}
-        style={{ width: this.props.gridToDisplay === 'INVENTORY_ITEM' ? '40rem' : null }}
+        style={{
+          width: this.props.gridToDisplay === 'INVENTORY_ITEM' && this.state.criteria &&
+            (strcmp(this.state.criteria, 'TAG_TYPE') || strcmp(this.state.criteria, 'ORDER_NUMBER')) ? '52rem' : null
+        }}
       >
         {this.searchInputComponent(this.state)}
+        {this.props.gridToDisplay === 'INVENTORY_ITEM' && this.state.criteria &&
+          (strcmp(this.state.criteria, 'TAG_TYPE') || strcmp(this.state.criteria, 'ORDER_NUMBER')) &&
+          <React.Fragment>
+            <input
+              id='rangeFrom'
+              name='rangeFrom'
+              value={this.state.rangeFrom}
+              className={`${style.customInvItemInput} ${this.state.emptyInputClassName}`}
+              style={{ marginRight: '1px', marginLeft: '-2.5px' }}
+              onChange={this.customHandleInvItemValueChange}
+              placeholder={
+                this.context.intl.formatMessage({ id: `${config.labelBasePath}.main.range_from`, defaultMessage: `${config.labelBasePath}.main.range_from` })
+              }
+              {...this.state.emptyInputClassName && {
+                'data-tip': this.context.intl.formatMessage(
+                  {
+                    id: `${config.labelBasePath}.login.mandatory_login_empty`,
+                    defaultMessage: `${config.labelBasePath}.login.mandatory_login_empty`
+                  }
+                )
+              }}
+              {...this.state.emptyInputClassName && { 'data-for': 'SearchAndLoadTooltipemptyInputClassName' }}
+              {...this.state.emptyInputClassName && { 'data-offset': "{'left': 45, 'top': 8}" }}
+            />
+            <input
+              id='rangeTo'
+              name='rangeTo'
+              value={this.state.rangeTo}
+              className={`${style.customInvItemInput} ${this.state.emptyInputClassName}`}
+              onChange={this.customHandleInvItemValueChange}
+              placeholder={
+                this.context.intl.formatMessage({ id: `${config.labelBasePath}.main.range_to`, defaultMessage: `${config.labelBasePath}.main.range_to` })
+              }
+              {...this.state.emptyInputClassName && {
+                'data-tip': this.context.intl.formatMessage(
+                  {
+                    id: `${config.labelBasePath}.login.mandatory_login_empty`,
+                    defaultMessage: `${config.labelBasePath}.login.mandatory_login_empty`
+                  }
+                )
+              }}
+              {...this.state.emptyInputClassName && { 'data-for': 'SearchAndLoadTooltipemptyInputClassName' }}
+              {...this.state.emptyInputClassName && { 'data-offset': "{'left': 45, 'top': 8}" }}
+            />
+          </React.Fragment>
+        }
         <button
           className={`${style.button}`}
+          style={{ float: this.props.gridToDisplay === 'INVENTORY_ITEM' ? 'none' : 'left' }}
           disabled={
             this.state.isSearchButtonDisabled ||
             (this.props.gridToDisplay === 'HOLDING' && this.state.criteria === 'PIC' &&
@@ -930,6 +1088,7 @@ class SearchAndLoadGrid extends React.Component {
             (this.state.selectedHoldingType === null || this.state.selectedHoldingType === ''))
             ? style.customSearchPrompt : style.searchPrompt
           }
+          style={{ marginTop: this.props.gridToDisplay === 'INVENTORY_ITEM' ? '25px' : !strcmp(this.state.criteria, 'PIC') ? '46px' : null }}
         >
           {
             this.context.intl.formatMessage(
@@ -955,7 +1114,7 @@ class SearchAndLoadGrid extends React.Component {
           <option value='' />
           {this.state.dropdownOptions}
         </select>
-        {this.props.gridToDisplay === 'HOLDING' &&
+        {this.props.gridToDisplay === 'HOLDING' && !this.props.isFromPetMovement &&
           <div id='selectType'
             className={style.selectType}>
             <select
@@ -988,7 +1147,7 @@ class SearchAndLoadGrid extends React.Component {
     }
     if ((this.props.userIsLinkedToOneHolding || this.props.userIsLinkedToTwoOrMoreHoldings) ||
       (this.state.userIsLinkedToOneHolding || this.state.userIsLinkedToTwoOrMoreHoldings)) {
-      if (!this.props.searchFromPopup) {
+      if (!this.props.searchFromPopup && !this.props.isSecondary) {
         return null
       }
     }
@@ -1151,7 +1310,7 @@ class SearchAndLoadGrid extends React.Component {
           </form>
         }
         {
-          ['INVENTORY_ITEM'].includes(this.props.gridToDisplay) &&
+          ['INVENTORY_ITEM'].includes(this.props.gridToDisplay) && !this.props.isSecondary &&
           <React.Fragment>
             <form id='customSearchAndLoadForm' className='js-containers-SearchStyles-module-search'>
               <label htmlFor='customSearchAndLoadInputValue' style={{ color: '#ffffff', marginBottom: '1rem', marginTop: '1rem' }}>
@@ -1165,7 +1324,6 @@ class SearchAndLoadGrid extends React.Component {
                 className={style.button}
                 onClick={(e) => {
                   e.preventDefault()
-                  this.setState({ rangeFrom: '', rangeTo: '' })
                   this.props.customSearch('SEARCH_BY_EAR_TAG_ID', this.state.customValue)
                   gaEventTracker(
                     'SEARCH',
@@ -1276,6 +1434,26 @@ class SearchAndLoadGrid extends React.Component {
             </select>
           </form>
         }
+        {
+          ['HOLDING'].includes(this.props.gridToDisplay) && !this.props.isSecondary && !this.props.searchFromPopup && (
+            <HoldingSearch waitForSearch={this.props.waitForSearch} holdingTypes={this.state.holdingTypes} />
+          )
+        }
+        {
+          ['HOLDING_RESPONSIBLE'].includes(this.props.gridToDisplay) && !this.props.isSecondary && !this.props.searchFromPopup && (
+            <HoldingResponsibleSearch waitForSearch={this.props.waitForSearch} />
+          )
+        }
+        {
+          ['ANIMAL'].includes(this.props.gridToDisplay) && !this.props.isSecondary && !this.props.searchFromPopup && (
+            <AnimalSearch waitForSearch={this.props.waitForSearch} />
+          )
+        }
+        {
+          ['FLOCK'].includes(this.props.gridToDisplay) && !this.props.isSecondary && !this.props.searchFromPopup && (
+            <FlockSearch waitForSearch={this.props.waitForSearch} />
+          )
+        }
       </div>
     )
   }
@@ -1295,11 +1473,13 @@ const mapStateToProps = state => ({
   POPULATION_ID: state.formToGridAfterSaveReducer.POPULATION_ID,
   LAB_SAMPLE_ID: state.formToGridAfterSaveReducer.LAB_SAMPLE_ID,
   LAB_TEST_TYPE_PKID: state.formToGridAfterSaveReducer.LAB_TEST_TYPE_PKID,
+  RFID_NUMBER: state.formToGridAfterSaveReducer.RFID_NUMBER,
   selectedGridRows: state.selectedGridRows.gridId,
   noResults: state.searchAndLoad.noResults,
   aFilterHasBeenUsed: state.searchAndLoad.aFilterHasBeenUsed,
   userIsLinkedToOneHolding: state.linkedHolding.userIsLinkedToOneHolding,
-  userIsLinkedToTwoOrMoreHoldings: state.linkedHolding.userIsLinkedToTwoOrMoreHoldings
+  userIsLinkedToTwoOrMoreHoldings: state.linkedHolding.userIsLinkedToTwoOrMoreHoldings,
+  getUserGroups: state.userInfoReducer.getUsers
 })
 
 const mapDispatchToProps = dispatch => ({

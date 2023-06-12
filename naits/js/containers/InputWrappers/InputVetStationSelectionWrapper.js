@@ -8,12 +8,12 @@ import { ComponentManager, ResultsGrid } from 'components/ComponentsIndex'
 import { alertUser } from 'tibro-components'
 import { store } from 'tibro-redux'
 import { menuConfig } from 'config/menuConfig'
+import { disableEvents } from 'functions/utils'
 
 class InputVetStationSelectionWrapper extends React.Component {
   constructor (props) {
     super(props)
     this.state = {
-      events: ['input', 'keydown', 'keyup', 'mousedown', 'mouseup', 'select', 'contextmenu', 'drop'],
       showSearchPopup: false,
       elementIdName: 'root_pet_passport.basic_info_HOLDING_NAME',
       altElementIdName: 'root_pet_passport.basic_info_PET_ID',
@@ -34,9 +34,9 @@ class InputVetStationSelectionWrapper extends React.Component {
     this.props.gridHierarchy.map(singleGrid => {
       if (singleGrid.gridType === 'PET') {
         const petGrid = singleGrid
-        if (petGrid.row['PET.OBJECT_ID'] && petGrid.row['PET.PET_ID']) {
+        if (petGrid.row['PET.OBJECT_ID'] && petGrid.row['PET.PET_TAG_ID']) {
           petObjectId = petGrid.row['PET.OBJECT_ID']
-          petId = petGrid.row['PET.PET_ID']
+          petId = petGrid.row['PET.PET_TAG_ID']
         }
       }
     })
@@ -101,9 +101,7 @@ class InputVetStationSelectionWrapper extends React.Component {
     }
 
     vetStationInput.onclick = this.displayPopupOnClick
-    this.state.events.forEach(event => {
-      vetStationInput.addEventListener(event, function (e) { e.preventDefault() })
-    })
+    disableEvents(vetStationInput)
 
     let elementPrefix = vetStationInput.id.replace('root_', '')
     elementPrefix = elementPrefix.replace(`_${this.state.fieldIdName}`, '')

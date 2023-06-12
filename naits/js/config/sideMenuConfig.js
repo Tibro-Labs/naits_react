@@ -16,6 +16,7 @@ export function sideMenuConfig (requestedSideMenu, context) {
               FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.side_bar_farm_details`
             },
           FUNCTION: 'form',
+          INPUT_WRAPPER: 'HoldingFormSecondLevelInputWrapper',
           TYPE: 'HOLDING'
         },
         {
@@ -34,6 +35,7 @@ export function sideMenuConfig (requestedSideMenu, context) {
           LINKNOTE: null,
           LINKEDTABLE: 'HOLDING',
           TYPE: 'HOLDING_RESPONSIBLE',
+          INPUT_WRAPPER: 'HoldingKeeperInputWrapper',
           GENERATE_CORE: 'HOLDING_RESPONSIBLE'
         }, {
           ID: 'list_item_holding_herder',
@@ -52,7 +54,7 @@ export function sideMenuConfig (requestedSideMenu, context) {
           LINKEDTABLE: 'HOLDING',
           TYPE: 'HOLDING_RESPONSIBLE',
           GENERATE_CORE: 'HOLDING_RESPONSIBLE',
-          DISABLE_FOR: ['7']
+          DISABLE_FOR: ['7', '15', '16', '17']
         }, {
           ID: 'list_item_holding_associated',
           ...context
@@ -71,6 +73,42 @@ export function sideMenuConfig (requestedSideMenu, context) {
           TYPE: 'HOLDING_RESPONSIBLE',
           GENERATE_CORE: 'HOLDING_RESPONSIBLE'
         }, {
+          ID: 'list_item_holding_membership',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.holding.holding_membership`, defaultMessage: `${config.labelBasePath}.main.holding.holding_membership` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.holding.holding_membership`, defaultMessage: `${config.labelBasePath}.main.holding.holding_membership` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.holding_membership`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.holding_membership`
+            },
+          FUNCTION: 'grid',
+          LINKNAME: 'HOLDING_MEMBER_OF',
+          LINKNOTE: null,
+          LINKEDTABLE: 'HOLDING',
+          TYPE: 'HOLDING_RESPONSIBLE',
+          GENERATE_CORE: 'HOLDING_RESPONSIBLE'
+        }, {
+          ID: 'list_item_holding_keeper_history',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.holding.keeper_history`, defaultMessage: `${config.labelBasePath}.main.holding.keeper_history` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.holding.keeper_history`, defaultMessage: `${config.labelBasePath}.main.holding.keeper_history` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.keeper_history`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.keeper_history`
+            },
+          FUNCTION: 'grid',
+          TYPE: 'HOLDING_RESPONSIBLE',
+          LINKNAME: 'HOLDING_RESPONSIBLE_HISTORY',
+          DISABLE_ADD_ROW: true,
+          DISABLE_EDIT: true,
+          DISABLE_FORM_EDIT: true,
+          CUSTOM_WS: 'GET_HOLDING_KEEPER_HISTORY'
+        },
+        {
           ID: 'movement_document',
           CUSTOM_GRID_ID: 'outgoing_movement_doc',
           ...context
@@ -87,11 +125,31 @@ export function sideMenuConfig (requestedSideMenu, context) {
           DISABLE_EDIT: true,
           DISABLE_FORM_EDIT: 'submit',
           ISCONTAINER: true,
-          ACTIONS_ENABLED: ['change_movement_doc_status', 'omit_release'],
-          MULTIGRID: { ITEMS: 2, CRITERIA: 'PARENT_ID,STATUS', FIRST_VALUE: 'DRAFT', SECOUND_VALUE: 'NOTIN-DRAFT', MAIN_CRIT: 'OBJECT_ID' },
-          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS',
-          DISABLE_FOR: ['7']
-        }, {
+          ACTIONS_ENABLED: ['change_movement_doc_status', 'omit_release', 'change_herd_movement_doc_status'],
+          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS_SORTED',
+          DISABLE_FOR: ['7', '15', '16', '17']
+        },
+        {
+          ID: 'finished_movement_document',
+          CUSTOM_GRID_ID: 'finished_outgoing_movement_doc',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.movement_doc_outgoing_finished`, defaultMessage: `${config.labelBasePath}.main.movement_doc_outgoing_finished` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.movement_doc_outgoing_finished`, defaultMessage: `${config.labelBasePath}.main.movement_doc_outgoing_finished` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.movement_doc`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.movement_doc`
+            },
+          FUNCTION: 'grid',
+          TYPE: 'MOVEMENT_DOC',
+          DISABLE_EDIT: true,
+          DISABLE_FORM_EDIT: 'submit',
+          ISCONTAINER: true,
+          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS_SORTED',
+          DISABLE_FOR: ['7', '15', '16', '17']
+        },
+        {
           ID: 'movement_document_incoming',
           CUSTOM_GRID_ID: 'incoming_movement_doc',
           ...context
@@ -108,10 +166,31 @@ export function sideMenuConfig (requestedSideMenu, context) {
           DISABLE_EDIT: true,
           DISABLE_FORM_EDIT: 'submit',
           ISCONTAINER: true,
-          ACTIONS_ENABLED: ['change_movement_doc_status'],
-          MULTIGRID: { ITEMS: 2, CRITERIA: 'DESTINATION_HOLDING_PIC,STATUS', FIRST_VALUE: 'DRAFT', SECOUND_VALUE: 'NOTIN-DRAFT', MAIN_CRIT: 'PIC' },
-          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS'
-        }, {
+          ACTIONS_ENABLED: ['change_movement_doc_status', 'change_incoming_herd_movement_doc_status'],
+          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS_SORTED',
+          DISABLE_FOR: ['15', '16', '17']
+        },
+        {
+          ID: 'finished_movement_document_incoming',
+          CUSTOM_GRID_ID: 'finished_incoming_movement_doc',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.movement_doc_incoming_finished`, defaultMessage: `${config.labelBasePath}.main.movement_doc_incoming_finished` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.movement_doc_incoming_finished`, defaultMessage: `${config.labelBasePath}.main.movement_doc_incoming_finished` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.movement_doc_incoming_finished`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.movement_doc_incoming_finished`
+            },
+          FUNCTION: 'grid',
+          TYPE: 'MOVEMENT_DOC',
+          DISABLE_EDIT: true,
+          DISABLE_FORM_EDIT: 'submit',
+          ISCONTAINER: true,
+          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS_SORTED',
+          DISABLE_FOR: ['15', '16', '17']
+        },
+        {
           ID: 'list_item_animal',
           ...context
             ? {
@@ -125,13 +204,35 @@ export function sideMenuConfig (requestedSideMenu, context) {
           FUNCTION: 'grid',
           TYPE: 'ANIMAL',
           ISCONTAINER: true,
-          ACTIONS_ENABLED: ['retire', 'activity', 'movement', 'generateDeathCertificates'],
-          MULTIGRID: { ITEMS: 2, CRITERIA: 'PARENT_ID,STATUS', FIRST_VALUE: 'IN-VALID-PREMORTEM', SECOUND_VALUE: 'NOTIN-VALID-PREMORTEM', MAIN_CRIT: 'OBJECT_ID' },
+          ACTIONS_ENABLED: ['retire', 'activity', 'movement', 'generateDeathCertificates', 'add_to_herd'],
+          MULTIGRID: { ITEMS: 2, CRITERIA: 'PARENT_ID,STATUS', FIRST_VALUE: 'IN-VALID-PREMORTEM', SECOUND_VALUE: 'NOTIN-VALID-PREMORTEM-DIED-SLAUGHTRD-DESTROYED-EXPORTED', MAIN_CRIT: 'OBJECT_ID' },
           INPUT_WRAPPER: 'InputWSValidationWrapper',
           FORM_EXTENSION: 'AnimalAge',
-          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS'
-        }, {
+          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS_SORTED',
+          DISABLE_FOR: ['15', '16', '17']
+        },
+        {
+          ID: 'list_item_terminated_animals',
+          CUSTOM_ID: 'TERMINATED_ANIMALS',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.terminated_animals`, defaultMessage: `${config.labelBasePath}.main.terminated_animals` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.terminated_animals`, defaultMessage: `${config.labelBasePath}.main.terminated_animals` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.animals`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.animals`
+            },
+          FUNCTION: 'grid',
+          TYPE: 'ANIMAL',
+          ISCONTAINER: true,
+          DISABLE_ADD_ROW: true,
+          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS_SORTED',
+          DISABLE_FOR: ['15', '16', '17']
+        },
+        {
           ID: 'list_item_animal_movement',
+          CUSTOM_ID: 'VALID_ANIMAL_MOVEMENTS',
           ...context
             ? {
               LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.animal_movement.general`, defaultMessage: `${config.labelBasePath}.main.animal_movement.general` }),
@@ -149,10 +250,34 @@ export function sideMenuConfig (requestedSideMenu, context) {
           ACTIONS_ENABLED: ['finish_movement'],
           DISABLE_EDIT: true,
           DISABLE_FORM_EDIT: true,
-          MULTIGRID: { ITEMS: 2, CRITERIA: 'STATUS', FIRST_VALUE: 'VALID', SECOUND_VALUE: 'FINISHED,CANCELED,REJECTED' },
-          CUSTOM_WS: 'GET_BYLINK_PER_STATUSES'
-        }, {
+          CUSTOM_WS: 'GET_BYLINK_PER_STATUSES_SORTED',
+          DISABLE_FOR: ['15', '16', '17']
+        },
+        {
+          ID: 'list_item_finished_animal_movement',
+          CUSTOM_ID: 'FINISHED_ANIMAL_MOVEMENTS',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.finished_animal_movement.general`, defaultMessage: `${config.labelBasePath}.main.finished_animal_movement.general` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.finished_animal_movement.general`, defaultMessage: `${config.labelBasePath}.main.finished_animal_movement.general` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.finished_animal_movement.general`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.finished_animal_movement.general`
+            },
+          FUNCTION: 'grid',
+          LINKNAME: 'ANIMAL_MOVEMENT_HOLDING',
+          LINKNOTE: null,
+          LINKEDTABLE: 'HOLDING',
+          TYPE: 'ANIMAL_MOVEMENT',
+          DISABLE_EDIT: true,
+          DISABLE_FORM_EDIT: true,
+          CUSTOM_WS: 'GET_BYLINK_PER_STATUSES_SORTED',
+          DISABLE_FOR: ['15', '16', '17']
+        },
+        {
           ID: 'list_item_outgoing_animals',
+          CUSTOM_ID: 'VALID_OUTGOING_ANIMAL_MOVEMENTS',
           ...context
             ? {
               LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.outgoing_animals.general`, defaultMessage: `${config.labelBasePath}.main.outgoing_animals.general` }),
@@ -167,10 +292,29 @@ export function sideMenuConfig (requestedSideMenu, context) {
           ACTIONS_ENABLED: ['cancel_movement'],
           DISABLE_EDIT: true,
           DISABLE_FORM_EDIT: true,
-          MULTIGRID: { ITEMS: 2, CRITERIA: 'SOURCE_HOLDING_ID,STATUS', FIRST_VALUE: 'VALID', 'SECOUND_VALUE': 'NOTVALID', MAIN_CRIT: 'PIC' },
-          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS',
-          DISABLE_FOR: ['7']
-        }, {
+          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS_SORTED',
+          DISABLE_FOR: ['7', '15', '16', '17']
+        },
+        {
+          ID: 'list_item_finished_outgoing_animals',
+          CUSTOM_ID: 'FINISHED_OUTGOING_ANIMAL_MOVEMENTS',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.finished_outgoing_animals.general`, defaultMessage: `${config.labelBasePath}.main.finished_outgoing_animals.general` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.finished_outgoing_animals.general`, defaultMessage: `${config.labelBasePath}.main.finished_outgoing_animals.general` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.finished_outgoing_animals.general`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.finished_outgoing_animals.general`
+            },
+          FUNCTION: 'grid',
+          TYPE: 'ANIMAL_MOVEMENT',
+          DISABLE_EDIT: true,
+          DISABLE_FORM_EDIT: true,
+          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS_SORTED',
+          DISABLE_FOR: ['7', '15', '16', '17']
+        },
+        {
           ID: 'list_item_flock',
           ...context
             ? {
@@ -186,10 +330,13 @@ export function sideMenuConfig (requestedSideMenu, context) {
           ISCONTAINER: true,
           MULTIGRID: { ITEMS: 2, CRITERIA: 'PARENT_ID,STATUS', FIRST_VALUE: 'IN-VALID-PREMORTEM', SECOUND_VALUE: 'NOTIN-VALID-PREMORTEM', MAIN_CRIT: 'OBJECT_ID' },
           INPUT_WRAPPER: 'InputWSValidationWrapper',
-          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS',
-          ACTIONS_ENABLED: ['retire', 'activity', 'movement']
-        }, {
+          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS_SORTED',
+          ACTIONS_ENABLED: ['retire', 'activity', 'movement'],
+          DISABLE_FOR: ['15', '16', '17']
+        },
+        {
           ID: 'list_item_flock_movement',
+          CUSTOM_ID: 'VALID_FLOCK_MOVEMENTS',
           ...context
             ? {
               LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.flock_movement.general`, defaultMessage: `${config.labelBasePath}.main.flock_movement.general` }),
@@ -207,11 +354,34 @@ export function sideMenuConfig (requestedSideMenu, context) {
           ACTIONS_ENABLED: ['finish_movement'],
           DISABLE_EDIT: true,
           DISABLE_FORM_EDIT: true,
-          MULTIGRID: { ITEMS: 2, CRITERIA: 'STATUS', FIRST_VALUE: 'VALID', SECOUND_VALUE: 'FINISHED, CANCELED, REJECTED' },
-          CUSTOM_WS: 'GET_BYLINK_PER_STATUSES'
+          CUSTOM_WS: 'GET_BYLINK_PER_STATUSES_SORTED',
+          DISABLE_FOR: ['15', '16', '17']
+        },
+        {
+          ID: 'list_item_finished_flock_movement',
+          CUSTOM_ID: 'FINISHED_FLOCK_MOVEMENTS',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.finished_flock_movement.general`, defaultMessage: `${config.labelBasePath}.main.finished_flock_movement.general` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.finished_flock_movement.general`, defaultMessage: `${config.labelBasePath}.main.finished_flock_movement.general` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.finished_flock_movement.general`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.finished_flock_movement.general`
+            },
+          FUNCTION: 'grid',
+          LINKNAME: 'FLOCK_MOVEMENT_HOLDING',
+          LINKEDTABLE: 'HOLDING',
+          TYPE: 'FLOCK_MOVEMENT',
+          ISCONTAINER: false,
+          DISABLE_EDIT: true,
+          DISABLE_FORM_EDIT: true,
+          CUSTOM_WS: 'GET_BYLINK_PER_STATUSES_SORTED',
+          DISABLE_FOR: ['15', '16', '17']
         },
         {
           ID: 'list_item_outgoing_flocks',
+          CUSTOM_ID: 'VALID_OUTGOING_FLOCK_MOVEMENTS',
           ...context
             ? {
               LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.outgoing_flocks.general`, defaultMessage: `${config.labelBasePath}.main.outgoing_flocks.general` }),
@@ -226,9 +396,193 @@ export function sideMenuConfig (requestedSideMenu, context) {
           ACTIONS_ENABLED: ['cancel_movement'],
           DISABLE_EDIT: true,
           DISABLE_FORM_EDIT: true,
-          MULTIGRID: { ITEMS: 2, CRITERIA: 'SOURCE_HOLDING_ID,STATUS', FIRST_VALUE: 'VALID', 'SECOUND_VALUE': 'NOTVALID', MAIN_CRIT: 'PIC' },
-          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS',
-          DISABLE_FOR: ['7']
+          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS_SORTED',
+          DISABLE_FOR: ['7', '15', '16', '17']
+        },
+        {
+          ID: 'list_item_finished_outgoing_flocks',
+          CUSTOM_ID: 'FINISHED_OUTGOING_FLOCK_MOVEMENTS',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.finished_outgoing_flocks.general`, defaultMessage: `${config.labelBasePath}.main.finished_outgoing_flocks.general` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.finished_outgoing_flocks.general`, defaultMessage: `${config.labelBasePath}.main.finished_outgoing_flocks.general` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.finished_outgoing_flocks.general`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.finished_outgoing_flocks.general`
+            },
+          FUNCTION: 'grid',
+          TYPE: 'FLOCK_MOVEMENT',
+          DISABLE_EDIT: true,
+          DISABLE_FORM_EDIT: true,
+          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS_SORTED',
+          DISABLE_FOR: ['7', '15', '16', '17']
+        },
+        {
+          ID: 'list_item_herd',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.herd`, defaultMessage: `${config.labelBasePath}.main.herd` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.herd`, defaultMessage: `${config.labelBasePath}.main.herd` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.herd`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.herd`
+            },
+          FUNCTION: 'grid',
+          TYPE: 'HERD',
+          ISCONTAINER: true,
+          MULTIGRID: { ITEMS: 2, CRITERIA: 'PARENT_ID,STATUS', FIRST_VALUE: 'IN-VALID', SECOUND_VALUE: 'NOTIN-VALID', MAIN_CRIT: 'OBJECT_ID' },
+          INPUT_WRAPPER: 'InputHerdWrapper',
+          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS_SORTED',
+          ACTIONS_ENABLED: ['retire_herd', 'herd_activity', 'herd_movement'],
+          DISABLE_FOR: ['7', '15', '16', '17']
+        },
+        {
+          ID: 'list_item_herd_movement',
+          CUSTOM_ID: 'VALID_HERD_MOVEMENTS',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.herd_movement.general`, defaultMessage: `${config.labelBasePath}.main.herd_movement.general` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.herd_movement.general`, defaultMessage: `${config.labelBasePath}.main.herd_movement.general` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.herd_movement.general`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.herd_movement.general`
+            },
+          FUNCTION: 'grid',
+          LINKNAME: 'HERD_MOVEMENT_HOLDING',
+          LINKNOTE: null,
+          LINKEDTABLE: 'HOLDING',
+          TYPE: 'HERD_MOVEMENT',
+          ACTIONS_ENABLED: ['handle_herd_movement'],
+          DISABLE_EDIT: true,
+          DISABLE_FORM_EDIT: true,
+          CUSTOM_WS: 'GET_BYLINK_PER_STATUSES_SORTED',
+          DISABLE_FOR: ['7', '15', '16', '17']
+        },
+        {
+          ID: 'list_item_finished_herd_movement',
+          CUSTOM_ID: 'FINISHED_HERD_MOVEMENTS',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.finished_herd_movement.general`, defaultMessage: `${config.labelBasePath}.main.finished_herd_movement.general` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.finished_herd_movement.general`, defaultMessage: `${config.labelBasePath}.main.finished_herd_movement.general` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.finished_herd_movement.general`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.finished_herd_movement.general`
+            },
+          FUNCTION: 'grid',
+          LINKNAME: 'HERD_MOVEMENT_HOLDING',
+          LINKNOTE: null,
+          LINKEDTABLE: 'HOLDING',
+          TYPE: 'HERD_MOVEMENT',
+          DISABLE_EDIT: true,
+          DISABLE_FORM_EDIT: true,
+          CUSTOM_WS: 'GET_BYLINK_PER_STATUSES_SORTED',
+          DISABLE_FOR: ['7', '15', '16', '17']
+        },
+        {
+          ID: 'list_item_outgoing_herds',
+          CUSTOM_ID: 'VALID_OUTGOING_HERD_MOVEMENTS',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.outgoing_herds.general`, defaultMessage: `${config.labelBasePath}.main.outgoing_herds.general` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.outgoing_herds.general`, defaultMessage: `${config.labelBasePath}.main.outgoing_herds.general` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.outgoing_herds.general`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.outgoing_herds.general`
+            },
+          FUNCTION: 'grid',
+          TYPE: 'HERD_MOVEMENT',
+          ACTIONS_ENABLED: ['cancel_herd_movement'],
+          DISABLE_EDIT: true,
+          DISABLE_FORM_EDIT: true,
+          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS_SORTED',
+          DISABLE_FOR: ['7', '15', '16', '17']
+        },
+        {
+          ID: 'list_item_finished_outgoing_herds',
+          CUSTOM_ID: 'FINISHED_OUTGOING_HERD_MOVEMENTS',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.finished_outgoing_herds.general`, defaultMessage: `${config.labelBasePath}.main.finished_outgoing_herds.general` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.finished_outgoing_herds.general`, defaultMessage: `${config.labelBasePath}.main.finished_outgoing_herds.general` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.finished_outgoing_herds.general`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.finished_outgoing_herds.general`
+            },
+          FUNCTION: 'grid',
+          TYPE: 'HERD_MOVEMENT',
+          DISABLE_EDIT: true,
+          DISABLE_FORM_EDIT: true,
+          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS_SORTED',
+          DISABLE_FOR: ['7', '15', '16', '17']
+        },
+        {
+          ID: 'list_item_ivinventory_item',
+          CUSTOM_ID: 'INVENTORY_ITEM_HOLDING',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.inventory_item.general`, defaultMessage: `${config.labelBasePath}.main.inventory_item.general` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.inventory_item.general`, defaultMessage: `${config.labelBasePath}.main.inventory_item.general` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.inventory_item.general`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.inventory_item.general`
+            },
+          FUNCTION: 'search',
+          COLUMN: 'PARENT_ID',
+          VALUE_FOR_COL: 'OBJECT_ID',
+          TYPE: 'INVENTORY_ITEM',
+          DISABLE_EDIT: true,
+          DISABLE_FORM_EDIT: true,
+          DISABLE_EDIT_FOR_SUBMODULES: true,
+          DISABLE_FOR: ['15', '16', '17']
+        },
+        {
+          ID: 'list_item_income_transfer',
+          CUSTOM_ID: 'TRANSFER_INCOME',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.org_units.income_transfer`, defaultMessage: `${config.labelBasePath}.main.org_units.income_transfer` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.org_units.income_transfer`, defaultMessage: `${config.labelBasePath}.main.org_units.income_transfer` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.org_units.income_transfer`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.org_units.income_transfer`
+            },
+          FUNCTION: 'grid',
+          TYPE: 'TRANSFER',
+          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS_SORTED',
+          // DISABLE_EDIT: true,
+          DISABLE_FORM_EDIT: true,
+          DISABLE_ADD_ROW: true,
+          DISABLE_FOR: ['15', '16', '17']
+          // CUSTOM_ROW_SELECT: true
+        },
+        {
+          ID: 'list_item_outcome_transfer',
+          CUSTOM_ID: 'TRANSFER_OUTCOME',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.org_units.outcome_transfer`, defaultMessage: `${config.labelBasePath}.main.org_units.outcome_transfer` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.org_units.outcome_transfer`, defaultMessage: `${config.labelBasePath}.main.org_units.outcome_transfer` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.org_units.outcome_transfer`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.org_units.outcome_transfer`
+            },
+          FUNCTION: 'grid',
+          TYPE: 'TRANSFER',
+          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS_SORTED',
+          DISABLE_FORM_EDIT: true,
+          DISABLE_ADD_ROW: true,
+          DISABLE_FOR: ['15', '16', '17'],
+          INPUT_WRAPPER: 'CombineTransferWrappers'
         },
         {
           ID: 'list_item_lab_sample',
@@ -247,7 +601,8 @@ export function sideMenuConfig (requestedSideMenu, context) {
           INPUT_WRAPPER: 'LabSampleFormSecondLevelInputWrapper',
           ACTIONS_ENABLED: ['sample_action'],
           MULTIGRID: { ITEMS: 2, CRITERIA: 'HOLDING_PIC,STATUS', FIRST_VALUE: 'COLLECTED', 'SECOUND_VALUE': 'NOTCOLLECTED', MAIN_CRIT: 'PIC' },
-          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS'
+          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS',
+          DISABLE_FOR: ['15', '16', '17']
         },
         {
           ID: 'list_item_export_quarantine',
@@ -266,7 +621,7 @@ export function sideMenuConfig (requestedSideMenu, context) {
           LINKEDTABLE: 'HOLDING',
           TYPE: 'QUARANTINE',
           ISCONTAINER: true,
-          DISABLE_FOR: ['7']
+          DISABLE_FOR: ['7', '15', '16', '17']
         },
         {
           ID: 'list_item_spot_check',
@@ -281,69 +636,7 @@ export function sideMenuConfig (requestedSideMenu, context) {
             },
           FUNCTION: 'grid',
           TYPE: 'SPOT_CHECK',
-          DISABLE_FOR: ['7']
-        },
-        {
-          ID: 'list_item_ivinventory_item',
-          ...context
-            ? {
-              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.inventory_item.general`, defaultMessage: `${config.labelBasePath}.main.inventory_item.general` }),
-              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.inventory_item.general`, defaultMessage: `${config.labelBasePath}.main.inventory_item.general` })
-            }
-            : {
-              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.inventory_item.general`,
-              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.inventory_item.general`
-            },
-          FUNCTION: 'search',
-          COLUMN: 'PARENT_ID',
-          VALUE_FOR_COL: 'OBJECT_ID',
-          TYPE: 'INVENTORY_ITEM',
-          DISABLE_EDIT: true
-        },
-        {
-          ID: 'list_item_income_transfer',
-          CUSTOM_ID: 'TRANSFER_INCOME',
-          ...context
-            ? {
-              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.org_units.income_transfer`, defaultMessage: `${config.labelBasePath}.main.org_units.income_transfer` }),
-              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.org_units.income_transfer`, defaultMessage: `${config.labelBasePath}.main.org_units.income_transfer` })
-            }
-            : {
-              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.org_units.income_transfer`,
-              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.org_units.income_transfer`
-            },
-          FUNCTION: 'grid',
-          TYPE: 'TRANSFER',
-          CONJUNCTION: 'AND,AND',
-          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS',
-          MULTIGRID: { ITEMS: 2, CRITERIA: 'DESTINATION_OBJ_ID,STATUS', FIRST_VALUE: 'IN-VALID-DRAFT-DELIVERED', SECOUND_VALUE: 'NOTIN-VALID-DRAFT-DELIVERED', MAIN_CRIT: 'OBJECT_ID' },
-          ACTIONS_ENABLED: ['move_inventory_item'],
-          // DISABLE_EDIT: true,
-          DISABLE_FORM_EDIT: true,
-          DISABLE_ADD_ROW: true,
-          CUSTOM_ROW_SELECT: true
-        },
-        {
-          ID: 'list_item_outcome_transfer',
-          CUSTOM_ID: 'TRANSFER_OUTCOME',
-          ...context
-            ? {
-              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.org_units.outcome_transfer`, defaultMessage: `${config.labelBasePath}.main.org_units.outcome_transfer` }),
-              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.org_units.outcome_transfer`, defaultMessage: `${config.labelBasePath}.main.org_units.outcome_transfer` })
-            }
-            : {
-              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.org_units.outcome_transfer`,
-              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.org_units.outcome_transfer`
-            },
-          FUNCTION: 'grid',
-          TYPE: 'TRANSFER',
-          CONJUNCTION: 'AND,AND',
-          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS',
-          MULTIGRID: { ITEMS: 2, CRITERIA: 'PARENT_ID,STATUS', FIRST_VALUE: 'IN-VALID-DRAFT', SECOUND_VALUE: 'NOTIN-VALID-DRAFT', MAIN_CRIT: 'OBJECT_ID' },
-          ACTIONS_ENABLED: ['move_inventory_item'],
-          DISABLE_FORM_EDIT: true,
-          DISABLE_ADD_ROW: true,
-          INPUT_WRAPPER: 'CombineTransferWrappers'
+          DISABLE_FOR: ['7', '15', '16', '17']
         },
         {
           ID: 'list_item_svarog_org_units',
@@ -361,11 +654,12 @@ export function sideMenuConfig (requestedSideMenu, context) {
           LINKNOTE: null,
           LINKEDTABLE: 'HOLDING',
           TYPE: 'SVAROG_ORG_UNITS',
-          DISABLE_FOR: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15'],
+          DISABLE_FOR: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '17', '18', '19'],
           DISABLE_FORM_EDIT: 'submit'
         },
         {
           ID: 'list_item_pet',
+          CUSTOM_ID: 'ALL_PETS',
           ...context
             ? {
               LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.pet.general`, defaultMessage: `${config.labelBasePath}.main.pet.general` }),
@@ -379,9 +673,28 @@ export function sideMenuConfig (requestedSideMenu, context) {
           TYPE: 'PET',
           ISCONTAINER: true,
           INPUT_WRAPPER: 'PetFormInputWrapper',
-          MULTIGRID: { ITEMS: 2, CRITERIA: 'PARENT_ID,STATUS', FIRST_VALUE: 'IN-VALID', SECOUND_VALUE: 'NOTIN-VALID', MAIN_CRIT: 'OBJECT_ID' },
-          DISABLE_FOR: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14'],
-          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS'
+          FORM_EXTENSION: 'PetAge',
+          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS',
+          DISABLE_FOR: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '16', '18', '19']
+        },
+        {
+          ID: 'list_item_terminated_pet',
+          CUSTOM_ID: 'TERMINATED_PETS',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.terminated_pets`, defaultMessage: `${config.labelBasePath}.main.terminated_pets` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.terminated_pets`, defaultMessage: `${config.labelBasePath}.main.terminated_pets` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.terminated_pets`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.terminated_pets`
+            },
+          FUNCTION: 'grid',
+          TYPE: 'PET',
+          ISCONTAINER: true,
+          INPUT_WRAPPER: 'PetFormInputWrapper',
+          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS',
+          DISABLE_FOR: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '16', '18', '19']
         },
         // {
         //   ID: 'list_item_stray_pet',
@@ -420,12 +733,13 @@ export function sideMenuConfig (requestedSideMenu, context) {
           INPUT_WRAPPER: 'InputPetSelectionWrapper',
           MULTIGRID: { ITEMS: 2, CRITERIA: 'HOLDING_OBJ_ID,STATUS', FIRST_VALUE: 'IN-VALID', SECOUND_VALUE: 'NOTIN-VALID', MAIN_CRIT: 'OBJECT_ID' },
           DISABLE_EDIT: true,
-          DISABLE_FOR: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15'],
+          DISABLE_FOR: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '17', '18', '19'],
           CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS'
         },
         {
           ID: 'list_item_outgoing_pets',
           CUSTOM_ID: 'OUTGOING_MOVEMENT',
+          CUSTOM_GRID_ID: 'RELEASED_PETS',
           ...context
             ? {
               LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.outgoing_pets`, defaultMessage: `${config.labelBasePath}.main.outgoing_pets` }),
@@ -436,11 +750,13 @@ export function sideMenuConfig (requestedSideMenu, context) {
               FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.outgoing_pets`
             },
           FUNCTION: 'grid',
-          TYPE: 'PET_MOVEMENT',
+          TYPE: 'PET',
           CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS',
-          MULTIGRID: { ITEMS: 2, CRITERIA: 'SOURCE_HOLDING_PIC,STATUS', FIRST_VALUE: 'NOTIN-FINISHED', SECOUND_VALUE: 'IN-FINISHED', MAIN_CRIT: 'PIC' },
           DISABLE_ADD_ROW: true,
-          DISABLE_EDIT: true
+          DISABLE_EDIT: true,
+          DISABLE_FORM_EDIT: 'delete',
+          DISABLE_EDIT_FOR_SUBMODULES: 'delete',
+          DISABLE_FOR: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '16', '18', '19']
         },
         {
           ID: 'list_item_incoming_pets',
@@ -456,10 +772,32 @@ export function sideMenuConfig (requestedSideMenu, context) {
             },
           FUNCTION: 'grid',
           TYPE: 'PET_MOVEMENT',
-          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS',
-          MULTIGRID: { ITEMS: 2, CRITERIA: 'HOLDING_OBJ_ID,STATUS', FIRST_VALUE: 'NOTIN-FINISHED', SECOUND_VALUE: 'IN-FINISHED', MAIN_CRIT: 'OBJECT_ID' },
+          SEARCH_PARAMS: { SEARCH_CRITERIA: 'HOLDING_OBJ_ID' },
+          CUSTOM_WS: 'GET_DATA_WITH_FILTER',
           DISABLE_ADD_ROW: true,
-          DISABLE_EDIT: true
+          DISABLE_EDIT: true,
+          DISABLE_FORM_EDIT: 'delete',
+          DISABLE_EDIT_FOR_SUBMODULES: 'delete',
+          DISABLE_FOR: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '16', '18', '19']
+        },
+        {
+          ID: 'list_item_pet_quarantine_shelter',
+          CUSTOM_ID: 'PET_QUARANTINE',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.pet_quarantine`, defaultMessage: `${config.labelBasePath}.main.pet_quarantine` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.pet_quarantine`, defaultMessage: `${config.labelBasePath}.main.pet_quarantine` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.pet_quarantine`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.pet_quarantine`
+            },
+          FUNCTION: 'grid',
+          TYPE: 'PET_QUARANTINE',
+          CUSTOM_WS: 'GET_BYPARENTID',
+          IS_CONTAINER: true,
+          INPUT_WRAPPER: 'PetQuarantineInputWrapper',
+          DISABLE_FOR: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '16', '17', '18', '19']
         }
         // {
         //   ID: 'list_item_pet_passport_request',
@@ -492,6 +830,13 @@ export function sideMenuConfig (requestedSideMenu, context) {
         },
         '15': {
           ID: 'animal_shelter',
+          TYPE: '15',
+          FOR_OBJECTS: ['PET'],
+          ACTIONS_ENABLED: ['pet_activity', 'pet_status', 'pet_movement', 'pet_quarantine'],
+          ADDITIONAL_MENU_ITEMS: ['CollectionLocation', 'ReleaseLocation']
+        },
+        '17': {
+          ID: 'veterinary_clinic',
           TYPE: '15',
           FOR_OBJECTS: ['PET'],
           ACTIONS_ENABLED: ['pet_activity', 'pet_status', 'pet_movement'],
@@ -652,6 +997,7 @@ export function sideMenuConfig (requestedSideMenu, context) {
           LINKNOTE: null,
           LINKEDTABLE: 'HOLDING_RESPONSIBLE',
           TYPE: 'HOLDING',
+          INPUT_WRAPPER: 'HoldingResponsibleLinkInputWrapper',
           ISCONTAINER: true
           // GENERATE_CORE: 'HOLDING'
         }, {
@@ -690,6 +1036,25 @@ export function sideMenuConfig (requestedSideMenu, context) {
           TYPE: 'HOLDING',
           ISCONTAINER: true,
           DISABLE_EDIT: true
+        }, {
+          ID: 'list_item_holding_members',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.holding.holding_members`, defaultMessage: `${config.labelBasePath}.main.holding.holding_members` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.holding.holding_members`, defaultMessage: `${config.labelBasePath}.main.holding.holding_members` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.holding_members`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.holding_members`
+            },
+          FUNCTION: 'grid',
+          LINKNAME: 'HOLDING_MEMBER_OF',
+          LINKNOTE: null,
+          LINKEDTABLE: 'HOLDING_RESPONSIBLE',
+          TYPE: 'HOLDING',
+          ISCONTAINER: true,
+          DISABLE_EDIT: true,
+          DISABLE_FOR: ['1']
         }, {
           ID: 'list_item_pet_owner',
           ...context
@@ -764,13 +1129,19 @@ export function sideMenuConfig (requestedSideMenu, context) {
         //   DISABLE_EDIT: true,
         //   CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS'
         // }
-      ]
+      ],
+      SUB_MODULES: {
+        'HOLDER': {
+          ID: 'holder',
+          TYPE: 'HOLDER'
+        }
+      }
     },
 
     SIDE_MENU_ANIMAL: {
       LIST_OF_ITEMS: [
         {
-          ID: 'list_item_animal',
+          ID: 'list_item_animal_info',
           ...context
             ? {
               LABEL: context.formatMessage({ id: `${config.labelBasePath}.animal.edit_animal_info`, defaultMessage: `${config.labelBasePath}.animal.edit_animal_info` }),
@@ -892,6 +1263,7 @@ export function sideMenuConfig (requestedSideMenu, context) {
           FUNCTION: 'form',
           TYPE: 'PET',
           INPUT_WRAPPER: 'PetFormSecondLevelInputWrapper',
+          FORM_EXTENSION: 'PetAge',
           HIDE_FOR_SUBMODULES: false
         },
         {
@@ -1035,7 +1407,29 @@ export function sideMenuConfig (requestedSideMenu, context) {
           TYPE: 'PET_MOVEMENT',
           CUSTOM_WS: 'GET_BYPARENTID',
           DISABLE_ADD_ROW: true,
-          DISABLE_EDIT: true
+          DISABLE_EDIT: true,
+          DISABLE_FORM_EDIT: 'delete',
+          DISABLE_EDIT_FOR_SUBMODULES: 'delete'
+        },
+        {
+          ID: 'list_item_pet_quarantine',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.pet_quarantine`, defaultMessage: `${config.labelBasePath}.main.pet_quarantine` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.pet_quarantine`, defaultMessage: `${config.labelBasePath}.main.pet_quarantine` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.side_pet_quarantine`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.side_pet_quarantine`
+            },
+          FUNCTION: 'grid',
+          LINKNAME: 'PET_QUARANTINE',
+          LINKNOTE: null,
+          LINKEDTABLE: 'PET',
+          TYPE: 'PET_QUARANTINE',
+          DISABLE_ADD_ROW: true,
+          DISABLE_FORM_EDIT: true,
+          DISABLE_EDIT_FOR_SUBMODULES: true
         }
       ]
     },
@@ -1113,7 +1507,7 @@ export function sideMenuConfig (requestedSideMenu, context) {
           INPUT_WRAPPER: 'PetPassportReadonlyInputWrapper'
         },
         {
-          ID: 'list_item_pet',
+          ID: 'list_item_health_passport_pet',
           ...context
             ? {
               LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.single_pet`, defaultMessage: `${config.labelBasePath}.main.single_pet` }),
@@ -1127,7 +1521,9 @@ export function sideMenuConfig (requestedSideMenu, context) {
           TYPE: 'PET',
           SEARCH_PARAMS: { SEARCH_CRITERIA: 'PET_ID' },
           CUSTOM_WS: 'GET_DATA_WITH_FILTER',
-          DISABLE_FORM_EDIT: 'delete'
+          DISABLE_FORM_EDIT: true,
+          DISABLE_EDIT: true,
+          DISABLE_EDIT_FOR_SUBMODULES: true
         }
       ]
     },
@@ -1397,6 +1793,165 @@ export function sideMenuConfig (requestedSideMenu, context) {
       ]
     },
 
+    SIDE_MENU_RFID_INPUT: {
+      LIST_OF_ITEMS: [
+        {
+          ID: 'list_item_rfid',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.rfid`, defaultMessage: `${config.labelBasePath}.main.rfid` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.rfid`, defaultMessage: `${config.labelBasePath}.main.rfid` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.rfid`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.rfid`
+            },
+          FUNCTION: 'form',
+          TYPE: 'RFID_INPUT',
+          INPUT_WRAPPER: 'RfidFormInputWrapper'
+        },
+        {
+          ID: 'list_item_rfid_input_state',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.rfid_input_state.general`, defaultMessage: `${config.labelBasePath}.main.rfid_input_state.general` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.rfid_input_state.general`, defaultMessage: `${config.labelBasePath}.main.rfid_input_state.general` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.rfid_input_state.general`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.rfid_input_state.general`
+            },
+          FUNCTION: 'grid',
+          TYPE: 'RFID_INPUT_STATE',
+          CUSTOM_WS: 'GET_BY_PARENTID_ASC_OR_DESC',
+          DISABLE_FORM_EDIT: 'delete'
+        },
+        {
+          ID: 'list_item_rfid_input_results',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.rfid_input_result.general`, defaultMessage: `${config.labelBasePath}.main.rfid_input_result.general` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.rfid_input_result.general`, defaultMessage: `${config.labelBasePath}.main.rfid_input_result.general` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.rfid_input_result.general`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.rfid_input_result.general`
+            },
+          FUNCTION: 'grid',
+          TYPE: 'RFID_INPUT_RESULT',
+          CUSTOM_WS: 'GET_BYPARENTID',
+          DISABLE_EDIT: true,
+          DISABLE_FORM_EDIT: true
+        }
+      ]
+    },
+
+    SIDE_MENU_RFID_INPUT_CVIRO: {
+      LIST_OF_ITEMS: [
+        {
+          ID: 'list_item_rfid',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.rfid`, defaultMessage: `${config.labelBasePath}.main.rfid` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.rfid`, defaultMessage: `${config.labelBasePath}.main.rfid` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.rfid`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.rfid`
+            },
+          FUNCTION: 'form',
+          TYPE: 'RFID_INPUT',
+          INPUT_WRAPPER: 'RfidFormInputWrapper'
+        },
+        {
+          ID: 'list_item_rfid_input_state',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.rfid_input_state.general`, defaultMessage: `${config.labelBasePath}.main.rfid_input_state.general` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.rfid_input_state.general`, defaultMessage: `${config.labelBasePath}.main.rfid_input_state.general` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.rfid_input_state.general`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.rfid_input_state.general`
+            },
+          FUNCTION: 'grid',
+          TYPE: 'RFID_INPUT_STATE',
+          CUSTOM_WS: 'GET_BY_PARENTID_ASC_OR_DESC',
+          DISABLE_FORM_EDIT: 'delete'
+        },
+        {
+          ID: 'list_item_rfid_input_results',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.rfid_input_result.general`, defaultMessage: `${config.labelBasePath}.main.rfid_input_result.general` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.rfid_input_result.general`, defaultMessage: `${config.labelBasePath}.main.rfid_input_result.general` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.rfid_input_result.general`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.rfid_input_result.general`
+            },
+          FUNCTION: 'grid',
+          TYPE: 'RFID_INPUT_RESULT',
+          CUSTOM_WS: 'GET_BYPARENTID',
+          DISABLE_EDIT: true,
+          DISABLE_FORM_EDIT: true
+        }
+      ]
+    },
+
+    SIDE_MENU_RFID_INPUT_FVIRO: {
+      LIST_OF_ITEMS: [
+        {
+          ID: 'list_item_rfid',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.rfid`, defaultMessage: `${config.labelBasePath}.main.rfid` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.rfid`, defaultMessage: `${config.labelBasePath}.main.rfid` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.rfid`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.rfid`
+            },
+          FUNCTION: 'form',
+          TYPE: 'RFID_INPUT',
+          INPUT_WRAPPER: 'RfidFormInputWrapper'
+        },
+        {
+          ID: 'list_item_rfid_input_state',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.rfid_input_state.general`, defaultMessage: `${config.labelBasePath}.main.rfid_input_state.general` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.rfid_input_state.general`, defaultMessage: `${config.labelBasePath}.main.rfid_input_state.general` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.rfid_input_state.general`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.rfid_input_state.general`
+            },
+          FUNCTION: 'grid',
+          TYPE: 'RFID_INPUT_STATE',
+          CUSTOM_WS: 'GET_BY_PARENTID_ASC_OR_DESC',
+          DISABLE_FORM_EDIT: 'delete'
+        },
+        {
+          ID: 'list_item_rfid_input_results',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.rfid_input_result.general`, defaultMessage: `${config.labelBasePath}.main.rfid_input_result.general` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.rfid_input_result.general`, defaultMessage: `${config.labelBasePath}.main.rfid_input_result.general` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.rfid_input_result.general`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.rfid_input_result.general`
+            },
+          FUNCTION: 'grid',
+          TYPE: 'RFID_INPUT_RESULT',
+          CUSTOM_WS: 'GET_BYPARENTID',
+          DISABLE_EDIT: true,
+          DISABLE_FORM_EDIT: true
+        }
+      ]
+    },
+
     SIDE_MENU_INVENTORY_ITEM: {
       LIST_OF_ITEMS: [
         {
@@ -1411,14 +1966,16 @@ export function sideMenuConfig (requestedSideMenu, context) {
               FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.inv_item`
             },
           FUNCTION: 'form',
-          TYPE: 'INVENTORY_ITEM'
+          TYPE: 'INVENTORY_ITEM',
+          DISABLE_EDIT: true,
+          DISABLE_FORM_EDIT: true
         }
       ]
     },
     SIDE_MENU_FLOCK: {
       LIST_OF_ITEMS: [
         {
-          ID: 'list_item_flock',
+          ID: 'list_item_flock_detail',
           ...context
             ? {
               LABEL: context.formatMessage({ id: `${config.labelBasePath}.flock.edit_flock_info`, defaultMessage: `${config.labelBasePath}.flock.edit_flock_info` }),
@@ -1434,7 +1991,7 @@ export function sideMenuConfig (requestedSideMenu, context) {
           // SELECTED_BY_DEFAULT: true
         },
         {
-          ID: 'list_item_flock_movement',
+          ID: 'list_item_flock_movement_detail',
           ...context
             ? {
               LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.flock_movement.general2`, defaultMessage: `${config.labelBasePath}.main.flock_movement.general2` }),
@@ -1467,9 +2024,7 @@ export function sideMenuConfig (requestedSideMenu, context) {
           LINKNOTE: null,
           LINKEDTABLE: 'FLOCK',
           LINKNAME: 'FLOCK_VACC_BOOK',
-          INPUT_WRAPPER: 'InputSearchCampaignWrapper'
-          // HIDE_FOR_SUBMODULES: false,
-          // DISABLE_EDIT_FOR_SUBMODULES: true
+          INPUT_WRAPPER: 'CombineHealthBookWrappers'
         },
         {
           ID: 'list_item_flock_history',
@@ -1486,9 +2041,97 @@ export function sideMenuConfig (requestedSideMenu, context) {
           TYPE: 'FLOCK',
           CUSTOM_WS: 'GET_HISTORY',
           DISABLE_EDIT: true,
+          DISABLE_FORM_EDIT: true,
           HIDE_FOR_SUBMODULES: false,
           DISABLE_EDIT_FOR_SUBMODULES: true
+        }
+      ]
+    },
 
+    SIDE_MENU_HERD: {
+      LIST_OF_ITEMS: [
+        {
+          ID: 'list_item_herd_detail',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.herd.edit_herd_info`, defaultMessage: `${config.labelBasePath}.herd.edit_herd_info` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.herd.edit_herd_info`, defaultMessage: `${config.labelBasePath}.herd.edit_herd_info` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.herd.edit_herd_info`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.herd.edit_herd_info`
+            },
+          FUNCTION: 'form',
+          TYPE: 'HERD',
+          INPUT_WRAPPER: 'InputHerdWrapper'
+        },
+        {
+          ID: 'list_item_herd_responsibles',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.herd.responsibles`, defaultMessage: `${config.labelBasePath}.main.herd.responsibles` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.herd.responsibles`, defaultMessage: `${config.labelBasePath}.main.herd.responsibles` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.herd.responsibles`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.herd.responsibles`
+            },
+          FUNCTION: 'grid',
+          TYPE: 'HOLDING_RESPONSIBLE',
+          CUSTOM_WS: 'GET_RESPONSIBLES_PER_HERD',
+          DISABLE_ADD_ROW: true,
+          DISABLE_FORM_EDIT: true
+        },
+        {
+          ID: 'list_item_animals',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.animal.general`, defaultMessage: `${config.labelBasePath}.main.animal.general` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.animal.general`, defaultMessage: `${config.labelBasePath}.main.animal.general` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.animal.general`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.animal.general`
+            },
+          FUNCTION: 'grid',
+          LINKNAME: 'ANIMAL_HERD',
+          LINKNOTE: null,
+          LINKEDTABLE: 'HERD',
+          TYPE: 'ANIMAL',
+          DISABLE_FORM_EDIT: true
+        },
+        {
+          ID: 'list_item_herd_health_book',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.herd.health_book`, defaultMessage: `${config.labelBasePath}.main.herd.health_book` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.herd.health_book`, defaultMessage: `${config.labelBasePath}.main.herd.health_book` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.herd.health_book`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.herd.health_book`
+            },
+          FUNCTION: 'grid',
+          TYPE: 'HERD_HEALTH_BOOK',
+          CUSTOM_WS: 'GET_BYPARENTID',
+          DISABLE_ADD_ROW: true
+        },
+        {
+          ID: 'list_item_herd_lab_sample',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.lab_sample`, defaultMessage: `${config.labelBasePath}.main.lab_sample` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.main.lab_sample`, defaultMessage: `${config.labelBasePath}.main.lab_sample` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.lab_sample`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.lab_sample`
+            },
+          FUNCTION: 'grid',
+          TYPE: 'LAB_SAMPLE',
+          ISCONTAINER: true,
+          MULTIGRID: { ITEMS: 2, CRITERIA: 'HERD_OBJ_ID,STATUS', FIRST_VALUE: 'COLLECTED', SECOUND_VALUE: 'NOTCOLLECTED', MAIN_CRIT: 'OBJECT_ID' },
+          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS'
         }
       ]
     },
@@ -1643,7 +2286,7 @@ export function sideMenuConfig (requestedSideMenu, context) {
           DISABLE_FOR: ['0']
         },
         {
-          ID: 'list_item_holding_details',
+          ID: 'list_item_holding_details_quarantine',
           ...context
             ? {
               LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.holding.general`, defaultMessage: `${config.labelBasePath}.main.holding.general` }),
@@ -1866,6 +2509,7 @@ export function sideMenuConfig (requestedSideMenu, context) {
       LIST_OF_ITEMS: [
         {
           ID: 'list_ivinventory_item',
+          CUSTOM_ID: 'INVENTORY_ITEM',
           ...context
             ? {
               LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.inventory_item.general`, defaultMessage: `${config.labelBasePath}.main.inventory_item.general` }),
@@ -1879,7 +2523,9 @@ export function sideMenuConfig (requestedSideMenu, context) {
           COLUMN: 'PARENT_ID',
           VALUE_FOR_COL: 'OBJECT_ID',
           TYPE: 'INVENTORY_ITEM',
-          DISABLE_EDIT: true
+          DISABLE_FORM_EDIT: 'closeAndDelete',
+          DISABLE_EDIT_FOR_SUBMODULES: 'closeAndDelete',
+          INPUT_WRAPPER: 'CombineDisableAndInvItemInputsWrapper'
         },
         {
           ID: 'list_item_income_transfer',
@@ -1895,14 +2541,11 @@ export function sideMenuConfig (requestedSideMenu, context) {
             },
           FUNCTION: 'grid',
           TYPE: 'TRANSFER',
-          CONJUNCTION: 'AND,AND',
-          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS',
-          MULTIGRID: { ITEMS: 2, CRITERIA: 'DESTINATION_OBJ_ID,STATUS', FIRST_VALUE: 'IN-VALID-DRAFT-DELIVERED', SECOUND_VALUE: 'NOTIN-VALID-DRAFT-DELIVERED', MAIN_CRIT: 'OBJECT_ID' },
-          ACTIONS_ENABLED: ['move_inventory_item'],
+          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS_SORTED',
           // DISABLE_EDIT: true,
           DISABLE_FORM_EDIT: true,
-          DISABLE_ADD_ROW: true,
-          CUSTOM_ROW_SELECT: true
+          DISABLE_ADD_ROW: true
+          // CUSTOM_ROW_SELECT: true
         },
         {
           ID: 'list_item_outcome_transfer',
@@ -1918,12 +2561,9 @@ export function sideMenuConfig (requestedSideMenu, context) {
             },
           FUNCTION: 'grid',
           TYPE: 'TRANSFER',
-          CONJUNCTION: 'AND,AND',
-          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS',
-          MULTIGRID: { ITEMS: 2, CRITERIA: 'PARENT_ID,STATUS', FIRST_VALUE: 'IN-VALID-DRAFT', SECOUND_VALUE: 'NOTIN-VALID-DRAFT', MAIN_CRIT: 'OBJECT_ID' },
-          ACTIONS_ENABLED: ['move_inventory_item'],
-          DISABLE_FORM_EDIT: 'delete',
-          INPUT_WRAPPER: 'CombineTransferWrappers'
+          CUSTOM_WS: 'GET_TABLE_WITH_MULTIPLE_FILTERS_SORTED',
+          DISABLE_FORM_EDIT: true,
+          DISABLE_ADD_ROW: true
         },
         {
           ID: 'list_item_order',
@@ -2108,7 +2748,7 @@ export function sideMenuConfig (requestedSideMenu, context) {
             },
           FUNCTION: 'form',
           TYPE: 'LAB_TEST_TYPE',
-          INPUT_WRAPPER: 'LabTestTypeDisableSaveInputWrapper'
+          DISABLE_FORM_EDIT: true
         }
       ]
     },
@@ -2128,7 +2768,7 @@ export function sideMenuConfig (requestedSideMenu, context) {
             },
           FUNCTION: 'form',
           TYPE: 'LAB_TEST_TYPE',
-          INPUT_WRAPPER: 'LabTestTypeDisableSaveInputWrapper'
+          DISABLE_FORM_EDIT: true
         }
       ]
     },
@@ -2167,6 +2807,25 @@ export function sideMenuConfig (requestedSideMenu, context) {
             },
           FUNCTION: 'grid',
           TYPE: 'FLOCK_MOVEMENT',
+          CUSTOM_WS: 'GET_TABLE_WITH_LIKE_FILTER',
+          SEARCH_PARAMS: { SEARCH_CRITERIA: 'MOVEMENT_DOC_ID', SEARCH_VALUE: 'CUSTOM' },
+          DISABLE_SELECT_ROW: true,
+          DISABLE_EDIT: true,
+          DISABLE_FORM_EDIT: true
+        },
+        {
+          ID: 'herd_movements',
+          ...context
+            ? {
+              LABEL: context.formatMessage({ id: `${config.labelBasePath}.form_labels.herd_movement.general`, defaultMessage: `${config.labelBasePath}.form_labels.herd_movement.general` }),
+              FLOATHELPER: context.formatMessage({ id: `${config.labelBasePath}.form_labels.herd_movement.general`, defaultMessage: `${config.labelBasePath}.form_labels.herd_movement.general` })
+            }
+            : {
+              LABEL: `CONTEXT_MISSING_${config.labelBasePath}.form_labels.herd_movement.general`,
+              FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.form_labels.help.herd_movement.general`
+            },
+          FUNCTION: 'grid',
+          TYPE: 'HERD_MOVEMENT',
           CUSTOM_WS: 'GET_TABLE_WITH_LIKE_FILTER',
           SEARCH_PARAMS: { SEARCH_CRITERIA: 'MOVEMENT_DOC_ID', SEARCH_VALUE: 'CUSTOM' },
           DISABLE_SELECT_ROW: true,
@@ -2341,7 +3000,7 @@ export function sideMenuConfig (requestedSideMenu, context) {
               LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.svarog_codes`,
               FLOATHELPER: `CONTEXT_MISSING_${config.labelBasePath}.main.help.svarog_codes`
             },
-          FUNCTION: 'grid',
+          FUNCTION: 'form',
           TYPE: 'SVAROG_CODES'
         },
         {

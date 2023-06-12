@@ -59,7 +59,7 @@ after_script:
   script:
     - mkdir -p ~/node_modules
     - ln -s ~/node_modules node_modules &>/dev/null
-    - npm install
+    - npm install --legacy-peer-deps
     - npm run test
 
 4_build_war:
@@ -78,7 +78,7 @@ after_script:
     #- ln -s ~/node_modules node_modules &>/dev/null
     - rm -rf node_modules/perun-components
     - rm -rf node_modules/perun-redux
-    - npm install
+    - npm install --legacy-peer-deps
     - npm version patch -m "Bump version to %s [ci_skip]"
     - npm run build-war
     - mkdir -p ~/JARS/georgia/
@@ -133,6 +133,7 @@ after_script:
     - ./ansible-gitlab-ci.sh georgia tomcat $CI_PROJECT_DIR/../triglav_rest
     - cp /home/gitlab-runner/JARS/georgia/triglav_rest.war $CI_PROJECT_DIR/
     - cp -r /home/gitlab-runner/UserManuals /opt/tomcats/georgia/webapps/
+    - cp -r /home/deploy/svarog.properties /opt/tomcats/georgia/webapps/triglav_rest/WEB-INF/classes/
 
   environment:
     name: $CI_BUILD_REF_NAME

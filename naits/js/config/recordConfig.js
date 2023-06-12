@@ -19,8 +19,8 @@ export default function recordConfig (selectedItem, context) {
         }, {
           ID: 'STATUS',
           ...context
-            ? { LABEL: context.formatMessage({ id: `${config.labelBasePath}.form_labels.holding_status`, defaultMessage: `${config.labelBasePath}.form_labels.holding_status` }) }
-            : { LABEL: `CONTEXT_MISSING_${config.labelBasePath}.form_labels.holding_status` },
+            ? { LABEL: context.formatMessage({ id: `${config.labelBasePath}.record_info.holding_status`, defaultMessage: `${config.labelBasePath}.record_info.holding_status` }) }
+            : { LABEL: `CONTEXT_MISSING_${config.labelBasePath}.record_info.holding_status` },
           VALUE: 'HOLDING.STATUS'
         }, {
           ID: 'TYPE',
@@ -98,6 +98,13 @@ export default function recordConfig (selectedItem, context) {
 
     PET: {
       CHOSEN_ITEM: [
+        {
+          ID: 'PET_TAG_ID',
+          ...context
+            ? { LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.pet.pet_tag_id`, defaultMessage: `${config.labelBasePath}.main.pet.pet_tag_id` }) }
+            : { LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.pet.pet_tag_id` },
+          VALUE: 'PET.PET_TAG_ID'
+        },
         {
           ID: 'PET_ID',
           ...context
@@ -527,6 +534,34 @@ export default function recordConfig (selectedItem, context) {
       ICON: 'icon-magnet'
     },
 
+    HERD: {
+      CHOSEN_ITEM: [
+        {
+          ID: 'HERD_ID',
+          ...context
+            ? { LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.herd.herd_id`, defaultMessage: `${config.labelBasePath}.main.herd.herd_id` }) }
+            : { LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.herd.herd_id` },
+          VALUE: 'HERD.HERD_ID'
+        },
+        {
+          ID: 'NAME',
+          ...context
+            ? { LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.herd.name`, defaultMessage: `${config.labelBasePath}.main.herd.name` }) }
+            : { LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.herd.name` },
+          VALUE: 'HERD.NAME'
+        },
+        {
+          ID: 'ANIMAL_TYPE',
+          ...context
+            ? { LABEL: context.formatMessage({ id: `${config.labelBasePath}.main.herd.animal_type`, defaultMessage: `${config.labelBasePath}.main.herd.animal_type` }) }
+            : { LABEL: `CONTEXT_MISSING_${config.labelBasePath}.main.herd.animal_type` },
+          VALUE: 'HERD.ANIMAL_TYPE',
+          ITEM_FUNC: translateCodeAction
+        }
+      ],
+      ICON: 'icon-magnet'
+    },
+
     QUARANTINE: {
       CHOSEN_ITEM: [
         {
@@ -761,6 +796,35 @@ export default function recordConfig (selectedItem, context) {
         }
       ],
       ICON: 'icon-th'
+    },
+
+    RFID_INPUT: {
+      CHOSEN_ITEM: [
+        {
+          ID: 'RFID_NUMBER',
+          ...context
+            ? { LABEL: context.formatMessage({ id: `${config.labelBasePath}.grid_labels.rfid_input.rfid_number`, defaultMessage: `${config.labelBasePath}.grid_labels.rfid_input.rfid_number` }) }
+            : { LABEL: `CONTEXT_MISSING_${config.labelBasePath}.grid_labels.rfid_input.rfid_number` },
+          VALUE: 'RFID_INPUT.RFID_NUMBER'
+        },
+        {
+          ID: 'IMPORT_TYPE',
+          ...context
+            ? { LABEL: context.formatMessage({ id: `${config.labelBasePath}.grid_labels.rfid_input.import_type`, defaultMessage: `${config.labelBasePath}.grid_labels.rfid_input.import_type` }) }
+            : { LABEL: `CONTEXT_MISSING_${config.labelBasePath}.grid_labels.rfid_input.import_type` },
+          VALUE: 'RFID_INPUT.IMPORT_TYPE',
+          ITEM_FUNC: translateCodeAction
+        },
+        {
+          ID: 'ANIMAL_TYPE',
+          ...context
+            ? { LABEL: context.formatMessage({ id: `${config.labelBasePath}.grid_labels.rfid_input.animal_type`, defaultMessage: `${config.labelBasePath}.grid_labels.rfid_input.animal_type` }) }
+            : { LABEL: `CONTEXT_MISSING_${config.labelBasePath}.grid_labels.rfid_input.animal_type` },
+          VALUE: 'RFID_INPUT.ANIMAL_TYPE',
+          ITEM_FUNC: translateCodeAction
+        }
+      ],
+      ICON: 'icon-magnet'
     },
 
     SVAROG_LABELS: {

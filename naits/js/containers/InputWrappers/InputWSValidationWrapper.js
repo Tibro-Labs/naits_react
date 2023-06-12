@@ -4,7 +4,7 @@ import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
 import { store } from 'tibro-redux'
 import { validateAnimalId, resetValidation } from 'backend/validationActions'
-import { transferAnimal, resetTransferAnimal } from 'backend/transferAction'
+import { transferAnimalOrFlock, resetTransferAnimal } from 'backend/transferAction'
 import { alertUser } from 'tibro-components'
 import { GridManager } from 'components/ComponentsIndex'
 import * as config from 'config/config'
@@ -72,8 +72,12 @@ class InputWSValidationWrapper extends React.Component {
                 object = this.props.gridHierarchy[0].gridId
                 destinationId = this.props.gridHierarchy[0].row[`${object}.OBJECT_ID`]
               }
-              store.dispatch(transferAnimal(this.props.svSession,
-                animalId, animalClass, destinationId, 'null', 'null', '0', '0', '0', '0'))
+              const paramsArray = [{
+                MASS_PARAM_ANIMAL_FLOCK_ID: animalId,
+                MASS_PARAM_HOLDING_OBJ_ID: destinationId,
+                MASS_PARAM_ANIMAL_CLASS: animalClass
+              }]
+              store.dispatch(transferAnimalOrFlock(this.props.svSession, paramsArray))
               store.dispatch(resetTransferAnimal())
               store.dispatch(resetValidation())
             },
@@ -251,7 +255,6 @@ class InputWSValidationWrapper extends React.Component {
   }
 
   render () {
-    // react jsonschema form
     return this.props.children
   }
 }

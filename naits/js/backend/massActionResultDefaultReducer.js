@@ -6,6 +6,8 @@ export function massActionResult (state = { result: null, executedActionType: nu
     case 'EXECUTE_ACTION_ON_ROWS': {
       return { ...state, result: action.payload, executedActionType: action.executedActionType, loading: false }
     }
+    case 'RESET_EXECUTE_ACTION_ON_ROWS':
+      return { ...state, result: null, executedActionType: null, loading: false }
     case 'MASS_PET_ACTION_PENDING': {
       return { ...state, result: action.payload, executedActionType: action.executedActionType, loading: true }
     }

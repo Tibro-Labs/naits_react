@@ -186,7 +186,7 @@ class UpdatePopulationStatus extends React.Component {
           }}
           onClick={this.showAlert}
         >
-          <p>
+          <p style={{ marginTop: '2px' }}>
             {this.context.intl.formatMessage({
               id: `${config.labelBasePath}.main.update_population_status`,
               defaultMessage: `${config.labelBasePath}.main.update_population_status`

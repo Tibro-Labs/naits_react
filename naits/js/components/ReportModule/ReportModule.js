@@ -23,40 +23,37 @@ class ReportModule extends React.Component {
       blankReports: null,
       displayInvoice: false,
       displayStatisticalReports: false,
-      userCanUseStatisticalReportTool: null
+      statistical_report: false,
+      invoice_report: false,
+      blank_report: false,
+      village_specific_report: false,
+      general_report: false,
+      availableReportTools: ['custom.statistical_report', 'custom.invoice_report', 'custom.blank_report',
+        'custom.village_specific_report', 'custom.general_report'
+      ]
     }
   }
 
   componentDidMount () {
-    // Check if the current user can use the statistical reports tool
-    this.checkIfCurrentUserCanUseTheStatReportsTool()
+    // Check if the user can use any of the report module tools
+    this.state.availableReportTools.forEach(reportTool => {
+      this.checkIfUserCanUseReportTool(reportTool)
+    })
   }
 
-  checkIfCurrentUserCanUseTheStatReportsTool = async () => {
+  checkIfUserCanUseReportTool = reportTool => {
     const server = config.svConfig.restSvcBaseUrl
-    let verbPath = config.svConfig.triglavRestVerbs.CHECK_IF_USER_CAN_USE_STATISTICAL_REPORT_TOOL
-    verbPath = verbPath.replace('%sessionId', this.props.session)
+    const verbPath = config.svConfig.triglavRestVerbs.CHECK_IF_USER_CAN_USE_REPORT_TOOL
     let url = `${server}${verbPath}`
-
-    try {
-      const res = await axios.get(url)
-      this.setState({ userCanUseStatisticalReportTool: res.data })
-    } catch (err) {
-      this.setState({
-        alert: alertUser(
-          true,
-          'error',
-          this.context.intl.formatMessage({
-            id: err,
-            defaultMessage: err
-          }),
-          null,
-          () => {
-            this.setState({ alert: false })
-          }
-        )
-      })
-    }
+    url = url.replace('%session', this.props.session)
+    url = url.replace('%permissionType', reportTool)
+    let splitReportTool = reportTool.split('.')
+    const finalReportTool = splitReportTool[1]
+    axios.get(url).then(res => {
+      if (res.data) {
+        this.setState({ [finalReportTool]: true })
+      }
+    }).catch(err => console.error(err))
   }
 
   clearSelection = () => {
@@ -137,88 +134,96 @@ class ReportModule extends React.Component {
     } else if (!reports && !blankReports) {
       return <div>
         <div className={sideMenuStyle.sideDiv}>
-          <div id='generalReports'>
-            <label>
-              {this.context.intl.formatMessage(
-                {
-                  id: `${config.labelBasePath}.main.general_reports`,
-                  defaultMessage: `${config.labelBasePath}.main.general_reports`
-                }
-              )}
-            </label>
+          {this.state.general_report && <React.Fragment>
+            <div id='generalReports'>
+              <label>
+                {this.context.intl.formatMessage(
+                  {
+                    id: `${config.labelBasePath}.main.general_reports`,
+                    defaultMessage: `${config.labelBasePath}.main.general_reports`
+                  }
+                )}
+              </label>
+              <br />
+              <button className={consoleStyle.conButton} onClick={this.generateGeneralReports}>
+                {this.context.intl.formatMessage(
+                  {
+                    id: `${config.labelBasePath}.main.display_general_reports`,
+                    defaultMessage: `${config.labelBasePath}.main.display_general_reports`
+                  }
+                )}
+              </button>
+            </div>
             <br />
-            <button className={consoleStyle.conButton} onClick={this.generateGeneralReports}>
-              {this.context.intl.formatMessage(
-                {
-                  id: `${config.labelBasePath}.main.display_general_reports`,
-                  defaultMessage: `${config.labelBasePath}.main.display_general_reports`
-                }
-              )}
-            </button>
-          </div>
-          <br />
-          <div id='blankReports'>
-            <label>
-              {this.context.intl.formatMessage(
-                {
-                  id: `${config.labelBasePath}.main.blank_reports`,
-                  defaultMessage: `${config.labelBasePath}.main.blank_reports`
-                }
-              )}
-            </label>
+          </React.Fragment>}
+          {this.state.blank_report && <React.Fragment>
+            <div id='blankReports'>
+              <label>
+                {this.context.intl.formatMessage(
+                  {
+                    id: `${config.labelBasePath}.main.blank_reports`,
+                    defaultMessage: `${config.labelBasePath}.main.blank_reports`
+                  }
+                )}
+              </label>
+              <br />
+              <button className={consoleStyle.conButton} onClick={this.generateBlankReports}>
+                {this.context.intl.formatMessage(
+                  {
+                    id: `${config.labelBasePath}.main.display_blank_reports`,
+                    defaultMessage: `${config.labelBasePath}.main.display_blank_reports`
+                  }
+                )}
+              </button>
+            </div>
             <br />
-            <button className={consoleStyle.conButton} onClick={this.generateBlankReports}>
-              {this.context.intl.formatMessage(
-                {
-                  id: `${config.labelBasePath}.main.display_blank_reports`,
-                  defaultMessage: `${config.labelBasePath}.main.display_blank_reports`
-                }
-              )}
-            </button>
-          </div>
-          <br />
-          <div id='villageSpecificReports'>
-            <label>
-              {this.context.intl.formatMessage(
-                {
-                  id: `${config.labelBasePath}.main.village_reports`,
-                  defaultMessage: `${config.labelBasePath}.main.village_reports`
-                }
-              )}
-            </label>
+          </React.Fragment>}
+          {this.state.village_specific_report && <React.Fragment>
+            <div id='villageSpecificReports'>
+              <label>
+                {this.context.intl.formatMessage(
+                  {
+                    id: `${config.labelBasePath}.main.village_reports`,
+                    defaultMessage: `${config.labelBasePath}.main.village_reports`
+                  }
+                )}
+              </label>
+              <br />
+              <DependencyDropdowns tableName={tableName} spread='down' />
+              <button className={consoleStyle.conButton} onClick={this.generateVillageReports}>
+                {this.context.intl.formatMessage(
+                  {
+                    id: `${config.labelBasePath}.main.display_village_reports`,
+                    defaultMessage: `${config.labelBasePath}.main.display_village_reports`
+                  }
+                )}
+              </button>
+            </div>
             <br />
-            <DependencyDropdowns tableName={tableName} spread='down' />
-            <button className={consoleStyle.conButton} onClick={this.generateVillageReports}>
-              {this.context.intl.formatMessage(
-                {
-                  id: `${config.labelBasePath}.main.display_village_reports`,
-                  defaultMessage: `${config.labelBasePath}.main.display_village_reports`
-                }
-              )}
-            </button>
-          </div>
-          <br />
-          <div id='invoices'>
-            <label>
-              {this.context.intl.formatMessage(
-                {
-                  id: `${config.labelBasePath}.main.invoices`,
-                  defaultMessage: `${config.labelBasePath}.main.invoices`
-                }
-              )}
-            </label>
+          </React.Fragment>}
+          {this.state.invoice_report && <React.Fragment>
+            <div id='invoices'>
+              <label>
+                {this.context.intl.formatMessage(
+                  {
+                    id: `${config.labelBasePath}.main.invoices`,
+                    defaultMessage: `${config.labelBasePath}.main.invoices`
+                  }
+                )}
+              </label>
+              <br />
+              <button className={consoleStyle.conButton} onClick={() => this.setState({ displayInvoice: true })}>
+                {this.context.intl.formatMessage(
+                  {
+                    id: `${config.labelBasePath}.main.generate_invoice`,
+                    defaultMessage: `${config.labelBasePath}.main.generate_invoice`
+                  }
+                )}
+              </button>
+            </div>
             <br />
-            <button className={consoleStyle.conButton} onClick={() => this.setState({ displayInvoice: true })}>
-              {this.context.intl.formatMessage(
-                {
-                  id: `${config.labelBasePath}.main.generate_invoice`,
-                  defaultMessage: `${config.labelBasePath}.main.generate_invoice`
-                }
-              )}
-            </button>
-          </div>
-          <br />
-          {this.state.userCanUseStatisticalReportTool && <div id='statistical_reports'>
+          </React.Fragment>}
+          {this.state.statistical_report && <div id='statistical_reports'>
             <label>
               {this.context.intl.formatMessage(
                 {

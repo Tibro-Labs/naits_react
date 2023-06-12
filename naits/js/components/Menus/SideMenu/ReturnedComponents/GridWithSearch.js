@@ -45,6 +45,10 @@ class GridWithSearch extends React.Component {
     }
   }
 
+  componentWillUnmount () {
+    ComponentManager.cleanComponentReducerState(`${this.props.showGrid}`)
+  }
+
   generateGrid = (props) => {
     const onSelectChangeFunct = props.onSelectChangeFunct || onGridSelectionChange
     let parentId = null

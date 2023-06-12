@@ -1,4 +1,5 @@
 export function linkObjectsReducer (state = {
+  isLoading: false,
   linkedHoldingToQuarantine: false,
   addedKeeperToHolding: false,
   linkedOwnerToPet: false,
@@ -10,9 +11,17 @@ export function linkObjectsReducer (state = {
      * a keeper has been added to a holding, an onwer has been
      * linked to a pet or an area unit has been linked to a population
      * */
+    case 'LINK_OBJECTS_DATA_PENDING':
+      return {
+        ...state, linkedHoldingToQuarantine: false, addedKeeperToHolding: false, linkedOwnerToPet: false, isLoading: true
+      }
     case 'LINK_OBJECTS_DATA_FULFILLED':
       return {
-        ...state, linkedHoldingToQuarantine: true, addedKeeperToHolding: true, linkedOwnerToPet: true
+        ...state, linkedHoldingToQuarantine: true, addedKeeperToHolding: true, linkedOwnerToPet: true, isLoading: false
+      }
+    case 'LINK_OBJECTS_DATA_REJECTED':
+      return {
+        ...state, linkedHoldingToQuarantine: false, addedKeeperToHolding: false, linkedOwnerToPet: false, isLoading: false
       }
     case 'ADD_LAST_SELECTED_ITEM':
       return {

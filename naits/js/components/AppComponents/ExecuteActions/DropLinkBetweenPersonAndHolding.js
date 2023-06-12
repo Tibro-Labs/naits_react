@@ -1,6 +1,7 @@
 import React from 'react'
 import { connect } from 'react-redux'
 import PropTypes from 'prop-types'
+import Loading from 'components/Loading'
 import * as config from 'config/config.js'
 import style from 'components/AppComponents/ExecuteActions/ExecuteActionOnSelectedRows.module.css'
 import styles from 'components/AppComponents/Presentational/Badges/Badges.module.css'
@@ -14,11 +15,13 @@ class DropLinkBetweenHoldingAndPerson extends React.Component {
   constructor (props) {
     super(props)
     this.state = {
+      loading: false,
       alert: null
     }
   }
 
   componentWillReceiveProps (nextProps) {
+    this.setState({ loading: nextProps.isLoading })
     if (this.props.linkName !== nextProps.linkName) {
       this.reloadData(nextProps)
     }
@@ -135,7 +138,13 @@ class DropLinkBetweenHoldingAndPerson extends React.Component {
       btn = <div>
         <button
           id='drop_link'
-          className={styles.container} style={{ cursor: 'pointer', marginRight: '7px', color: 'white' }}
+          className={styles.container}
+          style={{
+            cursor: 'pointer',
+            marginRight: '7px',
+            color: 'white',
+            width: linkName === 'HOLDING_MEMBER_OF' ? '165px' : '142px'
+          }}
           onClick={() => {
             this.dropLink()
             gaEventTracker(
@@ -147,7 +156,13 @@ class DropLinkBetweenHoldingAndPerson extends React.Component {
         >
           <span
             id='drop_link_between_person_and_holding'
-            className={style.actionText} style={{ marginLeft: '-7%', marginTop: '0.5%', cursor: 'pointer' }}
+            className={style.actionText}
+            style={{
+              marginLeft: linkName === 'HOLDING_MEMBER_OF' ? '3%' : '-5%',
+              marginTop: linkName === 'HOLDING_ASSOCIATED' ? '1.5%' : linkName === 'HOLDING_MEMBER_OF' ? '5.5%' : '6.5%',
+              wordWrap: linkName === 'HOLDING_MEMBER_OF' ? 'unset' : 'break-word',
+              cursor: 'pointer'
+            }}
           >
             {this.context.intl.formatMessage({
               id: `${config.labelBasePath}.remove_${type}`,
@@ -158,7 +173,10 @@ class DropLinkBetweenHoldingAndPerson extends React.Component {
         </button>
       </div>
     }
-    return btn
+    return <React.Fragment>
+      {btn}
+      {this.state.loading && <Loading />}
+    </React.Fragment>
   }
 }
 
@@ -179,6 +197,7 @@ const mapDispatchToProps = dispatch => ({
 const mapStateToProps = (state) => ({
   svSession: state.security.svSession,
   selectedObjects: state.gridConfig.gridHierarchy,
+  isLoading: state.dropLink.isLoading,
   dropLinkMessage: state.dropLink.message,
   dropLinkError: state.dropLink.error,
   componentToDisplay: state.componentToDisplay.componentToDisplay,

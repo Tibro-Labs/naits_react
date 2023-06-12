@@ -62,6 +62,7 @@ class MainContent extends React.Component {
     const altFilterBy = props.altFilterBy
     const altFilterVals = props.altFilterVals
     const gridType = props.gridType
+    const callbackSearchData = props.callbackSearchData
     const gridHeight = props.gridConfig ? (props.gridConfig.SIZE ? props.gridConfig.SIZE.HEIGHT : null) : null
     const gridWidth = props.gridConfig ? (props.gridConfig.SIZE ? props.gridConfig.SIZE.WIDTH : null) : null
     let gridTypeCall = props.methodType || 'GET_BYPARENTID'
@@ -70,7 +71,22 @@ class MainContent extends React.Component {
       gridId = this.props.id
     }
 
+    const gridParams = []
+
     if (gridToDisplay === 'LABORATORY') {
+      if (!props.isFromAdmConsole) {
+        gridParams.push({
+          PARAM_NAME: 'parentId',
+          PARAM_VALUE: props.userObjId
+        }, {
+          PARAM_NAME: 'linkName',
+          PARAM_VALUE: 'POA'
+        }, {
+          PARAM_NAME: 'rowlimit',
+          PARAM_VALUE: 10000
+        })
+      }
+
       if (!this.props.isAdmin) {
         insertNewRow = null
         this.customButton = null
@@ -104,7 +120,6 @@ class MainContent extends React.Component {
       if (insertRow) {
         insertNewRow = () => this.insertNewRow(gridId)
       }
-      const gridParams = []
 
       if (gridToDisplay === 'PET' && props.customValue && props.petCustomSearchCriteria !== '') {
         gridTypeCall = props.methodType
@@ -217,7 +232,18 @@ class MainContent extends React.Component {
               gridTypeCall = 'GET_TABLE_WITH_LIKE_FILTER_2'
             }
           } else {
-            gridTypeCall = 'GET_TABLE_WITH_LIKE_FILTER_2'
+            if (props.userIsLinkedToOneHolding || props.userIsLinkedToTwoOrMoreHoldings) {
+              gridTypeCall = 'GET_LINKED_HOLDINGS_PER_USER_2'
+            } else {
+              gridTypeCall = 'GET_TABLE_WITH_LIKE_FILTER_2'
+            }
+          }
+        } else if (gridToDisplay === 'HOLDING_RESPONSIBLE' || gridToDisplay === 'FLOCK') {
+          gridTypeCall = 'GET_TABLE_WITH_LIKE_FILTER'
+          if (props.searchFromPopup) {
+            insertNewRow = null
+            this.customButton = null
+            toggleCustomButton = false
           }
         } else {
           gridTypeCall = 'GET_TABLE_WITH_LIKE_FILTER'
@@ -257,8 +283,124 @@ class MainContent extends React.Component {
         }, {
           PARAM_NAME: 'criterumConjuction',
           PARAM_VALUE: 'AND'
-        }
-        )
+        })
+      }
+      if (gridType === 'CUSTOM' && gridTypeCall === 'GET_HOLDINGS_BY_CRITERIA') {
+        gridParams = []
+        gridParams.push({
+          PARAM_NAME: 'objectName',
+          PARAM_VALUE: gridToDisplay
+        }, {
+          PARAM_NAME: 'gridConfigWeWant',
+          PARAM_VALUE: gridToDisplay
+        }, {
+          PARAM_NAME: 'type',
+          PARAM_VALUE: callbackSearchData.holdingType || null
+        }, {
+          PARAM_NAME: 'name',
+          PARAM_VALUE: callbackSearchData.name || null
+        }, {
+          PARAM_NAME: 'pic',
+          PARAM_VALUE: callbackSearchData.pic || null
+        }, {
+          PARAM_NAME: 'keeperId',
+          PARAM_VALUE: callbackSearchData.keeperId || null
+        }, {
+          PARAM_NAME: 'geoCode',
+          PARAM_VALUE: callbackSearchData.geoCode || null
+        }, {
+          PARAM_NAME: 'address',
+          PARAM_VALUE: callbackSearchData.address || null
+        }, {
+          PARAM_NAME: 'rowlimit',
+          PARAM_VALUE: 5000
+        })
+      }
+      if (gridType === 'CUSTOM' && gridTypeCall === 'GET_HOLDING_RESPONSIBLES_BY_CRITERIA') {
+        gridParams = []
+        gridParams.push({
+          PARAM_NAME: 'objectName',
+          PARAM_VALUE: gridToDisplay
+        }, {
+          PARAM_NAME: 'gridConfigWeWant',
+          PARAM_VALUE: gridToDisplay
+        }, {
+          PARAM_NAME: 'idNo',
+          PARAM_VALUE: callbackSearchData.idNo || null
+        }, {
+          PARAM_NAME: 'firstName',
+          PARAM_VALUE: callbackSearchData.firstName || null
+        }, {
+          PARAM_NAME: 'lastName',
+          PARAM_VALUE: callbackSearchData.lastName || null
+        }, {
+          PARAM_NAME: 'fullName',
+          PARAM_VALUE: callbackSearchData.fullName || null
+        }, {
+          PARAM_NAME: 'geoCode',
+          PARAM_VALUE: callbackSearchData.geoCode || null
+        }, {
+          PARAM_NAME: 'phoneNumber',
+          PARAM_VALUE: callbackSearchData.phoneNumber || null
+        }, {
+          PARAM_NAME: 'rowlimit',
+          PARAM_VALUE: 5000
+        })
+      }
+      if (gridType === 'CUSTOM' && gridTypeCall === 'GET_ANIMALS_BY_CRITERIA') {
+        gridParams = []
+        gridParams.push({
+          PARAM_NAME: 'objectName',
+          PARAM_VALUE: gridToDisplay
+        }, {
+          PARAM_NAME: 'gridConfigWeWant',
+          PARAM_VALUE: gridToDisplay
+        }, {
+          PARAM_NAME: 'animalId',
+          PARAM_VALUE: callbackSearchData.animalId || null
+        }, {
+          PARAM_NAME: 'status',
+          PARAM_VALUE: callbackSearchData.animalStatus || null
+        }, {
+          PARAM_NAME: 'animalClass',
+          PARAM_VALUE: callbackSearchData.animalClass || null
+        }, {
+          PARAM_NAME: 'breed',
+          PARAM_VALUE: callbackSearchData.animalBreed || null
+        }, {
+          PARAM_NAME: 'color',
+          PARAM_VALUE: callbackSearchData.animalColor || null
+        }, {
+          PARAM_NAME: 'country',
+          PARAM_VALUE: callbackSearchData.animalCountry || null
+        }, {
+          PARAM_NAME: 'rowlimit',
+          PARAM_VALUE: 5000
+        })
+      } else if (gridType === 'CUSTOM' && gridTypeCall === 'GET_FLOCKS_BY_CRITERIA') {
+        gridParams = []
+        gridParams.push({
+          PARAM_NAME: 'objectName',
+          PARAM_VALUE: 'FLOCK'
+        }, {
+          PARAM_NAME: 'gridConfigWeWant',
+          PARAM_VALUE: 'FLOCK'
+        }, {
+          PARAM_NAME: 'flockId',
+          PARAM_VALUE: callbackSearchData.flockId || null
+        }, {
+          PARAM_NAME: 'status',
+          PARAM_VALUE: callbackSearchData.flockStatus || null
+        }, {
+          PARAM_NAME: 'animalClass',
+          PARAM_VALUE: callbackSearchData.flockClass || null
+        }, {
+          PARAM_NAME: 'color',
+          PARAM_VALUE: callbackSearchData.flockColor || null
+        }, {
+          PARAM_NAME: 'rowlimit',
+          PARAM_VALUE: 5000
+        })
       }
       if (filterVals && !altFilterVals) {
         gridParams.push({
@@ -272,21 +414,19 @@ class MainContent extends React.Component {
         })
       } else if (filterVals && altFilterVals) {
         gridTypeCall = 'GET_TABLE_WITH_FILTER'
-        gridParams.push(
-          {
-            PARAM_NAME: 'searchBy',
-            PARAM_VALUE: filterBy
-          }, {
-            PARAM_NAME: 'parentColumn',
-            PARAM_VALUE: altFilterBy
-          }, {
-            PARAM_NAME: 'parentId',
-            PARAM_VALUE: altFilterVals
-          }, {
-            PARAM_NAME: 'criterumConjuction',
-            PARAM_VALUE: 'AND'
-          }
-        )
+        gridParams.push({
+          PARAM_NAME: 'searchBy',
+          PARAM_VALUE: filterBy
+        }, {
+          PARAM_NAME: 'parentColumn',
+          PARAM_VALUE: altFilterBy
+        }, {
+          PARAM_NAME: 'parentId',
+          PARAM_VALUE: altFilterVals
+        }, {
+          PARAM_NAME: 'criterumConjuction',
+          PARAM_VALUE: 'AND'
+        })
       }
       renderGrid = GridManager.generateExportableGridWithCustomBtn(
         gridId, gridId, 'CUSTOM_GRID',
@@ -355,6 +495,9 @@ class MainContent extends React.Component {
         break
       case 'PET':
         inputWrapper = InputWrappers.PetFormInputWrapper
+        break
+      case 'RFID_INPUT':
+        inputWrapper = InputWrappers.RfidFormInputWrapper
         break
       case 'HOLDING':
       case 'HOLDING_RESPONSIBLE':
@@ -447,6 +590,7 @@ class MainContent extends React.Component {
 const mapStateToProps = state => ({
   session: state.security.svSession,
   isAdmin: state.userInfoReducer.isAdmin,
+  userObjId: state.userInfoReducer.userObjId,
   userIsLinkedToOneHolding: state.linkedHolding.userIsLinkedToOneHolding,
   userIsLinkedToTwoOrMoreHoldings: state.linkedHolding.userIsLinkedToTwoOrMoreHoldings
 })

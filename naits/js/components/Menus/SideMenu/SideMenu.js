@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
+import { alertUser } from 'tibro-components'
 import axios from 'axios'
 import { menuConfig } from 'config/menuConfig.js'
 import { sideMenuConfig } from 'config/sideMenuConfig.js'
@@ -15,6 +16,11 @@ import {
   MultiGrid,
   ActionListGenerator,
   AcceptAnimals,
+  TerminatedAnimalsFilter,
+  FinishedMovementDocumentsFilter,
+  FinishedMovementsFilter,
+  TerminatedPetsFilter,
+  ReleasedPetsFilter,
   GridWithSearch
 } from 'components/ComponentsIndex'
 import InputWrappers from 'containers/InputWrappers'
@@ -23,7 +29,7 @@ import MenuExtensions from 'containers/MenuExtensions'
 import BrowseHoldings from './BrowseHoldings'
 import { store } from 'tibro-redux'
 import { writeComponentToStoreAction } from 'backend/writeComponentToStoreAction'
-import { isValidObject, isValidArray, swapItems } from 'functions/utils'
+import { isValidObject, isValidArray, strcmp } from 'functions/utils'
 const hashHistory = createHashHistory()
 
 // side menu rendered depending on selected item from main top menu
@@ -44,12 +50,21 @@ class SideMenu extends React.Component {
   constructor (props) {
     super(props)
     this.state = {
+      alert: undefined,
       listItemId: undefined,
       isActive: false,
       animalBelongsToSlaughterhouse: null,
       stateTooltip: this.props.stateTooltip,
       selectedObject: this.props.menuType,
-      subModuleActions: []
+      subModuleActions: [],
+      changeHoldingPeopleState: false,
+      changeHoldingPeopleSlaughterhouseState: false,
+      changeMovementsState: false,
+      changeMovementsSlaugherhouseState: false,
+      changeOtherState: false,
+      changeOtherSlaughterhouseState: false,
+      changeInvetoryState: false,
+      changePetsShelterState: false
     }
   }
 
@@ -77,7 +92,54 @@ class SideMenu extends React.Component {
     }
 
     this.generateSubModuleActions(this.props)
+    if (this.props.gridType === 'HOLDING') {
+      this.displayOrHideHoldingPeople(false)
+      this.displayOrHideHoldingPeopleInSlaughterhouse(false)
+      this.displayOrHideMovements(false)
+      this.displayOrHideMovementsInSlaughterhouse(false)
+      this.displayOrHideOther(false)
+      this.displayOrHideOtherInSlaughterhouse(false)
+      this.displayOrHideInventory(false)
+      this.displayOrHidePetShelter(false)
+      this.hideButtons()
+    }
     document.getElementById('clearReturnedComponentSideMenu') && document.getElementById('clearReturnedComponentSideMenu').click()
+  }
+
+  componentDidUpdate (nextProps, nextState) {
+    if (nextProps.gridType === 'HOLDING') {
+      if (this.state.changeHoldingPeopleState !== nextState.changeHoldingPeopleState) {
+        this.handleDisplayingHoldingPeople(nextState.changeHoldingPeopleState)
+      }
+
+      if (this.state.changeHoldingPeopleSlaughterhouseState !== nextState.changeHoldingPeopleSlaughterhouseState) {
+        this.handleDisplayingHoldingPeopleInSlaughterhouse(nextState.changeHoldingPeopleSlaughterhouseState)
+      }
+
+      if (this.state.changeMovementsState !== nextState.changeMovementsState) {
+        this.handleDisplayingMovements(nextState.changeMovementsState)
+      }
+
+      if (this.state.changeMovementsSlaugherhouseState !== nextState.changeMovementsSlaugherhouseState) {
+        this.handleDisplayingMovementsInSlaughterhouse(nextState.changeMovementsSlaugherhouseState)
+      }
+
+      if (this.state.changeOtherState !== nextState.changeOtherState) {
+        this.handleDisplayingOther(nextState.changeOtherState)
+      }
+
+      if (this.state.changeOtherSlaughterhouseState !== nextState.changeOtherSlaughterhouseState) {
+        this.handleDisplayingOtherInSlaughterhouse(nextState.changeOtherSlaughterhouseState)
+      }
+
+      if (this.state.changeInvetoryState !== nextState.changeInvetoryState) {
+        this.handleDisplayingInventory(nextState.changeInvetoryState)
+      }
+
+      if (this.state.changePetsShelterState !== nextState.changePetsShelterState) {
+        this.handleDisplayingPetsShelter(nextState.changePetsShelterState)
+      }
+    }
   }
 
   componentWillReceiveProps (nextProps) {
@@ -95,6 +157,17 @@ class SideMenu extends React.Component {
     if (nextProps.removedKeeperFromHolding) {
       this.generateMenu()
     }
+    if (this.props.shouldRefreshSideMenu !== nextProps.shouldRefreshSideMenu) {
+      this.setState({
+        alert: alertUser(
+          true, 'info',
+          this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.alert.reload_page`,
+            defaultMessage: `${config.labelBasePath}.alert.reload_page`
+          }), '', () => { location.reload() }
+        )
+      })
+    }
   }
 
   generateSubModuleActions = (props) => {
@@ -107,6 +180,8 @@ class SideMenu extends React.Component {
             const type = grid.row[props.menuType + '.TYPE']
             if (subModules[type]) {
               this.setState({ subModuleActions: subModules[type].ACTIONS_ENABLED })
+            } else {
+              this.setState({ subModuleActions: [] })
             }
           }
         }
@@ -270,7 +345,9 @@ class SideMenu extends React.Component {
       customDelete: params.customDelete,
       isSpecificType: params.isSpecificType,
       customId: params.customId,
-      customGridId: params.customGridId
+      customGridId: params.customGridId,
+      holdingType: params.holdingType,
+      gridId: params.gridId
     }
 
     let returnedComponent = []
@@ -302,6 +379,7 @@ class SideMenu extends React.Component {
           gridId={gridProps.key}
           gridType={gridProps.showGrid}
           menuItemActions={this.state.subModuleActions}
+          customId={params.customId}
         />
       )
     }
@@ -311,8 +389,77 @@ class SideMenu extends React.Component {
           key={gridProps.key + '_DIRECT_TRANSFER'}
           gridId={gridProps.key}
           gridType={gridProps.showGrid}
+          customId={params.customId}
         />
       )
+    } else {
+      // Enable the component for direct transfer of animals in holding of type Animal market
+      if (gridProps.holdingType && strcmp(gridProps.holdingType, '10') && ['ANIMAL'].includes(params.varType)) {
+        returnedComponent.push(
+          <AcceptAnimals
+            key={gridProps.key + '_DIRECT_TRANSFER'}
+            gridId={gridProps.key}
+            gridType={gridProps.showGrid}
+            customId={params.customId}
+          />
+        )
+      }
+    }
+
+    if (gridProps.customId && strcmp(gridProps.customId, 'TERMINATED_ANIMALS')) {
+      returnedComponent.push(
+        <TerminatedAnimalsFilter
+          key={gridProps.key + '_FILTER_TERMINATED_ANIMALS'}
+          gridId={gridProps.key}
+          gridType={gridProps.showGrid}
+          customId={params.customId}
+        />
+      )
+    }
+
+    if (gridProps.customId && strcmp(gridProps.customId, 'TERMINATED_PETS')) {
+      returnedComponent.push(
+        <TerminatedPetsFilter
+          key={gridProps.key + '_FILTER_TERMINATED_PETS'}
+          gridId={gridProps.key}
+          gridType={gridProps.showGrid}
+          customId={params.customId}
+        />
+      )
+    }
+
+    if (gridProps.customGridId && strcmp(gridProps.customGridId, 'RELEASED_PETS')) {
+      returnedComponent.push(
+        <ReleasedPetsFilter
+          key={gridProps.key + '_FILTER_RELEASED_PETS'}
+          gridId={gridProps.key}
+          gridType={gridProps.showGrid}
+          customId={params.customId}
+          customGridId={params.customGridId}
+        />
+      )
+    }
+
+    if (gridProps.isSpecificType && gridProps.isSpecificType.TYPE && strcmp(gridProps.isSpecificType.TYPE, '7')) {
+      if (gridProps.customGridId && strcmp(gridProps.customGridId, 'finished_incoming_movement_doc')) {
+        returnedComponent.push(
+          <FinishedMovementDocumentsFilter
+            key={gridProps.key + '_FILTER_FINISHED_MOVEMENT_DOCUMENTS'}
+            gridId={gridProps.key}
+            gridType={gridProps.showGrid}
+            customGridId={params.customGridId}
+          />
+        )
+      } else if (gridProps.customId && strcmp(gridProps.customId, 'FINISHED_ANIMAL_MOVEMENTS')) {
+        returnedComponent.push(
+          <FinishedMovementsFilter
+            key={gridProps.key + '_FILTER_MOVEMENTS'}
+            gridId={gridProps.key}
+            gridType={gridProps.showGrid}
+            customId={params.customId}
+          />
+        )
+      }
     }
 
     if (params.multiGrid) {
@@ -338,15 +485,140 @@ class SideMenu extends React.Component {
     this.setState({ isActive: true, listItemId })
   }
 
+  hideButtons = () => {
+    const terminatedAnimalsBtn = document.getElementById('list_item_terminated_animals')
+    const incomingAnimalsBtn = document.getElementById('list_item_animal_movement')
+    const finishedIncomingAnimalsBtn = document.getElementById('list_item_finished_animal_movement')
+    const outgoingAnimalsBtn = document.getElementById('list_item_outgoing_animals')
+    const finishedOutgoingAnimalsBtn = document.getElementById('list_item_finished_outgoing_animals')
+    const incomingFlocksBtn = document.getElementById('list_item_flock_movement')
+    const finishedIncomingFlockBtn = document.getElementById('list_item_finished_flock_movement')
+    const outgoingFlocksBtn = document.getElementById('list_item_outgoing_flocks')
+    const finishedOutgoingFlockBtn = document.getElementById('list_item_finished_outgoing_flocks')
+    const incomingHerdsBtn = document.getElementById('list_item_herd_movement')
+    const finishedIncomingHerdsBtn = document.getElementById('list_item_finished_herd_movement')
+    const outgoingHerdsBtn = document.getElementById('list_item_outgoing_herds')
+    const finishedOutgoingHerdsBtn = document.getElementById('list_item_finished_outgoing_herds')
+    const finishedOutgoingMovementDocBtn = document.getElementById('finished_movement_document')
+    const finishedIncomingMovementDocBtn = document.getElementById('finished_movement_document_incoming')
+    const herderItem = document.getElementById('list_item_holding_herder')
+    if (terminatedAnimalsBtn) {
+      terminatedAnimalsBtn.style.display = 'none'
+    }
+    if (incomingAnimalsBtn) {
+      incomingAnimalsBtn.style.display = 'none'
+    }
+    if (finishedIncomingAnimalsBtn) {
+      finishedIncomingAnimalsBtn.style.display = 'none'
+    }
+    if (outgoingAnimalsBtn) {
+      outgoingAnimalsBtn.style.display = 'none'
+    }
+    if (finishedOutgoingAnimalsBtn) {
+      finishedOutgoingAnimalsBtn.style.display = 'none'
+    }
+    if (incomingFlocksBtn) {
+      incomingFlocksBtn.style.display = 'none'
+    }
+    if (finishedIncomingFlockBtn) {
+      finishedIncomingFlockBtn.style.display = 'none'
+    }
+    if (outgoingFlocksBtn) {
+      outgoingFlocksBtn.style.display = 'none'
+    }
+    if (finishedOutgoingFlockBtn) {
+      finishedOutgoingFlockBtn.style.display = 'none'
+    }
+    if (incomingHerdsBtn) {
+      incomingHerdsBtn.style.display = 'none'
+    }
+    if (finishedIncomingHerdsBtn) {
+      finishedIncomingHerdsBtn.style.display = 'none'
+    }
+    if (outgoingHerdsBtn) {
+      outgoingHerdsBtn.style.display = 'none'
+    }
+    if (finishedOutgoingHerdsBtn) {
+      finishedOutgoingHerdsBtn.style.display = 'none'
+    }
+    if (finishedOutgoingMovementDocBtn) {
+      finishedOutgoingMovementDocBtn.style.display = 'none'
+    }
+    if (finishedIncomingMovementDocBtn) {
+      finishedIncomingMovementDocBtn.style.display = 'none'
+    }
+    if (herderItem) {
+      herderItem.style.display = 'none'
+    }
+    if (this.state.subModuleActions.includes('pet_quarantine')) {
+      const activePetsItem = document.getElementById('list_item_pet')
+      const terminatedPetsItem = document.getElementById('list_item_terminated_pet')
+      const outgoingPetsItem = document.getElementById('list_item_outgoing_pets')
+      if (activePetsItem) {
+        activePetsItem.style.display = 'none'
+      }
+      if (terminatedPetsItem) {
+        terminatedPetsItem.style.display = 'none'
+      }
+      if (outgoingPetsItem) {
+        outgoingPetsItem.style.display = 'none'
+      }
+    }
+  }
+
   clearReturnedComponent = () => {
     this.setState(
       {
         isActive: false,
+        changeHoldingPeopleState: false,
+        changeHoldingPeopleSlaughterhouseState: false,
+        changeMovementsState: false,
+        changeMovementsSlaugherhouseState: false,
+        changeOtherState: false,
+        changeOtherSlaughterhouseState: false,
+        changeInvetoryState: false,
+        changePetsShelterState: false,
         listItemId: undefined,
         selectedObject: this.props.menuType
       }
     )
+    this.displayOrHideHoldingPeople(false)
+    this.displayOrHideHoldingPeopleInSlaughterhouse(false)
+    this.displayOrHideMovements(false)
+    this.displayOrHideMovementsInSlaughterhouse(false)
+    this.displayOrHideOther(false)
+    this.displayOrHideOtherInSlaughterhouse(false)
+    this.displayOrHideInventory(false)
+    this.displayOrHidePetShelter(false)
     store.dispatch(writeComponentToStoreAction(null))
+  }
+
+  handleTerminatedAnimalsFilter = () => {
+    store.dispatch({ type: 'FILTER_THE_TERMINATED_ANIMALS_GRID' })
+  }
+
+  handleFinishedMovementDocumentsFilter = () => {
+    store.dispatch({ type: 'FILTER_THE_FINISHED_MOVEMENT_DOCUMENTS_GRID' })
+  }
+
+  handleFinishedMovementsFilter = () => {
+    store.dispatch({ type: 'FILTER_THE_FINISHED_MOVEMENTS_GRID' })
+  }
+
+  handleOutgoingTransfersFilter = () => {
+    store.dispatch({ type: 'FILTER_THE_OUTGOING_TRANSFER_GRID' })
+  }
+
+  handleIncomingTransfersFilter = () => {
+    store.dispatch({ type: 'FILTER_THE_INCOMING_TRANSFER_GRID' })
+  }
+
+  handleTerminatedPetsFilter = () => {
+    store.dispatch({ type: 'FILTER_THE_TERMINATED_PETS_GRID' })
+  }
+
+  handleReleasedPetsFilter = () => {
+    store.dispatch({ type: 'FILTER_THE_RELEASED_PETS_GRID' })
   }
 
   generateMenu = () => {
@@ -359,8 +631,17 @@ class SideMenu extends React.Component {
     let holdingType, holdingStatus
     if (gridType === 'HOLDING') {
       selectedItems.forEach(grid => {
-        holdingType = grid.row['HOLDING.TYPE']
-        holdingStatus = grid.row['HOLDING.STATUS']
+        if (grid.active && grid.gridType === 'HOLDING') {
+          holdingType = grid.row['HOLDING.TYPE']
+          holdingStatus = grid.row['HOLDING.STATUS']
+        }
+      })
+    }
+    if (gridType === 'HEALTH_PASSPORT') {
+      selectedItems.forEach(grid => {
+        if (grid.gridType === 'HOLDING') {
+          holdingType = grid.row['HOLDING.TYPE']
+        }
       })
     }
     if (menuType) {
@@ -370,7 +651,7 @@ class SideMenu extends React.Component {
         if (gridType === 'HOLDING' && holdingStatus === 'NO-KEEPER') {
           listOfButtons = []
         } else if (gridType === 'HOLDING' && holdingStatus !== 'NO-KEEPER' &&
-          (holdingType === '15' || holdingType === '16')) {
+          (holdingType === '15' || holdingType === '16' || holdingType === '17')) {
           listOfButtons = []
         } else {
           configedMenu = sideMenuConfig(`SIDE_MENU_${menuType}_${splitGetUsers[0]}`, this.context.intl)
@@ -379,49 +660,263 @@ class SideMenu extends React.Component {
       } else {
         configedMenu = sideMenuConfig(`SIDE_MENU_${menuType}`, this.context.intl)
         let listOfItems = configedMenu.LIST_OF_ITEMS
+        listOfButtons = listOfItems
+
+        const outgoingMovementDocBtn = document.getElementById('movement_document')
+        const finishedOutgoingMovementDocBtn = document.getElementById('finished_movement_document')
+        const incomingMovementDocBtn = document.getElementById('movement_document_incoming')
+        const finishedIncomingMovementDocBtn = document.getElementById('finished_movement_document_incoming')
+        const animalsBtn = document.getElementById('list_item_animal')
+        const flockBtn = document.getElementById('list_item_flock')
+        const herdBtn = document.getElementById('list_item_herd')
+        const labSampleBtn = document.getElementById('list_item_lab_sample')
+        const quarantineBtn = document.getElementById('list_item_export_quarantine')
+        const spotCheckBtn = document.getElementById('list_item_spot_check')
+        const inventoryItemBtn = document.getElementById('list_item_ivinventory_item')
+        const incomingTransferBtn = document.getElementById('list_item_income_transfer')
+        const outgoingTransferBtn = document.getElementById('list_item_outcome_transfer')
+        const orgUnitsBtn = document.getElementById('list_item_svarog_org_units')
+        const petsBtn = document.getElementById('list_item_pet')
+        const terminatedPetsBtn = document.getElementById('list_item_terminated_pet')
+        const petPassportBtn = document.getElementById('list_item_pet_passport')
+        const outgoingPetsBtn = document.getElementById('list_item_outgoing_pets')
+        const incomingPetsBtn = document.getElementById('list_item_incoming_pets')
+        const petQuarantineBtn = document.getElementById('list_item_pet_quarantine_shelter')
+
         // Checks for a holding of type Animal shelter without a keeper
-        if (gridType === 'HOLDING' && holdingStatus === 'NO-KEEPER' && holdingType === '15') {
-          swapItems(listOfItems, 3, 2)
-          const newListOfButtons = listOfItems.splice(3, 20)
-          listOfButtons = newListOfButtons
+        if (gridType === 'HOLDING' && holdingStatus === 'NO-KEEPER' && (holdingType === '15' || holdingType === '17')) {
+          if (petsBtn) {
+            petsBtn.style.display = 'none'
+          }
+          if (terminatedPetsBtn) {
+            terminatedPetsBtn.style.display = 'none'
+          }
+          if (outgoingPetsBtn) {
+            outgoingPetsBtn.style.display = 'none'
+          }
+          if (incomingPetsBtn) {
+            incomingPetsBtn.style.display = 'none'
+          }
+          if (petQuarantineBtn) {
+            petQuarantineBtn.style.display = 'none'
+          }
           // Checks for a holding of type Vet station without a keeper
         } else if (gridType === 'HOLDING' && holdingStatus === 'NO-KEEPER' && holdingType === '16') {
-          swapItems(listOfItems, 3, 2)
-          const newListOfButtons = listOfItems.splice(3, 20)
-          listOfButtons = newListOfButtons
+          if (orgUnitsBtn) {
+            orgUnitsBtn.style.display = 'none'
+          }
+          if (petPassportBtn) {
+            petPassportBtn.style.display = 'none'
+          }
           // Checks for holdings without a type and without a keeper
         } else if (gridType === 'HOLDING' && holdingStatus === 'NO-KEEPER' && !holdingType) {
-          const newListOfButtons = listOfItems.splice(4, 25)
-          listOfButtons = newListOfButtons
+          if (outgoingMovementDocBtn) {
+            outgoingMovementDocBtn.style.display = 'none'
+          }
+          if (finishedOutgoingMovementDocBtn) {
+            finishedOutgoingMovementDocBtn.style.display = 'none'
+          }
+          if (incomingMovementDocBtn) {
+            incomingMovementDocBtn.style.display = 'none'
+          }
+          if (finishedIncomingMovementDocBtn) {
+            finishedIncomingMovementDocBtn.style.display = 'none'
+          }
+          if (animalsBtn) {
+            animalsBtn.style.display = 'none'
+          }
+          if (flockBtn) {
+            flockBtn.style.display = 'none'
+          }
+          if (herdBtn) {
+            herdBtn.style.display = 'none'
+          }
+          if (orgUnitsBtn) {
+            orgUnitsBtn.style.display = 'none'
+          }
+          if (labSampleBtn) {
+            labSampleBtn.style.display = 'none'
+          }
+          if (quarantineBtn) {
+            quarantineBtn.style.display = 'none'
+          }
+          if (spotCheckBtn) {
+            spotCheckBtn.style.display = 'none'
+          }
+          if (inventoryItemBtn) {
+            inventoryItemBtn.style.display = 'none'
+          }
+          if (incomingTransferBtn) {
+            incomingTransferBtn.style.display = 'none'
+          }
+          if (outgoingTransferBtn) {
+            outgoingTransferBtn.style.display = 'none'
+          }
+          if (petsBtn) {
+            petsBtn.style.display = 'none'
+          }
+          if (petPassportBtn) {
+            petPassportBtn.style.display = 'none'
+          }
+          if (incomingPetsBtn) {
+            incomingPetsBtn.style.display = 'none'
+          }
+          if (outgoingPetsBtn) {
+            outgoingPetsBtn.style.display = 'none'
+          }
           // Checks for all other holdings without a keeper
-        } else if (gridType === 'HOLDING' && holdingStatus === 'NO-KEEPER' && holdingType !== '15') {
-          const newListOfButtons = listOfItems.splice(4, 25)
-          listOfButtons = newListOfButtons
+        } else if (gridType === 'HOLDING' && holdingStatus === 'NO-KEEPER' && holdingType &&
+          (holdingType !== '7' || holdingType !== '15' || holdingType !== '16' || holdingType !== '17')) {
+          if (animalsBtn) {
+            animalsBtn.style.display = 'none'
+          }
+          if (flockBtn) {
+            flockBtn.style.display = 'none'
+          }
+          if (herdBtn) {
+            herdBtn.style.display = 'none'
+          }
+          if (outgoingMovementDocBtn) {
+            outgoingMovementDocBtn.style.display = 'none'
+          }
+          if (incomingMovementDocBtn) {
+            incomingMovementDocBtn.style.display = 'none'
+          }
+          if (labSampleBtn) {
+            labSampleBtn.style.display = 'none'
+          }
+          if (quarantineBtn) {
+            quarantineBtn.style.display = 'none'
+          }
+          if (spotCheckBtn) {
+            spotCheckBtn.style.display = 'none'
+          }
+          if (inventoryItemBtn) {
+            inventoryItemBtn.style.display = 'none'
+          }
+          if (incomingTransferBtn) {
+            incomingTransferBtn.style.display = 'none'
+          }
+          if (outgoingTransferBtn) {
+            outgoingTransferBtn.style.display = 'none'
+          }
         } else {
           // Holdings of type Animal shelter
           if (gridType === 'HOLDING' && holdingType === '15') {
-            swapItems(listOfItems, 3, 2)
-            swapItems(listOfItems, 19, 3)
-            swapItems(listOfItems, 21, 4)
-            swapItems(listOfItems, 22, 5)
-            const newListOfButtons = listOfItems.splice(6, 22)
-            listOfButtons = newListOfButtons
+            if (incomingPetsBtn) {
+              incomingPetsBtn.style.display = 'block'
+            }
+            if (petQuarantineBtn) {
+              petQuarantineBtn.style.display = 'block'
+            }
+          }
+          // Holdings of type Vet clinic
+          if (gridType === 'HOLDING' && holdingType === '17') {
+            if (petsBtn) {
+              petsBtn.style.display = 'block'
+            }
+            if (outgoingPetsBtn) {
+              outgoingPetsBtn.style.display = 'block'
+            }
+            if (incomingPetsBtn) {
+              incomingPetsBtn.style.display = 'block'
+            }
           }
           // Holdings of type Vet station
           if (gridType === 'HOLDING' && holdingType === '16') {
-            swapItems(listOfItems, 3, 2)
-            swapItems(listOfItems, 18, 3)
-            swapItems(listOfItems, 20, 4)
-            const newListOfButtons = listOfItems.splice(5, 20)
-            listOfButtons = newListOfButtons
+            if (orgUnitsBtn) {
+              orgUnitsBtn.style.display = 'block'
+            }
+            if (petPassportBtn) {
+              petPassportBtn.style.display = 'block'
+            }
           }
           // Holdings without a type
           if (!holdingType && listOfItems.length > 10) {
-            listOfItems.splice(18, 19)
+            if (this.props.wasClickedFromRecentTab) {
+              if (labSampleBtn) {
+                labSampleBtn.style.display = 'none'
+              }
+              if (quarantineBtn) {
+                quarantineBtn.style.display = 'none'
+              }
+              if (spotCheckBtn) {
+                spotCheckBtn.style.display = 'none'
+              }
+              if (inventoryItemBtn) {
+                inventoryItemBtn.style.display = 'none'
+              }
+              if (incomingTransferBtn) {
+                incomingTransferBtn.style.display = 'none'
+              }
+              if (outgoingTransferBtn) {
+                outgoingTransferBtn.style.display = 'none'
+              }
+              this.hideButtons()
+            }
+            if (orgUnitsBtn) {
+              orgUnitsBtn.style.display = 'none'
+            }
+            if (petsBtn) {
+              petsBtn.style.display = 'none'
+            }
+            if (petPassportBtn) {
+              petPassportBtn.style.display = 'none'
+            }
+            if (incomingPetsBtn) {
+              incomingPetsBtn.style.display = 'none'
+            }
+            if (outgoingPetsBtn) {
+              outgoingPetsBtn.style.display = 'none'
+            }
+            if (animalsBtn) {
+              animalsBtn.style.display = 'block'
+            }
+            if (flockBtn) {
+              flockBtn.style.display = 'block'
+            }
+            if (herdBtn) {
+              herdBtn.style.display = 'block'
+            }
           }
           // All other types of holdings
-          if (gridType === 'HOLDING' && (holdingType !== '15' || holdingType !== '16')) {
-            listOfItems.splice(18, 19)
+          if (gridType === 'HOLDING' && holdingType && (holdingType !== '7' || holdingType !== '16' || holdingType !== '17')) {
+            if (this.props.wasClickedFromRecentTab) {
+              if (outgoingMovementDocBtn) {
+                outgoingMovementDocBtn.style.display = 'none'
+              }
+              if (incomingMovementDocBtn) {
+                incomingMovementDocBtn.style.display = 'none'
+              }
+              if (labSampleBtn) {
+                labSampleBtn.style.display = 'none'
+              }
+              if (quarantineBtn) {
+                quarantineBtn.style.display = 'none'
+              }
+              if (spotCheckBtn) {
+                spotCheckBtn.style.display = 'none'
+              }
+              if (inventoryItemBtn) {
+                inventoryItemBtn.style.display = 'none'
+              }
+              if (incomingTransferBtn) {
+                incomingTransferBtn.style.display = 'none'
+              }
+              if (outgoingTransferBtn) {
+                outgoingTransferBtn.style.display = 'none'
+              }
+              this.hideButtons()
+            }
+            if (animalsBtn) {
+              animalsBtn.style.display = 'block'
+            }
+            if (flockBtn) {
+              flockBtn.style.display = 'block'
+            }
+            if (herdBtn) {
+              herdBtn.style.display = 'block'
+            }
           }
         }
         // Checks for the Pet button in the Health passport screen
@@ -431,7 +926,6 @@ class SideMenu extends React.Component {
             listOfButtons = newListOfButtons
           }
         }
-        listOfButtons = listOfItems
       }
       let subModuleItem
       const objects = selectedItems
@@ -485,7 +979,8 @@ class SideMenu extends React.Component {
             if (isValidObject(subModules, 1)) {
               type = selectedItems[i].row[menuType + '.TYPE'] ||
                 selectedItems[i].row[menuType + '.' + menuType + '_TYPE'] ||
-                selectedItems[i].row[menuType + '.' + 'ORG_UNIT_TYPE']
+                selectedItems[i].row[menuType + '.' + 'ORG_UNIT_TYPE'] ||
+                selectedItems[i].row[menuType + '.' + 'HOLDER_TYPE']
 
               if (subModules[type]) {
                 isSpecificType = subModules[type]
@@ -545,6 +1040,147 @@ class SideMenu extends React.Component {
                     disableFormEdit = disableEditForSubmodules
                   }
                 }
+                const terminatedAnimalsBtn = document.getElementById('list_item_terminated_animals')
+                const incomingAnimalsBtn = document.getElementById('list_item_animal_movement')
+                const finishedIncomingAnimalsBtn = document.getElementById('list_item_finished_animal_movement')
+                const outgoingAnimalsBtn = document.getElementById('list_item_outgoing_animals')
+                const finishedOutgoingAnimalsBtn = document.getElementById('list_item_finished_outgoing_animals')
+                const incomingFlocksBtn = document.getElementById('list_item_flock_movement')
+                const finishedIncomingFlockBtn = document.getElementById('list_item_finished_flock_movement')
+                const outgoingFlocksBtn = document.getElementById('list_item_outgoing_flocks')
+                const finishedOutgoingFlockBtn = document.getElementById('list_item_finished_outgoing_flocks')
+                const incomingHerdsBtn = document.getElementById('list_item_herd_movement')
+                const finishedIncomingHerdsBtn = document.getElementById('list_item_finished_herd_movement')
+                const outgoingHerdsBtn = document.getElementById('list_item_outgoing_herds')
+                const finishedOutgoingHerdsBtn = document.getElementById('list_item_finished_outgoing_herds')
+                if (varId === 'list_item_animal') {
+                  if (terminatedAnimalsBtn) {
+                    terminatedAnimalsBtn.style.display = 'block'
+                    terminatedAnimalsBtn.style.paddingLeft = '2.5rem'
+                  }
+                  if (incomingAnimalsBtn) {
+                    incomingAnimalsBtn.style.display = 'block'
+                    incomingAnimalsBtn.style.paddingLeft = '2.5rem'
+                  }
+                  if (finishedIncomingAnimalsBtn) {
+                    finishedIncomingAnimalsBtn.style.display = 'block'
+                    finishedIncomingAnimalsBtn.style.paddingLeft = '2.5rem'
+                  }
+                  if (outgoingAnimalsBtn) {
+                    outgoingAnimalsBtn.style.display = 'block'
+                    outgoingAnimalsBtn.style.paddingLeft = '2.5rem'
+                  }
+                  if (finishedOutgoingAnimalsBtn) {
+                    finishedOutgoingAnimalsBtn.style.display = 'block'
+                    finishedOutgoingAnimalsBtn.style.paddingLeft = '2.5rem'
+                  }
+                  if (incomingFlocksBtn) {
+                    incomingFlocksBtn.style.display = 'none'
+                  }
+                  if (finishedIncomingFlockBtn) {
+                    finishedIncomingFlockBtn.style.display = 'none'
+                  }
+                  if (outgoingFlocksBtn) {
+                    outgoingFlocksBtn.style.display = 'none'
+                  }
+                  if (finishedOutgoingFlockBtn) {
+                    finishedOutgoingFlockBtn.style.display = 'none'
+                  }
+                  if (incomingHerdsBtn) {
+                    incomingHerdsBtn.style.display = 'none'
+                  }
+                  if (finishedIncomingHerdsBtn) {
+                    finishedIncomingHerdsBtn.style.display = 'none'
+                  }
+                  if (outgoingHerdsBtn) {
+                    outgoingHerdsBtn.style.display = 'none'
+                  }
+                  if (finishedOutgoingHerdsBtn) {
+                    finishedOutgoingHerdsBtn.style.display = 'none'
+                  }
+                } else {
+                  if (varId !== 'list_item_terminated_animals' && varId !== 'list_item_animal_movement' &&
+                    varId !== 'list_item_finished_animal_movement' && varId !== 'list_item_outgoing_animals' &&
+                    varId !== 'list_item_finished_outgoing_animals') {
+                    if (terminatedAnimalsBtn) {
+                      terminatedAnimalsBtn.style.display = 'none'
+                    }
+                    if (incomingAnimalsBtn) {
+                      incomingAnimalsBtn.style.display = 'none'
+                    }
+                    if (finishedIncomingAnimalsBtn) {
+                      finishedIncomingAnimalsBtn.style.display = 'none'
+                    }
+                    if (outgoingAnimalsBtn) {
+                      outgoingAnimalsBtn.style.display = 'none'
+                    }
+                    if (finishedOutgoingAnimalsBtn) {
+                      finishedOutgoingAnimalsBtn.style.display = 'none'
+                    }
+                  }
+
+                  if (varId === 'list_item_flock') {
+                    if (incomingFlocksBtn) {
+                      incomingFlocksBtn.style.display = 'block'
+                      incomingFlocksBtn.style.paddingLeft = '2.5rem'
+                    }
+                    if (finishedIncomingFlockBtn) {
+                      finishedIncomingFlockBtn.style.display = 'block'
+                      finishedIncomingFlockBtn.style.paddingLeft = '2.5rem'
+                    }
+                    if (outgoingFlocksBtn) {
+                      outgoingFlocksBtn.style.display = 'block'
+                      outgoingFlocksBtn.style.paddingLeft = '2.5rem'
+                    }
+                    if (finishedOutgoingFlockBtn) {
+                      finishedOutgoingFlockBtn.style.display = 'block'
+                      finishedOutgoingFlockBtn.style.paddingLeft = '2.5rem'
+                    }
+                    if (incomingHerdsBtn) {
+                      incomingHerdsBtn.style.display = 'none'
+                    }
+                    if (finishedIncomingHerdsBtn) {
+                      finishedIncomingHerdsBtn.style.display = 'none'
+                    }
+                    if (outgoingHerdsBtn) {
+                      outgoingHerdsBtn.style.display = 'none'
+                    }
+                    if (finishedOutgoingHerdsBtn) {
+                      finishedOutgoingHerdsBtn.style.display = 'none'
+                    }
+                  }
+
+                  if (varId === 'list_item_herd') {
+                    if (incomingHerdsBtn) {
+                      incomingHerdsBtn.style.display = 'block'
+                      incomingHerdsBtn.style.paddingLeft = '2.5rem'
+                    }
+                    if (finishedIncomingHerdsBtn) {
+                      finishedIncomingHerdsBtn.style.display = 'block'
+                      finishedIncomingHerdsBtn.style.paddingLeft = '2.5rem'
+                    }
+                    if (outgoingHerdsBtn) {
+                      outgoingHerdsBtn.style.display = 'block'
+                      outgoingHerdsBtn.style.paddingLeft = '2.5rem'
+                    }
+                    if (finishedOutgoingHerdsBtn) {
+                      finishedOutgoingHerdsBtn.style.display = 'block'
+                      finishedOutgoingHerdsBtn.style.paddingLeft = '2.5rem'
+                    }
+                    if (incomingFlocksBtn) {
+                      incomingFlocksBtn.style.display = 'none'
+                    }
+                    if (finishedIncomingFlockBtn) {
+                      finishedIncomingFlockBtn.style.display = 'none'
+                    }
+                    if (outgoingFlocksBtn) {
+                      outgoingFlocksBtn.style.display = 'none'
+                    }
+                    if (finishedOutgoingFlockBtn) {
+                      finishedOutgoingFlockBtn.style.display = 'none'
+                    }
+                  }
+                }
                 this.highlightActivatedElement(varId)
                 const params = {
                   varType,
@@ -568,7 +1204,8 @@ class SideMenu extends React.Component {
                   customDelete,
                   isSpecificType,
                   customId,
-                  customGridId
+                  customGridId,
+                  holdingType
                 }
                 this.generateGrid(params)
               }
@@ -579,6 +1216,7 @@ class SideMenu extends React.Component {
                   disableEdit = disableEditForSubmodules
                   disableFormEdit = disableEditForSubmodules
                 }
+                this.hideButtons()
                 this.highlightActivatedElement(varId)
                 const params = {
                   varType,
@@ -598,6 +1236,7 @@ class SideMenu extends React.Component {
             }}
             {...varFunc === 'search' && {
               onClick: () => {
+                this.hideButtons()
                 this.highlightActivatedElement(varId)
                 const params = {
                   varType,
@@ -630,7 +1269,14 @@ class SideMenu extends React.Component {
             }}
             {...isActive && listItemId === varId
               ? { className: `list-group-item ${sideMenuStyle.li_item} ${sideMenuStyle.li_item_clicked}` }
-              : { className: `list-group-item ${sideMenuStyle.li_item}` }
+              : {
+                className:
+                  varId === 'list_item_holding_details' ? `${sideMenuStyle.custom_holding_li_item}`
+                    : varId === 'list_item_animal' ? `${sideMenuStyle.custom_animal_li_item}`
+                      : varId === 'list_item_flock' ? `${sideMenuStyle.custom_flock_li_item}`
+                        : varId === 'list_item_herd' ? `${sideMenuStyle.custom_herd_li_item}`
+                          : `list-group-item ${sideMenuStyle.li_item}`
+              }
             }
           >
             {varLabel}
@@ -717,8 +1363,412 @@ class SideMenu extends React.Component {
           htmlBuffer.push(additionalMenuItems)
         }
       }
+
+      const peopleListItem = (
+        <li
+          id='peopleListItem'
+          className={`${sideMenuStyle.custom_li_item} custom_li_item_people`}
+          onClick={this.displayOrHideHoldingPeople}
+        >
+          {this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.main.people`,
+            defaultMessage: `${config.labelBasePath}.main.people`
+          })}
+          <span style={{ float: 'right' }}>
+            <i id='chevron_icon_people' class='fa fa-chevron-right' />
+          </span>
+        </li>
+      )
+      const peopleListItemSlaughterhouse = (
+        <li
+          id='peopleListItem'
+          className={`${sideMenuStyle.custom_li_item} custom_li_item_people`}
+          onClick={this.displayOrHideHoldingPeopleInSlaughterhouse}
+        >
+          {this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.main.people`,
+            defaultMessage: `${config.labelBasePath}.main.people`
+          })}
+          <span style={{ float: 'right' }}>
+            <i id='chevron_icon_people_slaughterhouse' class='fa fa-chevron-right' />
+          </span>
+        </li>
+      )
+
+      const movementsItem = (
+        <li
+          id='movementsListItem'
+          className={`${sideMenuStyle.custom_li_item} custom_li_item_movements`}
+          onClick={this.displayOrHideMovements}
+        >
+          {this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.main.movements`,
+            defaultMessage: `${config.labelBasePath}.main.movements`
+          })}
+          <span style={{ float: 'right' }}>
+            <i id='chevron_icon_movements' class='fa fa-chevron-right' />
+          </span>
+        </li>
+      )
+      const movementsItemSlaughterhouse = (
+        <li
+          id='movementsListItem'
+          className={`${sideMenuStyle.custom_li_item} custom_li_item_movements`}
+          onClick={this.displayOrHideMovementsInSlaughterhouse}
+        >
+          {this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.main.movements`,
+            defaultMessage: `${config.labelBasePath}.main.movements`
+          })}
+          <span style={{ float: 'right' }}>
+            <i id='chevron_icon_movements_slaughterhouse' class='fa fa-chevron-right' />
+          </span>
+        </li>
+      )
+
+      const inventoryListItem = (
+        <li
+          id='inventoryListItem'
+          className={`${sideMenuStyle.custom_li_item} custom_li_item_inventory`}
+          onClick={this.displayOrHideInventory}
+        >
+          {this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.main.inventory`,
+            defaultMessage: `${config.labelBasePath}.main.inventory`
+          })}
+          <span style={{ float: 'right' }}>
+            <i id='chevron_icon_inventory' class='fa fa-chevron-right' />
+          </span>
+        </li>
+      )
+
+      const otherListItem = (
+        <li
+          id='otherListItem'
+          className={`${sideMenuStyle.custom_li_item} custom_li_item_other`}
+          onClick={this.displayOrHideOther}
+        >
+          {this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.main.other`,
+            defaultMessage: `${config.labelBasePath}.main.other`
+          })}
+          <span style={{ float: 'right' }}>
+            <i id='chevron_icon_other' class='fa fa-chevron-right' />
+          </span>
+        </li>
+      )
+      const otherListSlaughterhouseItem = (
+        <li
+          id='otherListItem'
+          className={`${sideMenuStyle.custom_li_item} custom_li_item_other`}
+          onClick={this.displayOrHideOtherInSlaughterhouse}
+        >
+          {this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.main.other`,
+            defaultMessage: `${config.labelBasePath}.main.other`
+          })}
+          <span style={{ float: 'right' }}>
+            <i id='chevron_icon_other_slaughterhouse' class='fa fa-chevron-right' />
+          </span>
+        </li>
+      )
+
+      const petsShelterItem = (
+        <li
+          id='petsShelterItem'
+          className={`${sideMenuStyle.custom_li_item} custom_li_item_other`}
+          onClick={this.displayOrHidePetShelter}
+        >
+          {this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.main.pets`,
+            defaultMessage: `${config.labelBasePath}.main.pets`
+          })}
+          <span style={{ float: 'right' }}>
+            <i id='chevron_icon_pets' class='fa fa-chevron-right' />
+          </span>
+        </li>
+      )
+
+      if (gridType === 'HOLDING') {
+        if (['FVIRO'].includes(splitGetUsers[0]) || ['CVIRO'].includes(splitGetUsers[0]) || ['LABORANT'].includes(splitGetUsers[0])) {
+          const labSampleBtn = document.getElementById('list_item_lab_sample')
+          if (labSampleBtn) {
+            labSampleBtn.style.display = 'block'
+            labSampleBtn.style.paddingLeft = null
+          }
+        } else {
+          if (!holdingType || (holdingType !== '7' && holdingType !== '15' && holdingType !== '16' && holdingType !== '17')) {
+            htmlBuffer.splice(1, 0, peopleListItem)
+
+            if (holdingStatus !== 'NO-KEEPER') {
+              htmlBuffer.splice(7, 0, movementsItem)
+              htmlBuffer.splice(28, 0, inventoryListItem)
+              htmlBuffer.splice(32, 0, otherListItem)
+            }
+          } else if (holdingType === '7') {
+            htmlBuffer.splice(1, 0, peopleListItemSlaughterhouse)
+
+            if (holdingStatus !== 'NO-KEEPER') {
+              htmlBuffer.splice(6, 0, movementsItemSlaughterhouse)
+              htmlBuffer.splice(16, 0, inventoryListItem)
+              htmlBuffer.splice(20, 0, otherListSlaughterhouseItem)
+            }
+          } else if (holdingType === '15') {
+            htmlBuffer.splice(1, 0, peopleListItemSlaughterhouse)
+            if (holdingStatus !== 'NO-KEEPER') {
+              htmlBuffer.splice(6, 0, petsShelterItem)
+            }
+          } else if (holdingType === '16' || holdingType === '17') {
+            htmlBuffer.splice(1, 0, peopleListItemSlaughterhouse)
+          }
+        }
+      }
       return { htmlBuffer, documentsFound, documentBuffer }
     }
+  }
+
+  displayOrHideHoldingPeople = () => {
+    this.setState(prevState => { this.setState({ changeHoldingPeopleState: !prevState.changeHoldingPeopleState }) })
+  }
+
+  displayOrHideHoldingPeopleInSlaughterhouse = () => {
+    this.setState(prevState => { this.setState({ changeHoldingPeopleSlaughterhouseState: !prevState.changeHoldingPeopleSlaughterhouseState }) })
+  }
+
+  handleDisplayingHoldingPeople = show => {
+    store.dispatch({ type: 'RESET_HISTORY_TAB' })
+    const keeperItem = document.getElementById('list_item_holding_keeper')
+    const herderItem = document.getElementById('list_item_holding_herder')
+    const associatedItem = document.getElementById('list_item_holding_associated')
+    const membershipItem = document.getElementById('list_item_holding_membership')
+    const keeperHistoryItem = document.getElementById('list_item_holding_keeper_history')
+    const chevronIcon = document.getElementById('chevron_icon_people')
+    if (show) {
+      if (keeperItem && herderItem && associatedItem && membershipItem && chevronIcon) {
+        keeperItem.style.display = 'block'
+        keeperItem.style.paddingLeft = '2.5rem'
+        herderItem.style.display = 'block'
+        herderItem.style.paddingLeft = '2.5rem'
+        associatedItem.style.display = 'block'
+        associatedItem.style.paddingLeft = '2.5rem'
+        membershipItem.style.display = 'block'
+        membershipItem.style.paddingLeft = '2.5rem'
+        keeperHistoryItem.style.display = 'block'
+        keeperHistoryItem.style.paddingLeft = '2.5rem'
+        chevronIcon.className = 'fa fa-chevron-down'
+      }
+    } else {
+      if (keeperItem && herderItem && associatedItem && membershipItem && chevronIcon) {
+        keeperItem.style.display = 'none'
+        herderItem.style.display = 'none'
+        associatedItem.style.display = 'none'
+        membershipItem.style.display = 'none'
+        keeperHistoryItem.style.display = 'none'
+        chevronIcon.className = 'fa fa-chevron-right'
+      }
+    }
+  }
+
+  handleDisplayingHoldingPeopleInSlaughterhouse = show => {
+    store.dispatch({ type: 'RESET_HISTORY_TAB' })
+    const keeperItem = document.getElementById('list_item_holding_keeper')
+    const associatedItem = document.getElementById('list_item_holding_associated')
+    const membershipItem = document.getElementById('list_item_holding_membership')
+    const keeperHistoryItem = document.getElementById('list_item_holding_keeper_history')
+    const chevronIcon = document.getElementById('chevron_icon_people_slaughterhouse')
+    if (show) {
+      if (keeperItem && associatedItem && chevronIcon) {
+        keeperItem.style.display = 'block'
+        keeperItem.style.paddingLeft = '2.5rem'
+        associatedItem.style.display = 'block'
+        associatedItem.style.paddingLeft = '2.5rem'
+        membershipItem.style.display = 'block'
+        membershipItem.style.paddingLeft = '2.5rem'
+        keeperHistoryItem.style.display = 'block'
+        keeperHistoryItem.style.paddingLeft = '2.5rem'
+        chevronIcon.className = 'fa fa-chevron-down'
+      }
+    } else {
+      if (keeperItem && associatedItem && chevronIcon) {
+        keeperItem.style.display = 'none'
+        associatedItem.style.display = 'none'
+        membershipItem.style.display = 'none'
+        keeperHistoryItem.style.display = 'none'
+        chevronIcon.className = 'fa fa-chevron-right'
+      }
+    }
+  }
+
+  displayOrHideMovements = () => {
+    this.setState(prevState => { this.setState({ changeMovementsState: !prevState.changeMovementsState }) })
+  }
+
+  handleDisplayingMovements = show => {
+    store.dispatch({ type: 'RESET_HISTORY_TAB' })
+    const outgoingDocsItem = document.getElementById('movement_document')
+    const finishedOutgoingMovementDocBtn = document.getElementById('finished_movement_document')
+    const incomingDocsItem = document.getElementById('movement_document_incoming')
+    const finishedIncomingMovementDocBtn = document.getElementById('finished_movement_document_incoming')
+    const chevronIcon = document.getElementById('chevron_icon_movements')
+    if (show) {
+      if (outgoingDocsItem && incomingDocsItem && chevronIcon) {
+        outgoingDocsItem.style.display = 'block'
+        outgoingDocsItem.style.paddingLeft = '2.5rem'
+        finishedOutgoingMovementDocBtn.style.display = 'block'
+        finishedOutgoingMovementDocBtn.style.paddingLeft = '2.5rem'
+        incomingDocsItem.style.display = 'block'
+        incomingDocsItem.style.paddingLeft = '2.5rem'
+        finishedIncomingMovementDocBtn.style.display = 'block'
+        finishedIncomingMovementDocBtn.style.paddingLeft = '2.5rem'
+        chevronIcon.className = 'fa fa-chevron-down'
+      }
+    } else {
+      if (outgoingDocsItem && incomingDocsItem && chevronIcon) {
+        outgoingDocsItem.style.display = 'none'
+        finishedOutgoingMovementDocBtn.style.display = 'none'
+        incomingDocsItem.style.display = 'none'
+        finishedIncomingMovementDocBtn.style.display = 'none'
+        chevronIcon.className = 'fa fa-chevron-right'
+      }
+    }
+  }
+
+  displayOrHideMovementsInSlaughterhouse = () => {
+    this.setState(prevState => { this.setState({ changeMovementsSlaugherhouseState: !prevState.changeMovementsSlaugherhouseState }) })
+  }
+
+  handleDisplayingMovementsInSlaughterhouse = show => {
+    store.dispatch({ type: 'RESET_HISTORY_TAB' })
+    const incomingDocsItem = document.getElementById('movement_document_incoming')
+    const finishedIncomingMovementDocBtn = document.getElementById('finished_movement_document_incoming')
+    const chevronIcon = document.getElementById('chevron_icon_movements_slaughterhouse')
+    if (show) {
+      if (incomingDocsItem && finishedIncomingMovementDocBtn && chevronIcon) {
+        incomingDocsItem.style.display = 'block'
+        incomingDocsItem.style.paddingLeft = '2.5rem'
+        finishedIncomingMovementDocBtn.style.display = 'block'
+        finishedIncomingMovementDocBtn.style.paddingLeft = '2.5rem'
+        chevronIcon.className = 'fa fa-chevron-down'
+      }
+    } else {
+      if (incomingDocsItem && chevronIcon) {
+        incomingDocsItem.style.display = 'none'
+        finishedIncomingMovementDocBtn.style.display = 'none'
+        chevronIcon.className = 'fa fa-chevron-right'
+      }
+    }
+  }
+
+  displayOrHideOther = () => {
+    this.setState(prevState => { this.setState({ changeOtherState: !prevState.changeOtherState }) })
+  }
+
+  handleDisplayingOther = show => {
+    store.dispatch({ type: 'RESET_HISTORY_TAB' })
+    const labSampleItem = document.getElementById('list_item_lab_sample')
+    const quarantineItem = document.getElementById('list_item_export_quarantine')
+    const spotCheckItem = document.getElementById('list_item_spot_check')
+    const chevronIcon = document.getElementById('chevron_icon_other')
+    if (show) {
+      if (labSampleItem && quarantineItem && spotCheckItem && chevronIcon) {
+        labSampleItem.style.display = 'block'
+        labSampleItem.style.paddingLeft = '2.5rem'
+        quarantineItem.style.display = 'block'
+        quarantineItem.style.paddingLeft = '2.5rem'
+        spotCheckItem.style.display = 'block'
+        spotCheckItem.style.paddingLeft = '2.5rem'
+        chevronIcon.className = 'fa fa-chevron-down'
+      }
+    } else {
+      if (labSampleItem && quarantineItem && spotCheckItem && chevronIcon) {
+        labSampleItem.style.display = 'none'
+        quarantineItem.style.display = 'none'
+        spotCheckItem.style.display = 'none'
+        chevronIcon.className = 'fa fa-chevron-right'
+      }
+    }
+  }
+
+  displayOrHideOtherInSlaughterhouse = () => {
+    this.setState(prevState => { this.setState({ changeOtherSlaughterhouseState: !prevState.changeOtherSlaughterhouseState }) })
+  }
+
+  handleDisplayingOtherInSlaughterhouse = show => {
+    store.dispatch({ type: 'RESET_HISTORY_TAB' })
+    const labSampleItem = document.getElementById('list_item_lab_sample')
+    const chevronIcon = document.getElementById('chevron_icon_other_slaughterhouse')
+    if (show) {
+      if (labSampleItem && chevronIcon) {
+        labSampleItem.style.display = 'block'
+        labSampleItem.style.paddingLeft = '2.5rem'
+        chevronIcon.className = 'fa fa-chevron-down'
+      }
+    } else {
+      if (labSampleItem && chevronIcon) {
+        labSampleItem.style.display = 'none'
+        chevronIcon.className = 'fa fa-chevron-right'
+      }
+    }
+  }
+
+  displayOrHideInventory = () => {
+    this.setState(prevState => { this.setState({ changeInvetoryState: !prevState.changeInvetoryState }) })
+  }
+
+  handleDisplayingInventory = show => {
+    store.dispatch({ type: 'RESET_HISTORY_TAB' })
+    const inventoryItem = document.getElementById('list_item_ivinventory_item')
+    const incomingTransferItem = document.getElementById('list_item_income_transfer')
+    const outgoingTransferItem = document.getElementById('list_item_outcome_transfer')
+    const chevronIcon = document.getElementById('chevron_icon_inventory')
+    if (show) {
+      if (inventoryItem && incomingTransferItem && outgoingTransferItem && chevronIcon) {
+        inventoryItem.style.display = 'block'
+        inventoryItem.style.paddingLeft = '2.5rem'
+        incomingTransferItem.style.display = 'block'
+        incomingTransferItem.style.paddingLeft = '2.5rem'
+        outgoingTransferItem.style.display = 'block'
+        outgoingTransferItem.style.paddingLeft = '2.5rem'
+        chevronIcon.className = 'fa fa-chevron-down'
+      }
+    } else {
+      if (inventoryItem && incomingTransferItem && outgoingTransferItem && chevronIcon) {
+        inventoryItem.style.display = 'none'
+        incomingTransferItem.style.display = 'none'
+        outgoingTransferItem.style.display = 'none'
+        chevronIcon.className = 'fa fa-chevron-right'
+      }
+    }
+  }
+
+  handleDisplayingPetsShelter = show => {
+    store.dispatch({ type: 'RESET_HISTORY_TAB' })
+    const activePetsItem = document.getElementById('list_item_pet')
+    const terminatedPetsItem = document.getElementById('list_item_terminated_pet')
+    const outgoingPetsItem = document.getElementById('list_item_outgoing_pets')
+    const chevronIcon = document.getElementById('chevron_icon_pets')
+    if (show) {
+      if (activePetsItem && terminatedPetsItem && outgoingPetsItem && chevronIcon) {
+        activePetsItem.style.display = 'block'
+        activePetsItem.style.paddingLeft = '2.5rem'
+        terminatedPetsItem.style.display = 'block'
+        terminatedPetsItem.style.paddingLeft = '2.5rem'
+        outgoingPetsItem.style.display = 'block'
+        outgoingPetsItem.style.paddingLeft = '2.5rem'
+        chevronIcon.className = 'fa fa-chevron-down'
+      }
+    } else {
+      if (activePetsItem && terminatedPetsItem && outgoingPetsItem && chevronIcon) {
+        activePetsItem.style.display = 'none'
+        terminatedPetsItem.style.display = 'none'
+        outgoingPetsItem.style.display = 'none'
+        chevronIcon.className = 'fa fa-chevron-right'
+      }
+    }
+  }
+
+  displayOrHidePetShelter = () => {
+    this.setState(prevState => { this.setState({ changePetsShelterState: !prevState.changePetsShelterState }) })
   }
 
   render () {
@@ -758,6 +1808,83 @@ class SideMenu extends React.Component {
           id='clearReturnedComponentSideMenu'
           onClick={this.clearReturnedComponent}
         />
+        <button
+          style={
+            {
+              height: '0px',
+              width: '0px',
+              display: 'none'
+            }
+          }
+          id='filterTerminatedAnimalsByDate'
+          onClick={this.handleTerminatedAnimalsFilter}
+        />
+        <button
+          style={
+            {
+              height: '0px',
+              width: '0px',
+              display: 'none'
+            }
+          }
+          id='filterMovementDocumentsByDate'
+          onClick={this.handleFinishedMovementDocumentsFilter}
+        />
+        <button
+          style={
+            {
+              height: '0px',
+              width: '0px',
+              display: 'none'
+            }
+          }
+          id='filterMovementsByDate'
+          onClick={this.handleFinishedMovementsFilter}
+        />
+        <button
+          style={
+            {
+              height: '0px',
+              width: '0px',
+              display: 'none'
+            }
+          }
+          id='filterOutgoingTransfers'
+          onClick={this.handleOutgoingTransfersFilter}
+        />
+        <button
+          style={
+            {
+              height: '0px',
+              width: '0px',
+              display: 'none'
+            }
+          }
+          id='filterIncomingTransfers'
+          onClick={this.handleIncomingTransfersFilter}
+        />
+        <button
+          style={
+            {
+              height: '0px',
+              width: '0px',
+              display: 'none'
+            }
+          }
+          id='filterTerminatedPetsByDate'
+          onClick={this.handleTerminatedPetsFilter}
+        />
+        <button
+          style={
+            {
+              height: '0px',
+              width: '0px',
+              display: 'none'
+            }
+          }
+          id='filterReleasedPetsByDate'
+          onClick={this.handleReleasedPetsFilter}
+        />
       </div>
     )
   }
@@ -775,7 +1902,9 @@ const mapStateToProps = state => ({
   componentToDisplay: state.componentToDisplay.componentToDisplay,
   getUserGroups: state.userInfoReducer.getUsers,
   addedKeeperToHolding: state.linkedObjects.addedKeeperToHolding,
-  removedKeeperFromHolding: state.dropLink.removedKeeperFromHolding
+  removedKeeperFromHolding: state.dropLink.removedKeeperFromHolding,
+  shouldRefreshSideMenu: state.changeStatus.shouldRefreshSideMenu,
+  wasClickedFromRecentTab: state.historyReducer.wasClickedFromRecentTab
 })
 
 export default connect(mapStateToProps)(SideMenu)

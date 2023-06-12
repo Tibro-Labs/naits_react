@@ -5,20 +5,25 @@ import * as config from 'config/config.js'
 import style from './ExecuteActionOnSelectedRows.module.css'
 import { store } from 'tibro-redux'
 import { alertUser } from 'tibro-components'
-import { formatAlertType } from 'functions/utils'
-import { executeActionOnSelectedRows } from 'backend/executeActionOnSelectedRows.js'
+import { Loading } from 'components/ComponentsIndex'
+import { strcmp, formatAlertType } from 'functions/utils'
+import { massAnimalOrFlockAction } from 'backend/executeActionOnSelectedRows.js'
 
 class UndoAnimalRetirement extends React.Component {
   constructor (props) {
     super(props)
     this.state = {
-      alert: null
+      alert: null,
+      loading: false
     }
   }
 
   componentWillReceiveProps (nextProps) {
-    if ((this.props.massActionResult !== nextProps.massActionResult) &&
-      nextProps.massActionResult) {
+    this.setState({ loading: nextProps.loading })
+    if ((this.props.massActionResult !== nextProps.massActionResult) && nextProps.massActionResult) {
+      if (strcmp(formatAlertType(nextProps.massActionResult), 'success')) {
+        store.dispatch({ type: 'UNDO_ANIMAL_RETIREMENT_FULFILLED' })
+      }
       this.setState({
         alert: alertUser(true, formatAlertType(nextProps.massActionResult), this.context.intl.formatMessage({
           id: nextProps.massActionResult,
@@ -26,51 +31,55 @@ class UndoAnimalRetirement extends React.Component {
         }) || ' ', null,
         () => {
           store.dispatch({ type: 'CLEAN_ACTION_STATE', payload: null })
+          store.dispatch({ type: 'RESET_UNDO_ANIMAL_RETIREMENT' })
         })
       })
     }
   }
 
-  executeAction = (actionName, subActionName) => {
-    store.dispatch({ type: 'CLEAN_ACTION_STATE', payload: null })
-    function prompt (component, onConfirmCallback) {
-      component.setState({
-        alert: alertUser(
-          true,
-          'warning',
-          component.context.intl.formatMessage({
-            id: `${config.labelBasePath}.actions.prompt_text`,
-            defaultMessage: `${config.labelBasePath}.actions.prompt_text`
-          }) + ' ' + '"' +
-          component.context.intl.formatMessage({
-            id: `${config.labelBasePath}.actions.undo_retire`,
-            defaultMessage: `${config.labelBasePath}.actions.undo_retire`
-          }) + '"' + '?',
-          null,
-          onConfirmCallback,
-          () => component.setState({ alert: alertUser(false, 'info', '') }),
-          true,
-          component.context.intl.formatMessage({
-            id: `${config.labelBasePath}.actions.execute`,
-            defaultMessage: `${config.labelBasePath}.actions.execute`
-          }),
-          component.context.intl.formatMessage({
-            id: `${config.labelBasePath}.main.forms.cancel`,
-            defaultMessage: `${config.labelBasePath}.main.forms.cancel`
-          }),
-          true,
-          null,
-          true
-        )
-      })
-    }
+  undoRetirePrompt = () => {
+    let type = this.props.gridType.toLowerCase()
+    this.setState({
+      alert: alertUser(
+        true,
+        'warning',
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.actions.prompt_text`,
+          defaultMessage: `${config.labelBasePath}.actions.prompt_text`
+        }) + ' ' + '"' +
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.actions.undo_${type}_retire`,
+          defaultMessage: `${config.labelBasePath}.actions.undo_${type}_retire`
+        }) + '"' + '?',
+        null,
+        () => this.executeUndoRetireAction(),
+        () => this.setState({ alert: alertUser(false, 'info', '') }),
+        true,
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.actions.execute`,
+          defaultMessage: `${config.labelBasePath}.actions.execute`
+        }),
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.main.forms.cancel`,
+          defaultMessage: `${config.labelBasePath}.main.forms.cancel`
+        })
+      )
+    })
+  }
 
+  executeUndoRetireAction = () => {
+    store.dispatch({ type: 'CLEAN_ACTION_STATE', payload: null })
     this.props.selectedObjects.forEach(grid => {
       if (grid.active) {
         const objectArray = Array(grid.row)
-        prompt(this, () => this.props.executeActionOnSelectedRows(
-          this.props.svSession, this.props.gridType, 'EXECUTE_ACTION_ON_ROWS', actionName, subActionName,
-          objectArray, 'null', 'null', 'null', 'null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'
+        const actionName = 'undo-retire'
+        const massActionType = 'EXECUTE_ACTION_ON_ROWS'
+        const paramsArray = [{
+          MASS_PARAM_TBL_NAME: this.props.gridType,
+          MASS_PARAM_ACTION: actionName
+        }]
+        store.dispatch(massAnimalOrFlockAction(
+          this.props.svSession, massActionType, actionName, objectArray, paramsArray
         ))
       }
     })
@@ -89,9 +98,13 @@ class UndoAnimalRetirement extends React.Component {
           component = <div
             id='undo_retire'
             className={style.menuActivator}
-            onClick={() => this.executeAction('undo-retire', 'null')}>
+            onClick={() => this.undoRetirePrompt()}>
             {this.state.alert}
-            <span id='undo_text' className={style.actionText}>
+            <span
+              id='undo_text'
+              style={{ marginLeft: '10px', marginTop: gridType === 'ANIMAL' && '0' }}
+              className={style.actionText}
+            >
               {this.context.intl.formatMessage({
                 id: `${config.labelBasePath}.actions.undo_${type}_retire`,
                 defaultMessage: `${config.labelBasePath}.actions.undo_${type}_retire`
@@ -103,19 +116,18 @@ class UndoAnimalRetirement extends React.Component {
         }
       })
     }
-    return component
+    return (
+      <React.Fragment>
+        {this.state.loading && <Loading />}
+        {component}
+      </React.Fragment>
+    )
   }
 }
 
 UndoAnimalRetirement.contextTypes = {
   intl: PropTypes.object.isRequired
 }
-
-const mapDispatchToProps = dispatch => ({
-  executeActionOnSelectedRows: (...params) => {
-    dispatch(executeActionOnSelectedRows(...params))
-  }
-})
 
 UndoAnimalRetirement.propTypes = {
   gridType: PropTypes.string.isRequired
@@ -124,7 +136,8 @@ UndoAnimalRetirement.propTypes = {
 const mapStateToProps = (state) => ({
   svSession: state.security.svSession,
   selectedObjects: state.gridConfig.gridHierarchy,
-  massActionResult: state.massActionResult.result
+  massActionResult: state.massActionResult.result,
+  loading: state.massActionResult.loading
 })
 
-export default connect(mapStateToProps, mapDispatchToProps)(UndoAnimalRetirement)
+export default connect(mapStateToProps)(UndoAnimalRetirement)

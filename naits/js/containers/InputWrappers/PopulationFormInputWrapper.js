@@ -16,6 +16,9 @@ class PopulationFormInputWrapper extends React.Component {
       fieldIdName: 'CAMPAIGN_NAME',
       gridToDisplay: 'VACCINATION_EVENT',
       formSectionsClassName: 'form-group field field-object',
+      animalStatusDropdownElId: 'root_population.basic_info_POPULATION_STATUS',
+      holdingStatusDropdownElId: 'root_population.basic_info_HOLDING_STATUS',
+      animalTypeDropdownElId: 'root_population.basic_info_FILTER_ANI_TYPE',
       missingTagDropdown: 'root_population.filter_missing_tag_EAR_TAG_FILTER',
       missingTagFrom: 'root_population.filter_missing_tag_FILTER_MISSING_TAG_FROM',
       missingTagTo: 'root_population.filter_missing_tag_FILTER_MISSING_TAG_TO',
@@ -72,6 +75,7 @@ class PopulationFormInputWrapper extends React.Component {
       tagTo.setAttribute('disabled', '')
     }
 
+    this.disableEmptyOptions()
     this.sectionsStyleChange('initial')
   }
 
@@ -93,6 +97,28 @@ class PopulationFormInputWrapper extends React.Component {
           }
         }
       }
+    }
+  }
+
+  disableEmptyOptions = () => {
+    const { animalStatusDropdownElId, holdingStatusDropdownElId, animalTypeDropdownElId } = this.state
+    const animalStatusDropdown = $(animalStatusDropdownElId)
+    const holdingStatusDropdown = $(holdingStatusDropdownElId)
+    const animalTypeDropdown = $(animalTypeDropdownElId)
+    if (animalStatusDropdown && animalStatusDropdown.firstChild) {
+      animalStatusDropdown.firstChild.setAttribute('disabled', 'true')
+      animalStatusDropdown.firstChild.setAttribute('selected', 'true')
+      animalStatusDropdown.firstChild.setAttribute('hidden', 'true')
+    }
+    if (holdingStatusDropdown && holdingStatusDropdown.firstChild) {
+      holdingStatusDropdown.firstChild.setAttribute('disabled', 'true')
+      holdingStatusDropdown.firstChild.setAttribute('selected', 'true')
+      holdingStatusDropdown.firstChild.setAttribute('hidden', 'true')
+    }
+    if (animalTypeDropdown && animalStatusDropdown.firstChild) {
+      animalTypeDropdown.firstChild.setAttribute('disabled', 'true')
+      animalTypeDropdown.firstChild.setAttribute('selected', 'true')
+      animalTypeDropdown.firstChild.setAttribute('hidden', 'true')
     }
   }
 

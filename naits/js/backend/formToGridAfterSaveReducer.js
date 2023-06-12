@@ -7,7 +7,10 @@ export function formToGridAfterSaveReducer (state = {
   QUARANTINE_ID: undefined,
   POPULATION_ID: undefined,
   LAB_SAMPLE_ID: undefined,
-  LAB_TEST_TYPE_PKID: undefined
+  LAB_TEST_TYPE_PKID: undefined,
+  RFID_NUMBER: undefined,
+  HERD_OBJ_ID: undefined,
+  HERD_ANIMAL_TYPE: undefined
 }, action) {
   switch (action.type) {
     case 'HOLDING_FORM/SAVE_FORM_DATA': {
@@ -88,6 +91,26 @@ export function formToGridAfterSaveReducer (state = {
     case 'LAB_TEST_TYPE_FORM_REDUCER': {
       return {
         ...state, LAB_TEST_TYPE_PKID: undefined
+      }
+    }
+    case 'RFID_INPUT_FORM/SAVE_FORM_DATA': {
+      return {
+        ...state, RFID_NUMBER: action.payload['RFID_INPUT.RFID_NUMBER']
+      }
+    }
+    case 'RESET_RFID_INPUT_FORM_REDUCER': {
+      return {
+        ...state, RFID_NUMBER: undefined
+      }
+    }
+    case 'NEW_HERD_FORM/SAVE_FORM_DATA': {
+      return {
+        ...state, HERD_OBJ_ID: action.payload.object_id, HERD_ANIMAL_TYPE: action.payload.ANIMAL_TYPE, HERD_CONTACT_PERSON_ID: action.payload.CONTACT_PERSON_ID
+      }
+    }
+    case 'RESET_NEW_HERD_FORM_REDUCER': {
+      return {
+        ...state, HERD_OBJ_ID: undefined, HERD_ANIMAL_TYPE: undefined, HERD_CONTACT_PERSON_ID: undefined
       }
     }
   }

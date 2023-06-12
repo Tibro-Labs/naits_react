@@ -151,7 +151,7 @@ class ChangePetPassportStatus extends React.Component {
         <ul id='actionMenu' className={'list-group ' + style.ul_item} >
           <li id='change_pet_passport_status' key='change_pet_passport_status' className={style.li_item}>
             <div className={style.imgTxtHolder}>
-              <span id='activity_text' className={style.actionText}>
+              <span id='activity_text' style={{ marginTop: '2px' }} className={style.actionText}>
                 {this.context.intl.formatMessage({
                   id: `${config.labelBasePath}.actions.change_pet_passport_status`,
                   defaultMessage: `${config.labelBasePath}.actions.change_pet_passport_status`

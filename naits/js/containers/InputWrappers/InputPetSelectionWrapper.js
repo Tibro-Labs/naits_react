@@ -7,12 +7,12 @@ import { connect } from 'react-redux'
 import { ComponentManager, GridInModalLinkObjects } from 'components/ComponentsIndex'
 import { alertUser } from 'tibro-components'
 import { store } from 'tibro-redux'
+import { disableEvents } from 'functions/utils'
 
 class InputPetSelectionWrapper extends React.Component {
   constructor (props) {
     super(props)
     this.state = {
-      events: ['input', 'keydown', 'keyup', 'mousedown', 'mouseup', 'select', 'contextmenu', 'drop'],
       showSearchPopup: false,
       elementIdName: 'root_pet_passport.basic_info_HOLDING_NAME',
       petIdInputElement: 'root_pet_passport.basic_info_PET_ID',
@@ -41,9 +41,7 @@ class InputPetSelectionWrapper extends React.Component {
     vetStationInput.setAttribute('disabled', '')
     vetStationInput.value = this.props.gridHierarchy[0].row['HOLDING.PIC']
     petIdInput.onclick = this.displayPopupOnClick
-    this.state.events.forEach(event => {
-      petIdInput.addEventListener(event, function (e) { e.preventDefault() })
-    })
+    disableEvents(petIdInput)
 
     let elementPrefix = petIdInput.id.replace('root_', '')
     elementPrefix = elementPrefix.replace(`_${this.state.fieldIdName}`, '')

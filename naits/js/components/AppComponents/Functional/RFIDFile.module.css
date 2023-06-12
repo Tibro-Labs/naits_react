@@ -1,0 +1,84 @@
+.fileInput + label {
+  background: #e3eedd;
+  color: #141414;
+  width: 30rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  display: inline-block;
+  font-size: 1.3rem;
+  font-weight: 500;
+  outline: none;
+  padding: 2.5rem 50px;
+  position: relative;
+  transition: all 1s;
+  vertical-align: middle;
+  word-break: break-word;
+}
+
+.fileInput + label:hover {
+  background-color: darken(#e3eedd, 30%);
+}
+
+.fileInfo {
+  margin: 1px 5px 6px;
+  float: right;
+  color: #DFF2F6;
+  width: 15vw;
+  height: 8.6vh;
+  cursor: auto;
+}
+
+.boldParagraph {
+  font-weight: bold;
+}
+
+.noFileParagraph {
+  margin-top: 2rem;
+  margin-left: 5rem;
+  font-weight: bold;
+  font-size: 1.5rem;
+}
+
+@media screen and (min-device-width: 2000px) and (max-device-width: 2560px) {
+  .noFileParagraph {
+    margin-left: 3.5vw;
+  }
+}
+
+@media screen and (min-device-width: 1400px) and (max-device-width: 1600px) {
+  .noFileParagraph {
+    margin-top: 2.3rem;
+    margin-left: 2rem;
+  }
+}
+
+@media screen and (min-device-width: 1000px) and (max-device-width: 1400px) {
+  .noFileParagraph {
+    margin-top: 2rem;
+    margin-left: 0.5rem;
+  }
+}
+
+@media screen and (min-device-width: 1600px) and (max-device-width: 1900px) {
+  .noFileParagraph {
+    margin-top: 2rem;
+    margin-left: 5vh;
+  }
+}
+
+@media screen and (min-device-width: 2000px) {
+  .fileInfoHeader {
+    width: 20rem;
+  }
+}
+
+@media screen and (max-device-width: 1600px) {
+  .fileInfoHeader {
+    display: none;
+  }
+
+  .boldParagraph {
+    margin-top: 1rem;
+  }
+}

@@ -9,6 +9,9 @@ export function resetObject () {
 
 export function moveInventoryItem (session, objectArray) {
   return function (dispatch) {
+    const actionType = 'MOVE_INVENTORY_ITEM'
+    dispatch({ type: `${actionType}_PENDING` })
+
     const verbPath = config.svConfig.triglavRestVerbs.MOVE_INVENTORY_ITEM
     const restUrl = `${config.svConfig.restSvcBaseUrl}${verbPath}/${session}`
     axios({
@@ -18,9 +21,9 @@ export function moveInventoryItem (session, objectArray) {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     })
       .then((response) => {
-        dispatch({ type: 'MOVE_INVENTORY_ITEM_FULFILLED', payload: response })
+        dispatch({ type: `${actionType}_FULFILLED`, payload: response })
       }).catch((error) => {
-        dispatch({ type: 'MOVE_INVENTORY_ITEM_REJECTED', payload: error })
+        dispatch({ type: `${actionType}_REJECTED`, payload: error })
       })
   }
 }

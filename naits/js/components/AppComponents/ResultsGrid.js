@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
 import { ComponentManager, GridManager } from 'components/ComponentsIndex'
-import { menuConfig } from 'config/menuConfig.js'
+import { disableAddRowConfig } from 'config/disableAddRowConfig'
 
 class ResultsGrid extends React.Component {
   static propTypes = {
@@ -47,8 +47,8 @@ class ResultsGrid extends React.Component {
     let renderGrid
 
     if (!filterBy && !filterVals) {
-      menuConfig('DISABLE_ADD_ROW_FOR_TABLE') && menuConfig('DISABLE_ADD_ROW_FOR_TABLE').LIST_OF_ITEMS.map((element) => {
-        // Disable add button for some grids defined in menuConfig
+      disableAddRowConfig('DISABLE_ADD_ROW_FOR_TABLE') && disableAddRowConfig('DISABLE_ADD_ROW_FOR_TABLE').LIST_OF_ITEMS.map((element) => {
+        // Disable add button for some grids defined in disableAddRowConfig
         if (id === element.TABLE) {
           this.insertNewRow = null
           this.customButton = null
@@ -57,27 +57,139 @@ class ResultsGrid extends React.Component {
       })
 
       if (props.gridTypeCall) {
-        gridParams.push({
-          PARAM_NAME: 'objectName',
-          PARAM_VALUE: showGrid
-        }, {
-          PARAM_NAME: 'gridConfigWeWant',
-          PARAM_VALUE: showGrid
-        }, {
-          PARAM_NAME: 'svSession',
-          PARAM_VALUE: props.session
-        }, {
-          PARAM_NAME: 'rowlimit',
-          PARAM_VALUE: 10000
-        }, {
-          PARAM_NAME: 'externalId',
-          PARAM_VALUE: props.externalId
-        })
-        renderGrid = GridManager.generateGridWithCustomSize(
-          id, id, 'CUSTOM_GRID', props.gridTypeCall,
-          gridParams, 'CUSTOM', this.onRowSelect, null, enableMultiSelect,
-          onSelectChangeFunct, gridHeight, gridWidth, toggleCustomButton, this.customButton
-        )
+        if (props.gridTypeCall === 'GET_BYOBJECTID') {
+          gridParams.push({
+            PARAM_NAME: 'objectName',
+            PARAM_VALUE: showGrid
+          }, {
+            PARAM_NAME: 'gridConfigWeWant',
+            PARAM_VALUE: showGrid
+          }, {
+            PARAM_NAME: 'svSession',
+            PARAM_VALUE: props.session
+          }, {
+            PARAM_NAME: 'objectId',
+            PARAM_VALUE: props.orgUnitObjId
+          })
+          renderGrid = GridManager.generateGridWithCustomSize(
+            id, id, 'CUSTOM_GRID', props.gridTypeCall,
+            gridParams, 'CUSTOM', this.onRowSelect, null, enableMultiSelect,
+            onSelectChangeFunct, gridHeight, gridWidth, toggleCustomButton, this.customButton
+          )
+        } else if (props.gridTypeCall === 'GET_BYPARENTID') {
+          gridParams.push({
+            PARAM_NAME: 'objectName',
+            PARAM_VALUE: showGrid
+          }, {
+            PARAM_NAME: 'gridConfigWeWant',
+            PARAM_VALUE: showGrid
+          }, {
+            PARAM_NAME: 'svSession',
+            PARAM_VALUE: props.session
+          }, {
+            PARAM_NAME: 'parentId',
+            PARAM_VALUE: props.parentId
+          }, {
+            PARAM_NAME: 'objectType',
+            PARAM_VALUE: showGrid
+          }, {
+            PARAM_NAME: 'rowlimit',
+            PARAM_VALUE: 10000
+          })
+          renderGrid = GridManager.generateGridWithCustomSize(
+            id, id, 'CUSTOM_GRID', props.gridTypeCall,
+            gridParams, 'CUSTOM', this.onRowSelect, null, enableMultiSelect,
+            onSelectChangeFunct, gridHeight, gridWidth, toggleCustomButton, this.customButton
+          )
+        } else if (props.gridTypeCall === 'BASE_DATA_SECONDARY') {
+          gridParams.push({
+            PARAM_NAME: 'objectName',
+            PARAM_VALUE: showGrid
+          }, {
+            PARAM_NAME: 'gridConfigWeWant',
+            PARAM_VALUE: showGrid
+          }, {
+            PARAM_NAME: 'svSession',
+            PARAM_VALUE: props.session
+          })
+          renderGrid = GridManager.generateGridWithCustomSize(
+            id, id, 'CUSTOM_GRID', props.gridTypeCall,
+            gridParams, 'CUSTOM', this.onRowSelect, null, enableMultiSelect,
+            onSelectChangeFunct, gridHeight, gridWidth, toggleCustomButton, this.customButton
+          )
+        } else if (props.gridTypeCall === 'GET_TABLE_WITH_LIKE_FILTER_2') {
+          gridParams.push({
+            PARAM_NAME: 'objectName',
+            PARAM_VALUE: showGrid
+          }, {
+            PARAM_NAME: 'gridConfigWeWant',
+            PARAM_VALUE: showGrid
+          }, {
+            PARAM_NAME: 'svSession',
+            PARAM_VALUE: props.session
+          }, {
+            PARAM_NAME: 'searchBy',
+            PARAM_VALUE: 'NAME'
+          }, {
+            PARAM_NAME: 'searchForValue',
+            PARAM_VALUE: props.externalId
+          }, {
+            PARAM_NAME: 'rowlimit',
+            PARAM_VALUE: 10000
+          })
+          renderGrid = GridManager.generateGridWithCustomSize(
+            id, id, 'CUSTOM_GRID', props.gridTypeCall,
+            gridParams, 'CUSTOM', this.onRowSelect, null, enableMultiSelect,
+            onSelectChangeFunct, gridHeight, gridWidth, toggleCustomButton, this.customButton
+          )
+        } else if (props.gridTypeCall === 'GET_TABLE_WITH_FILTER_2') {
+          gridParams.push({
+            PARAM_NAME: 'table_name',
+            PARAM_VALUE: showGrid
+          }, {
+            PARAM_NAME: 'gridConfigWeWant',
+            PARAM_VALUE: showGrid
+          }, {
+            PARAM_NAME: 'svSession',
+            PARAM_VALUE: props.session
+          }, {
+            PARAM_NAME: 'searchBy',
+            PARAM_VALUE: props.filterValue
+          }, {
+            PARAM_NAME: 'searchForValue',
+            PARAM_VALUE: props.externalId
+          }, {
+            PARAM_NAME: 'no_rec',
+            PARAM_VALUE: 10000
+          })
+          renderGrid = GridManager.generateGridWithCustomSize(
+            id, id, 'CUSTOM_GRID', props.gridTypeCall,
+            gridParams, 'CUSTOM', this.onRowSelect, null, enableMultiSelect,
+            onSelectChangeFunct, gridHeight, gridWidth, toggleCustomButton, this.customButton
+          )
+        } else {
+          gridParams.push({
+            PARAM_NAME: 'objectName',
+            PARAM_VALUE: showGrid
+          }, {
+            PARAM_NAME: 'gridConfigWeWant',
+            PARAM_VALUE: showGrid
+          }, {
+            PARAM_NAME: 'svSession',
+            PARAM_VALUE: props.session
+          }, {
+            PARAM_NAME: 'rowlimit',
+            PARAM_VALUE: 10000
+          }, {
+            PARAM_NAME: 'externalId',
+            PARAM_VALUE: props.externalId || 'null'
+          })
+          renderGrid = GridManager.generateGridWithCustomSize(
+            id, id, 'CUSTOM_GRID', props.gridTypeCall,
+            gridParams, 'CUSTOM', this.onRowSelect, null, enableMultiSelect,
+            onSelectChangeFunct, gridHeight, gridWidth, toggleCustomButton, this.customButton
+          )
+        }
       } else {
         if (showGrid === 'LAB_TEST_TYPE') {
           gridTypeCall = 'GET_VALID_TEST_TYPES'
@@ -115,10 +227,20 @@ class ResultsGrid extends React.Component {
 
         if (this.props.customGridDataWS) {
           gridTypeCall = this.props.customGridDataWS
-          if (gridTypeCall === 'GET_APPLIED_STRAT_FILTERS') {
+          if (gridTypeCall === 'GET_APPLIED_STRAT_FILTERS' || gridTypeCall === 'GET_HERDS_PER_HOLDING' || gridTypeCall === 'GET_ANIMALS_PER_HERD') {
             gridParams.push({
               PARAM_NAME: 'parentId',
               PARAM_VALUE: this.props.parentId
+            })
+          }
+
+          if (gridTypeCall === 'GET_AVAILABLE_ANIMALS_PER_TYPE') {
+            gridParams.push({
+              PARAM_NAME: 'herdObjId',
+              PARAM_VALUE: this.props.herdObjId
+            }, {
+              PARAM_NAME: 'animalType',
+              PARAM_VALUE: this.props.herdAnimalType
             })
           }
 
@@ -157,8 +279,8 @@ class ResultsGrid extends React.Component {
         }
       }
     } else {
-      menuConfig('DISABLE_ADD_ROW_FOR_TABLE') && menuConfig('DISABLE_ADD_ROW_FOR_TABLE').LIST_OF_ITEMS.map((element) => {
-        // Disable add button for some grids defined in menuConfig
+      disableAddRowConfig('DISABLE_ADD_ROW_FOR_TABLE') && disableAddRowConfig('DISABLE_ADD_ROW_FOR_TABLE').LIST_OF_ITEMS.map((element) => {
+        // Disable add button for some grids defined in disableAddRowConfig
         if (id === element.TABLE) {
           this.insertNewRow = null
           this.customButton = null

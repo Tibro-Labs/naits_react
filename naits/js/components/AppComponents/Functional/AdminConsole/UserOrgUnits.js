@@ -1,17 +1,20 @@
 import React from 'react'
 import { connect } from 'react-redux'
 import PropTypes from 'prop-types'
+import axios from 'axios'
 import * as config from 'config/config'
+import { Loading } from 'components/ComponentsIndex'
 import { userAttachmentPostMethod } from './admConsoleActions'
 import { alertUser, DependencyDropdowns } from 'tibro-components'
-import { gaEventTracker } from 'functions/utils'
+import { strcmp, gaEventTracker } from 'functions/utils'
 import consoleStyle from './AdminConsole.module.css'
 
 class UserOrgUnits extends React.Component {
   constructor (props) {
     super(props)
     this.state = {
-      alert: null
+      alert: null,
+      loading: false
     }
   }
 
@@ -168,6 +171,149 @@ class UserOrgUnits extends React.Component {
     this.props.userAttachmentPostMethod(url, verbPath, objectArray)
   }
 
+  printResponsibleUserReport = (e, orgUnit) => {
+    e.stopPropagation()
+    const server = config.svConfig.restSvcBaseUrl
+    const verbPath = config.svConfig.triglavRestVerbs.GET_REPORT
+    let url = `${server}/${verbPath}`
+    url = url.replace('%session', this.props.svSession)
+    url = url.replace('%reportName', 'responsible_users_per_org_unit')
+    let regionElement = null
+    let municipalityElement = null
+    let communityElement = null
+    let villageElement = null
+    let region = null
+    let municipality = null
+    let community = null
+    let village = null
+    regionElement = document.getElementById('root_holding.location.info_REGION_CODE')
+    region = regionElement.options[regionElement.selectedIndex].value
+    municipalityElement = document.getElementById('root_holding.location.info_MUNIC_CODE')
+    if (!municipalityElement) {
+      municipality = null
+    } else {
+      municipality = municipalityElement.options[municipalityElement.selectedIndex].value
+    }
+    communityElement = document.getElementById('root_holding.location.info_COMMUN_CODE')
+    if (!communityElement) {
+      community = null
+    } else {
+      community = communityElement.options[communityElement.selectedIndex].value
+    }
+    villageElement = document.getElementById('root_holding.location.info_VILLAGE_CODE')
+    if (!villageElement) {
+      village = null
+    } else {
+      village = villageElement.options[villageElement.selectedIndex].value
+    }
+
+    if (strcmp(orgUnit, 'region')) {
+      if (!region) {
+        this.setState({
+          alert: alertUser(true, 'warning', this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.report.no_region_selected`,
+            defaultMessage: `${config.labelBasePath}.report.no_region_selected`
+          }))
+        })
+      } else {
+        this.setState({ loading: true })
+        const verbPath = config.svConfig.triglavRestVerbs.GET_TABLE_WITH_FILTER_2
+        let secondaryUrl = `${server}${verbPath}`
+        secondaryUrl = secondaryUrl.replace('%session', this.props.svSession)
+        secondaryUrl = secondaryUrl.replace('%table_name', 'SVAROG_ORG_UNITS')
+        secondaryUrl = secondaryUrl.replace('%searchBy', 'EXTERNAL_ID')
+        secondaryUrl = secondaryUrl.replace('%searchForValue', region)
+        secondaryUrl = secondaryUrl.replace('%no_rec', 1000)
+        axios.get(secondaryUrl).then(res => {
+          if (res.data && res.data[0]) {
+            this.setState({ loading: false }, () => {
+              url = url.replace('%objectId', res.data[0]['SVAROG_ORG_UNITS.OBJECT_ID'])
+              window.open(url, '_blank')
+            })
+          }
+        })
+      }
+    } else if (strcmp(orgUnit, 'munic')) {
+      if (!municipality) {
+        this.setState({
+          alert: alertUser(true, 'warning', this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.report.no_municipality_selected`,
+            defaultMessage: `${config.labelBasePath}.report.no_municipality_selected`
+          }))
+        })
+      } else {
+        this.setState({ loading: true })
+        const verbPath = config.svConfig.triglavRestVerbs.GET_TABLE_WITH_FILTER_2
+        let secondaryUrl = `${server}${verbPath}`
+        secondaryUrl = secondaryUrl.replace('%session', this.props.svSession)
+        secondaryUrl = secondaryUrl.replace('%table_name', 'SVAROG_ORG_UNITS')
+        secondaryUrl = secondaryUrl.replace('%searchBy', 'EXTERNAL_ID')
+        secondaryUrl = secondaryUrl.replace('%searchForValue', municipality)
+        secondaryUrl = secondaryUrl.replace('%no_rec', 1000)
+        axios.get(secondaryUrl).then(res => {
+          if (res.data && res.data[0]) {
+            this.setState({ loading: false }, () => {
+              url = url.replace('%objectId', res.data[0]['SVAROG_ORG_UNITS.OBJECT_ID'])
+              window.open(url, '_blank')
+            })
+          }
+        })
+      }
+    } else if (strcmp(orgUnit, 'commun')) {
+      if (!community) {
+        this.setState({
+          alert: alertUser(true, 'warning', this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.report.no_community_selected`,
+            defaultMessage: `${config.labelBasePath}.report.no_community_selected`
+          }))
+        })
+      } else {
+        this.setState({ loading: true })
+        const verbPath = config.svConfig.triglavRestVerbs.GET_TABLE_WITH_FILTER_2
+        let secondaryUrl = `${server}${verbPath}`
+        secondaryUrl = secondaryUrl.replace('%session', this.props.svSession)
+        secondaryUrl = secondaryUrl.replace('%table_name', 'SVAROG_ORG_UNITS')
+        secondaryUrl = secondaryUrl.replace('%searchBy', 'EXTERNAL_ID')
+        secondaryUrl = secondaryUrl.replace('%searchForValue', community)
+        secondaryUrl = secondaryUrl.replace('%no_rec', 1000)
+        axios.get(secondaryUrl).then(res => {
+          if (res.data && res.data[0]) {
+            this.setState({ loading: false }, () => {
+              url = url.replace('%objectId', res.data[0]['SVAROG_ORG_UNITS.OBJECT_ID'])
+              window.open(url, '_blank')
+            })
+          }
+        })
+      }
+    } else if (strcmp(orgUnit, 'village')) {
+      if (!village) {
+        this.setState({
+          alert: alertUser(true, 'warning', this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.report.no_village_selected`,
+            defaultMessage: `${config.labelBasePath}.report.no_village_selected`
+          }))
+        })
+      } else {
+        this.setState({ loading: true })
+        const verbPath = config.svConfig.triglavRestVerbs.GET_TABLE_WITH_FILTER_2
+        let secondaryUrl = `${server}${verbPath}`
+        secondaryUrl = secondaryUrl.replace('%session', this.props.svSession)
+        secondaryUrl = secondaryUrl.replace('%table_name', 'SVAROG_ORG_UNITS')
+        secondaryUrl = secondaryUrl.replace('%searchBy', 'EXTERNAL_ID')
+        secondaryUrl = secondaryUrl.replace('%searchForValue', village)
+        secondaryUrl = secondaryUrl.replace('%no_rec', 1000)
+        axios.get(secondaryUrl).then(res => {
+          if (res.data && res.data[0]) {
+            this.setState({ loading: false }, () => {
+              url = url.replace('%objectId', res.data[0]['SVAROG_ORG_UNITS.OBJECT_ID'])
+              window.open(url, '_blank')
+            })
+          }
+        })
+      }
+    }
+  }
+
   render () {
     let disabled = false
     if (this.props.selectedRows.length === 0) {
@@ -303,10 +449,49 @@ class UserOrgUnits extends React.Component {
       </div>
     </div>
 
+    let reportComponent = <div id='responsible_user_report_container'
+      className={consoleStyle.conButton} style={{ marginTop: '1.5rem' }}
+    >
+      <div id='responsible_user_report' className={consoleStyle['gauge-conButton']} style={{ marginTop: '23px' }}>
+        <div id='create_sublist' className={consoleStyle['dropdown-content']} style={{ marginTop: '0.9rem' }}>
+          <div id='region' onClick={(e) => this.printResponsibleUserReport(e, 'region')}>
+            {this.context.intl.formatMessage({
+              id: `${config.labelBasePath}.grid_labels.village.region_code`,
+              defaultMessage: `${config.labelBasePath}.grid_labels.village.region_code`
+            })}
+          </div>
+          <div id='munic' onClick={(e) => this.printResponsibleUserReport(e, 'munic')}>
+            {this.context.intl.formatMessage({
+              id: `${config.labelBasePath}.grid_labels.village.munic_code`,
+              defaultMessage: `${config.labelBasePath}.grid_labels.village.munic_code`
+            })}
+          </div>
+          <div id='commun' onClick={(e) => this.printResponsibleUserReport(e, 'commun')}>
+            {this.context.intl.formatMessage({
+              id: `${config.labelBasePath}.grid_labels.village.commun_code`,
+              defaultMessage: `${config.labelBasePath}.grid_labels.village.commun_code`
+            })}
+          </div>
+          <div id='village' onClick={(e) => this.printResponsibleUserReport(e, 'village')}>
+            {this.context.intl.formatMessage({
+              id: `${config.labelBasePath}.grid_labels.village.village_code`,
+              defaultMessage: `${config.labelBasePath}.grid_labels.village.village_code`
+            })}
+          </div>
+        </div>
+      </div>
+      {this.context.intl.formatMessage({
+        id: `${config.labelBasePath}.report.responsible_user_info`,
+        defaultMessage: `${config.labelBasePath}.report.responsible_user_info`
+      })}
+    </div>
+
     return (
       <div id='orgUnitContainer' className={consoleStyle.componentContainer}>
+        {this.state.loading && <Loading />}
         <DependencyDropdowns tableName='HOLDING' />
         {component}
+        {strcmp(this.props.gridToDisplay, 'SVAROG_USERS') && reportComponent}
         <div
           style={{ display: this.props.gridToDisplay === 'SVAROG_USERS' ? 'block' : 'none' }}
           className={consoleStyle.verticalLine}

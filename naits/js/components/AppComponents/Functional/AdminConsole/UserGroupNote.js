@@ -25,7 +25,7 @@ class UserGroupNote extends React.Component {
   }
 
   componentWillReceiveProps (nextProps) {
-    if (this.props.addedANewNote !== nextProps.addedANewNote) {
+    if ((this.props.addedANewNote !== nextProps.addedANewNote) && nextProps.addedANewNote) {
       this.getUserGroupNote()
     }
   }
@@ -54,6 +54,26 @@ class UserGroupNote extends React.Component {
 
   handleInputChange = (event) => {
     this.setState({ userGroupNoteValue: event.target.value })
+    this.disableOrEnableAlertBtn()
+  }
+
+  disableOrEnableAlertBtn = () => {
+    const noteDescriptionTextarea = document.getElementById('usergroup_note')
+    let noteDescriptionDomValue
+    if (noteDescriptionTextarea) {
+      noteDescriptionDomValue = noteDescriptionTextarea.value
+    }
+
+    const submitBtn = document.getElementsByClassName('swal-button swal-button--confirm')
+    if (noteDescriptionDomValue === '' || !noteDescriptionDomValue) {
+      if (submitBtn) {
+        submitBtn[0].setAttribute('disabled', '')
+      }
+    } else {
+      if (submitBtn) {
+        submitBtn[0].removeAttribute('disabled')
+      }
+    }
   }
 
   setUserGroupNote = async (props) => {
@@ -178,6 +198,11 @@ class UserGroupNote extends React.Component {
         wrapper
       )
     })
+
+    const submitBtn = document.getElementsByClassName('swal-button swal-button--confirm')
+    if (submitBtn) {
+      submitBtn[0].setAttribute('disabled', '')
+    }
   }
 
   render () {
@@ -208,7 +233,7 @@ class UserGroupNote extends React.Component {
           className={styles.container} style={{ cursor: 'pointer', marginRight: '7px', color: 'white' }}
           onClick={this.showAlert}
         >
-          <p>
+          <p style={{ marginTop: '2px' }}>
             {this.context.intl.formatMessage({
               id: `${config.labelBasePath}.main.setUserGroupNote`,
               defaultMessage: `${config.labelBasePath}.main.setUserGroupNote`

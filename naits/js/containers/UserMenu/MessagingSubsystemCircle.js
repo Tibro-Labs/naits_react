@@ -2,6 +2,8 @@ import React from 'react'
 import axios from 'axios'
 import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
+import { alertUser } from 'tibro-components'
+import { store } from 'tibro-redux'
 import animations from './animations.module.css'
 import style from './MessagingSubsystemCircle.module.css'
 import createHashHistory from 'history/createHashHistory'
@@ -22,29 +24,44 @@ class MessagingSubsystemCircle extends React.Component {
   }
 
   getNumOfUnreadMsgs = () => {
+    const youHaveUnreadMsgsLabel = this.context.intl.formatMessage({
+      id: 'naits.main.you_have_unread_messages',
+      defaultMessage: 'naits.main.you_have_unread_messages'
+    })
+    const openInboxLabel = this.context.intl.formatMessage({
+      id: 'naits.main.open_inbox',
+      defaultMessage: 'naits.main.open_inbox'
+    })
+    const dismissLabel = this.context.intl.formatMessage({
+      id: 'naits.main.dismiss',
+      defaultMessage: 'naits.main.dismiss'
+    })
     const server = config.svConfig.restSvcBaseUrl
-    let verbPath = config.svConfig.triglavRestVerbs.COUNT_UNREAD_MSGS
+    let verbPath = config.svConfig.triglavRestVerbs.GET_NUMBER_OF_UNREAD_OF_MSGS_PER_USER
     verbPath = verbPath.replace('%session', this.props.session)
-    let url = `${server}${verbPath}`
-    axios.get(url)
-      .then(res => this.setState({ unread: res.data }))
-      .catch(err => console.error(err))
+    const url = `${server}${verbPath}`
+    axios.get(url).then(res => {
+      this.setState({ unread: res.data })
+      if (res.data > 0 && !this.props.weDismissedTheUnreadMessagesAlert) {
+        alertUser(true, 'info', youHaveUnreadMsgsLabel + '.', null, () => {
+          store.dispatch({ type: 'WE COME FROM THE UNREAD MESSAGES ALERT' })
+          hashHistory.push('/chats')
+        }, () => store.dispatch({ type: 'WE DISMISSED THE UNREAD MESSAGES ALERT' }), true, openInboxLabel, dismissLabel)
+      }
+    }).catch(err => console.error(err))
   }
 
   render () {
     return (
       <div className={animations.fadeIn}>
-        <div
-          onClick={() => hashHistory.push('/messages')}
-          className={style.messagesContainer}
-        >
-          <span>
+        <div className={style.messagesContainer} onClick={() => hashHistory.push('/chats')}>
+          <span className={style.messagesTitle}>
             {this.context.intl.formatMessage({
               id: 'naits.main.messages',
               defaultMessage: 'naits.main.messages'
             })}
           </span>
-          <div className={style.notificationsCircle}>{this.state.unread}</div>
+          <div className={`badge badge-danger ${style.notificationsCircle}`}><span className={style.notificationNumber}>{this.state.unread}</span></div>
         </div>
       </div>
     )
@@ -56,7 +73,8 @@ MessagingSubsystemCircle.contextTypes = {
 }
 
 const mapStateToProps = state => ({
-  session: state.security.svSession
+  session: state.security.svSession,
+  weDismissedTheUnreadMessagesAlert: state.unreadMessagesAlert.weDismissedTheUnreadMessagesAlert
 })
 
 export default connect(mapStateToProps)(MessagingSubsystemCircle)

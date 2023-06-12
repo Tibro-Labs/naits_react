@@ -7,6 +7,7 @@ import { userInfoAction } from 'backend/userInfoAction'
 import PropTypes from 'prop-types'
 import { store, lastSelectedItem } from 'tibro-redux'
 import axios from 'axios'
+import { strcmp, isValidArray } from 'functions/utils'
 
 const styles = {
   bmBurgerButton: {
@@ -68,7 +69,7 @@ function SideMenuHOC (WrappedComponent) {
       let routeList = []
       const tempObject = {}
 
-      this.props.userInfo.allowedObjects.LIST_OF_ITEMS.map((configElement) => {
+      this.props.userInfo.allowedObjectsForSideMenu.LIST_OF_ITEMS.map((configElement) => {
         updatedList.push(configElement.LABEL)
         routeList.push(configElement.ROUTE)
         return Object.assign(tempObject, { [configElement.ROUTE]: configElement.LABEL })
@@ -93,18 +94,28 @@ function SideMenuHOC (WrappedComponent) {
     }
 
     componentWillReceiveProps (nextProps) {
-      if (this.props.userInfo.allowedObjects !== nextProps.userInfo.allowedObjects) {
+      if (this.props.userInfo.allowedObjectsForSideMenu !== nextProps.userInfo.allowedObjectsForSideMenu) {
         // fill state from config file on initial render
-        const linkText = nextProps.userInfo.allowedObjects.LIST_OF_ITEMS.map(configElement => configElement.LABEL)
-        const routes = nextProps.userInfo.allowedObjects.LIST_OF_ITEMS.map(configElement => configElement.ROUTE)
+        const linkText = nextProps.userInfo.allowedObjectsForSideMenu.LIST_OF_ITEMS.map(configElement => configElement.LABEL)
+        const routes = nextProps.userInfo.allowedObjectsForSideMenu.LIST_OF_ITEMS.map(configElement => configElement.ROUTE)
         this.setState({ menuItems: linkText, initialUrls: routes })
       }
     }
 
     componentDidMount () {
-      this.props.userInfoAction(this.props.svSession, 'ALLOWED_CUSTOM_OBJECTS')
-      if (!this.props.userIsLinkedToOneHolding && !this.props.userIsLinkedToTwoOrMoreHoldings) {
-        this.getLinkedHoldingsForCurrentUser()
+      const { userInfo } = this.props
+      if (userInfo.allowedObjectsForSideMenu && userInfo.allowedObjectsForSideMenu.LIST_OF_ITEMS && !isValidArray(userInfo.allowedObjectsForSideMenu.LIST_OF_ITEMS, 1)) {
+        this.props.userInfoAction(this.props.svSession, 'ALLOWED_CUSTOM_OBJECTS')
+      } else {
+        const linkText = userInfo.allowedObjectsForSideMenu.LIST_OF_ITEMS.map(configElement => configElement.LABEL)
+        const routes = userInfo.allowedObjectsForSideMenu.LIST_OF_ITEMS.map(configElement => configElement.ROUTE)
+        this.setState({ menuItems: linkText, initialUrls: routes })
+      }
+      const navigationType = window.performance.getEntriesByType('navigation')[0]
+      if (navigationType.type && strcmp(navigationType.type, 'reload')) {
+        if (!this.props.userIsLinkedToOneHolding && !this.props.userIsLinkedToTwoOrMoreHoldings) {
+          this.getLinkedHoldingsForCurrentUser()
+        }
       }
     }
 
@@ -116,13 +127,17 @@ function SideMenuHOC (WrappedComponent) {
       url = url.replace('%session', session)
       try {
         const res = await axios.get(url)
-        if (res.data && res.data.length === 1) {
-          store.dispatch({ type: 'USER_IS_LINKED_TO_ONE_HOLDING' })
-          this.setState({ userIsLinkedToOneHolding: true, userIsLinkedToTwoOrMoreHoldings: false })
-        } else if (res.data && res.data.length > 1) {
-          store.dispatch({ type: 'USER_IS_LINKED_TO_TWO_OR_MORE_HOLDINGS' })
-          this.setState({ userIsLinkedToOneHolding: false, userIsLinkedToTwoOrMoreHoldings: true })
-        } else if (res.data.length === 0) {
+        if (res.data && res.data instanceof Array) {
+          if (res.data && res.data.length === 1) {
+            store.dispatch({ type: 'USER_IS_LINKED_TO_ONE_HOLDING' })
+            this.setState({ userIsLinkedToOneHolding: true, userIsLinkedToTwoOrMoreHoldings: false })
+          } else if (res.data && res.data.length > 1) {
+            store.dispatch({ type: 'USER_IS_LINKED_TO_TWO_OR_MORE_HOLDINGS' })
+            this.setState({ userIsLinkedToOneHolding: false, userIsLinkedToTwoOrMoreHoldings: true })
+          } else if (res.data.length === 0) {
+            store.dispatch({ type: 'USER_IS_NOT_LINKED_TO_ANY_HOLDINGS' })
+          }
+        } else {
           store.dispatch({ type: 'USER_IS_NOT_LINKED_TO_ANY_HOLDINGS' })
         }
       } catch (err) {
@@ -178,7 +193,6 @@ function SideMenuHOC (WrappedComponent) {
                 this.state.SideMenuIsOpen ? componentStyle.hideButton : componentStyle.fadeIn
               }
             >
-
               <input type='text' className={componentStyle.search} placeholder='Type to search' onChange={this.filterList} />
               <ul className={componentStyle.unorderedList}>
                 <li key='liSideMenu Main Screen'>

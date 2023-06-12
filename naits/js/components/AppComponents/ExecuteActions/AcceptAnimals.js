@@ -5,12 +5,12 @@ import PropTypes from 'prop-types'
 import * as config from 'config/config.js'
 import style from './ExecuteActionOnSelectedRows.module.css'
 import { store } from 'tibro-redux'
-import { executeActionOnSelectedRows } from 'backend/executeActionOnSelectedRows.js'
+import { massAnimalOrFlockAction } from 'backend/executeActionOnSelectedRows.js'
 import { alertUser } from 'tibro-components'
 import DatePicker from 'react-date-picker'
 import { isValidArray, convertToShortDate, formatAlertType } from 'functions/utils'
 import { SearchPopup, ComponentManager, GridManager, Loading } from 'components/ComponentsIndex'
-import { transferAnimal, resetTransferAnimal } from 'backend/transferAction'
+import { transferAnimalOrFlock, resetTransferAnimal } from 'backend/transferAction'
 import FlockMovementCustomForm from './FlockMovementCustomForm'
 
 class AcceptAnimals extends React.Component {
@@ -33,7 +33,7 @@ class AcceptAnimals extends React.Component {
   }
 
   componentWillReceiveProps (nextProps) {
-    nextProps.isLoading ? this.setState({ loading: true }) : this.setState({ loading: false })
+    this.setState({ loading: nextProps.isLoading })
     if ((this.props.directTransferMessage !== nextProps.directTransferMessage) &&
       nextProps.directTransferMessage) {
       this.setState({
@@ -214,11 +214,21 @@ class AcceptAnimals extends React.Component {
         const selectedRow = grid.rowClicked['HOLDING_RESPONSIBLE.OBJECT_ID']
         const shortDateOfMovement = convertToShortDate(dateOfMovement, 'y-m-d')
         const shortDateOfAdmittance = convertToShortDate(dateOfAdmittance, 'y-m-d')
-        store.dispatch(executeActionOnSelectedRows(this.props.svSession,
-          'ANIMAL_MOVEMENT', 'EXECUTE_ACTION_ON_ROWS', 'MOVE',
-          'FINISH_MOVEMENT_SLAUGHTR', selectedGridRows, objectId, shortDateOfMovement, shortDateOfAdmittance, selectedRow,
-          null, null, null, null, null, null)
-        )
+        const massActionType = 'EXECUTE_ACTION_ON_ROWS'
+        const actionType = 'MOVE'
+        const subActionType = 'FINISH_MOVEMENT_SLAUGHTR'
+        const paramsArray = [{
+          MASS_PARAM_TBL_NAME: this.props.gridType,
+          MASS_PARAM_ACTION: actionType,
+          MASS_PARAM_SUBACTION: subActionType,
+          MASS_PARAM_ADDITIONAL_PARAM: String(objectId),
+          MASS_PARAM_DATE_OF_MOVEMENT: shortDateOfMovement,
+          MASS_PARAM_DATE_OF_ADMISSION: shortDateOfAdmittance,
+          MASS_PARAM_TRANSPORTER_PERSON_ID: String(selectedRow)
+        }]
+        store.dispatch(massAnimalOrFlockAction(
+          this.props.svSession, massActionType, subActionType, this.props.selectedGridRows, paramsArray
+        ))
         this.setState({ dateOfMovement: null, dateOfAdmittance: null })
         document.getElementById(elementItemId).value = ''
         ComponentManager.cleanComponentReducerState(gridToDisplay)
@@ -273,6 +283,13 @@ class AcceptAnimals extends React.Component {
           const animalId = store.getState()[showSearchGridToDisplay].rowClicked[this.props.gridType + '.ANIMAL_ID']
           const animalClass = store.getState()[showSearchGridToDisplay].rowClicked[this.props.gridType + '.ANIMAL_CLASS']
           shortDateOfAdmittance = convertToShortDate(dateOfAdmittance, 'y-m-d')
+          const paramsArray = [{
+            MASS_PARAM_ANIMAL_FLOCK_ID: String(animalId),
+            MASS_PARAM_HOLDING_OBJ_ID: destinationObjectId,
+            MASS_PARAM_ANIMAL_CLASS: animalClass,
+            MASS_PARAM_DATE_OF_ADMISSION: shortDateOfAdmittance,
+            MASS_PARAM_TRANSPORTER_PERSON_ID: String(transporterPersonId)
+          }]
           this.setState({
             alert: alertUser(true, 'warning',
               this.context.intl.formatMessage({
@@ -282,12 +299,7 @@ class AcceptAnimals extends React.Component {
                 id: `${config.labelBasePath}.actions.direct_transfer_animal`,
                 defaultMessage: `${config.labelBasePath}.actions.direct_transfer_animal`
               }) + '"' + '?', null,
-              () => {
-                store.dispatch(transferAnimal(this.props.svSession,
-                  animalId, animalClass, destinationObjectId, shortDateOfAdmittance, transporterPersonId,
-                  totalUnits, maleUnits, femaleUnits, adultsUnits)
-                )
-              },
+              () => { store.dispatch(transferAnimalOrFlock(this.props.svSession, paramsArray)) },
               () => { store.dispatch(resetTransferAnimal()) },
               true,
               this.context.intl.formatMessage({
@@ -321,6 +333,17 @@ class AcceptAnimals extends React.Component {
           maleUnits = document.getElementById('maleUnits').value || '0'
           femaleUnits = document.getElementById('femaleUnits').value || '0'
           adultsUnits = document.getElementById('adultsUnits').value || '0'
+          const paramsArray = [{
+            MASS_PARAM_ANIMAL_FLOCK_ID: String(flockId),
+            MASS_PARAM_HOLDING_OBJ_ID: destinationObjectId,
+            MASS_PARAM_ANIMAL_CLASS: flockType,
+            MASS_PARAM_DATE_OF_ADMISSION: shortDateOfAdmittance,
+            MASS_PARAM_TRANSPORTER_PERSON_ID: String(transporterPersonId),
+            MASS_PARAM_TOTAL_UNITS: parseInt(totalUnits),
+            MASS_PARAM_MALE_UNITS: parseInt(maleUnits),
+            MASS_PARAM_FEMALE_UNITS: parseInt(femaleUnits),
+            MASS_PARAM_ADULT_UNITS: parseInt(adultsUnits)
+          }]
           if (totalUnits === '0' &&
             maleUnits === '0' &&
             femaleUnits === '0' &&
@@ -331,9 +354,7 @@ class AcceptAnimals extends React.Component {
             })
             this.setState({
               alert: alertUser(true, 'warning', warning, null,
-                () => store.dispatch(transferAnimal(this.props.svSession,
-                  flockId, flockType, destinationObjectId, shortDateOfAdmittance, transporterPersonId,
-                  totalUnits, maleUnits, femaleUnits, adultsUnits)),
+                () => store.dispatch(transferAnimalOrFlock(this.props.svSession, paramsArray)),
                 () => this.setState({ alert: alertUser(false, 'info', '') }),
                 true,
                 this.context.intl.formatMessage({
@@ -359,12 +380,7 @@ class AcceptAnimals extends React.Component {
                   id: `${config.labelBasePath}.actions.direct_transfer_animal`,
                   defaultMessage: `${config.labelBasePath}.actions.direct_transfer_animal`
                 }) + '"' + '?', null,
-                () => {
-                  store.dispatch(transferAnimal(this.props.svSession,
-                    flockId, flockType, destinationObjectId, shortDateOfAdmittance, transporterPersonId,
-                    totalUnits, maleUnits, femaleUnits, adultsUnits)
-                  )
-                },
+                () => { store.dispatch(transferAnimalOrFlock(this.props.svSession, paramsArray)) },
                 () => { store.dispatch(resetTransferAnimal()) },
                 true,
                 this.context.intl.formatMessage({
@@ -398,10 +414,17 @@ class AcceptAnimals extends React.Component {
 
   chooseRowOnClick (component) {
     const { gridToDisplay, elementItemId } = component.state
-    const selectedRow = store.getState()[gridToDisplay].rowClicked['HOLDING_RESPONSIBLE.FULL_NAME']
-    if (selectedRow) {
+    let selectedPersonValue = ''
+    const fullName = store.getState()[gridToDisplay].rowClicked['HOLDING_RESPONSIBLE.FULL_NAME']
+    const natRegNum = store.getState()[gridToDisplay].rowClicked['HOLDING_RESPONSIBLE.NAT_REG_NUMBER']
+    if (fullName) {
+      selectedPersonValue = fullName
+    } else if (natRegNum) {
+      selectedPersonValue = natRegNum
+    }
+    if (selectedPersonValue) {
       if (elementItemId) {
-        document.getElementById(elementItemId).value = selectedRow
+        document.getElementById(elementItemId).value = selectedPersonValue
       }
     }
     component.closeModal(component)
@@ -535,7 +558,7 @@ class AcceptAnimals extends React.Component {
             }
             )}
           />
-          <div>
+          <div style={{ marginTop: '3.5px' }}>
             <div style={{ marginTop: '-0.9rem' }}>
               {this.context.intl.formatMessage({
                 id: `${config.labelBasePath}.main.start_date_of_movement`,
@@ -557,8 +580,8 @@ class AcceptAnimals extends React.Component {
               {nowBtnText}
             </button>
           </div>
-          <div style={{ marginLeft: '1rem' }}>
-            <div style={{ marginTop: '-0.9rem' }}>
+          <div style={{ marginLeft: '1rem', marginTop: '1.5px' }}>
+            <div style={{ marginTop: '-0.8rem' }}>
               {this.context.intl.formatMessage({
                 id: `${config.labelBasePath}.main.date_of_addmitance`,
                 defaultMessage: `${config.labelBasePath}.main.date_of_addmitance`
@@ -594,7 +617,11 @@ class AcceptAnimals extends React.Component {
             src='/naits/img/massActionsIcons/accept.png' />
         </div>
       </div>
-    } else if (this.props.gridType === 'ANIMAL' || this.props.gridType === 'FLOCK') {
+
+      if (this.props.customId && this.props.customId.includes('FINISHED')) {
+        component = null
+      }
+    } else if ((this.props.gridType === 'ANIMAL' || this.props.gridType === 'FLOCK') && !this.props.customId) {
       component = <div id='container' className={style.container}>
         <div className={style.title}>{this.context.intl.formatMessage(
           {

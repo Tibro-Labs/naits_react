@@ -65,3 +65,4 @@ triglav.plugin_path=C:\\naits_tomcat\\apache-tomcat\\webapps\\triglav_rest\\plug
 
 public_registry.path=C:\\PublicRegistry
 app_block.disable_animal_check=true
+naits.reporter_user=REPORTER_USER

@@ -3,23 +3,24 @@ import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
 import * as config from 'config/config.js'
 import { GridManager, Loading } from 'components/ComponentsIndex'
-import consoleStyle from 'components/AppComponents/Functional/AdminConsole/AdminConsole.module.css'
+import style from 'components/AppComponents/Functional/EarTagReplacement/EarTagReplacement.module.css'
 import { alertUser } from 'tibro-components'
 import { store } from 'tibro-redux'
-import { formatAlertType, convertToShortDate } from 'functions/utils'
-import DatePicker from 'react-date-picker'
+import { formatAlertType, strcmp } from 'functions/utils'
 import { earTagReplacementAction, replaceEarTag } from 'backend/earTagReplacementAction.js'
 
 class EarTagForm extends React.Component {
   constructor (props) {
     super(props)
     this.state = {
+      alert: undefined,
+      loading: false,
       replacementReasons: ['REPLACED', 'DAMAGED', 'APPLIED_LOST', 'FAULTY', 'WRONG_ENTRY'],
       reasonLabels: ['replaced', 'damaged', 'lost', 'faulty_assigned', 'wrong_entry'],
       newEarTag: 'new_ear_tag',
       textInput: 'note',
       selectedReason: '',
-      replacementDate: null
+      replacementDate: ''
     }
   }
 
@@ -27,13 +28,12 @@ class EarTagForm extends React.Component {
     this.setState({ selectedReason: 'REPLACED' })
   }
 
-  setDate = (date) => {
+  setDate = date => {
     this.setState({ replacementDate: date })
   }
 
   earTagReplacement = () => {
     const { newEarTag, replacementDate, textInput, selectedReason } = this.state
-    const setReplacementDate = convertToShortDate(replacementDate, 'y-m-d')
     const inputNewEarTagContainer = document.getElementById(newEarTag).value
     const inputNoteContainer = document.getElementById(textInput).value
     let objectId
@@ -58,7 +58,10 @@ class EarTagForm extends React.Component {
             defaultMessage: `${config.labelBasePath}.main.eartag_replacement`
           }) + '"' + '?',
           null,
-          onConfirmCallback,
+          () => {
+            component.setState({ loading: true })
+            onConfirmCallback()
+          },
           () => component.setState({ alert: alertUser(false, 'info', '') }),
           true,
           component.context.intl.formatMessage({
@@ -84,14 +87,14 @@ class EarTagForm extends React.Component {
       id: `${config.labelBasePath}.ear_tag_replacement.new_ear_tag`,
       defaultMessage: `${config.labelBasePath}.ear_tag_replacement.new_ear_tag`
     })
-    if (setReplacementDate && inputNewEarTagContainer) {
+    if (replacementDate && inputNewEarTagContainer) {
       prompt(this, () => this.props.earTagReplacementAction(
-        this.props.svSession, objectId, inputNewEarTagContainer, setReplacementDate,
+        this.props.svSession, objectId, inputNewEarTagContainer, replacementDate,
         selectedReason || 'null', inputNoteContainer || 'null'
       ))
     } else {
       let message = ''
-      if (!setReplacementDate) message = message + setReplacementDateLbl + ' '
+      if (!replacementDate) message = message + setReplacementDateLbl + ' '
       if (!inputNewEarTagContainer) message = message + inputNewEarTagContainerLbl + ' '
       this.setState({
         alert: alertUser(true, 'warning',
@@ -108,14 +111,19 @@ class EarTagForm extends React.Component {
   componentWillReceiveProps (nextProps) {
     if ((this.props.earTagReplacementMessage !== nextProps.earTagReplacementMessage) &&
       nextProps.earTagReplacementMessage) {
+      const responseType = formatAlertType(nextProps.earTagReplacementMessage)
+      if (strcmp(responseType, 'success')) {
+        this.props.onAlertClose()
+      }
       this.setState({
-        alert: alertUser(true, formatAlertType(nextProps.earTagReplacementMessage), this.context.intl.formatMessage({
+        alert: alertUser(true, responseType, this.context.intl.formatMessage({
           id: nextProps.earTagReplacementMessage,
           defaultMessage: nextProps.earTagReplacementMessage
         }) || ' ', null,
         () => {
           store.dispatch(replaceEarTag())
-        })
+        }),
+        loading: false
       })
     }
     if ((this.props.earTagReplacementError !== nextProps.earTagReplacementError) &&
@@ -127,10 +135,10 @@ class EarTagForm extends React.Component {
         }) || ' ', null,
         () => {
           store.dispatch(replaceEarTag())
-        })
+        }),
+        loading: false
       })
     }
-    this.props.onAlertClose()
     const object = nextProps.selectedObjects.find((element) => {
       return (element.active && element.gridType === nextProps.gridType)
     })
@@ -158,136 +166,104 @@ class EarTagForm extends React.Component {
               onClick={this.props.closeModal} >&times;</button>
           </div>
           <div id='form_modal_body' className='modal-body'>
-            <form
-              id='ear_tag_form'
-              className='form-test custom-modal-content disable_scroll_bar'
-              style={{ height: '450px' }}
-            >
-              <p id='title' style={{ marginTop: '0.8%', fontSize: '150%' }}>{this.context.intl.formatMessage({
-                id: config.labelBasePath + '.ear_tag_replacement',
-                defaultMessage: config.labelBasePath + '.ear_tag_replacement'
-              })} </p>
-              <hr style={{ color: 'white' }} />
-              <div
-                className={'form-group' + ' ' + consoleStyle.formGroupInline}
-                style={{ display: 'flex', marginLeft: '3rem' }}
-              >
-                <div style={{ marginLeft: '500px' }}>
-                  <label htmlFor='new_ear_tag'>
-                    {this.context.intl.formatMessage({
-                      id: config.labelBasePath + '.ear_tag_replacement.new_ear_tag',
-                      defaultMessage: config.labelBasePath + '.ear_tag_replacement.new_ear_tag'
-                    })}*
-                  </label>
-                  <input
-                    type='text'
-                    id='new_ear_tag'
-                    className='form-control'
-                    style={{ width: '200px', marginTop: '2px' }}
-                    placeholder={this.context.intl.formatMessage({
-                      id: `${config.labelBasePath}.register.must_be_integer`,
-                      defaultMessage: `${config.labelBasePath}.register.must_be_integer`
-                    })}
-                  />
-                </div>
-                <div style={{ marginLeft: '90px' }}>
-                  <label htmlFor='replacementReason'>
-                    {this.context.intl.formatMessage(
-                      {
-                        id: `${config.labelBasePath}.form_labels.reason`,
-                        defaultMessage: `${config.labelBasePath}.form_labels.reason`
-                      }
-                    )}
-                  </label>
-                  <select
-                    id='replacementReason'
-                    className='form-control'
-                    style={{
-                      backgroundColor: '#e3eedd',
-                      color: '#000000',
-                      marginTop: '2px',
-                      width: '150px'
-                    }}
-                    onChange={this.handleReasonSelection}
-                  >
-                    {replacementReasons.map((reason, index) => {
-                      return <option value={reason}>
-                        {this.context.intl.formatMessage(
-                          {
-                            id: `${config.labelBasePath}.ear_tag_replc_reason.${reasonLabels[index]}`,
-                            defaultMessage: `${config.labelBasePath}.ear_tag_replc_reason.${reasonLabels[index]}`
-                          }
-                        )}
-                      </option>
-                    })}
-                  </select>
-                </div>
-                <div style={{ marginLeft: '90px', marginTop: '5px' }}>
-                  <label
-                    htmlFor='replacementDate'
-                    style={{ position: 'absolute', color: 'white', marginTop: '-5px', marginLeft: '-30px' }}
-                  >
-                    {this.context.intl.formatMessage(
-                      {
-                        id: `${config.labelBasePath}.replacementDate`,
-                        defaultMessage: `${config.labelBasePath}.replacementDate`
-                      }
-                    )}*
-                  </label>
-                  <br />
-                  <DatePicker
-                    key='replacementDate'
-                    required
-                    className='datePicker'
-                    onChange={this.setDate}
-                    value={replacementDate}
-                    style={{ marginLeft: '23%', marginTop: '-2.9%' }}
-                  />
-                  <button
-                    id='dateNow'
-                    type='button'
-                    className='btn-success'
-                    style={{
-                      position: 'absolute',
-                      height: '40px',
-                      padding: '7px 12px'
-                    }}
-                    onClick={() => this.setDate(new Date())} >
-                    {nowBtnText}
-                  </button>
-                </div>
-              </div>
-              <br />
-              <hr style={{ color: 'white' }} />
-              <div
-                className={'form-group' + ' ' + consoleStyle.formGroupInline}
-                style={{ marginRight: '50px' }}
-              >
-                <label htmlFor='note' style={{ marginLeft: '5rem' }}>
+            <div id='ear_tag_form' className='form-test custom-modal-content disable_scroll_bar'>
+              <legend style={{ textAlign: 'center', marginTop: '1rem' }}>
+                {this.context.intl.formatMessage({
+                  id: config.labelBasePath + '.ear_tag_replacement',
+                  defaultMessage: config.labelBasePath + '.ear_tag_replacement'
+                })}
+              </legend>
+              <div className='form-group field field-object' style={{ textAlign: 'center' }}>
+                <legend style={{ textAlign: 'center' }}>
                   {this.context.intl.formatMessage({
-                    id: config.labelBasePath + '.note',
-                    defaultMessage: config.labelBasePath + '.note'
+                    id: config.labelBasePath + '.form_labels.ear_tag_replc.basic_info',
+                    defaultMessage: config.labelBasePath + '.form_labels.ear_tag_replc.basic_info'
                   })}
-                </label>
-                <textarea
-                  id='note'
-                  className='form-control'
-                  style={{ width: '85%', marginLeft: '51px' }}
-                />
+                </legend>
+                <fieldset>
+                  <div className='form-group field field-string'>
+                    <label htmlFor='new_ear_tag'>
+                      {this.context.intl.formatMessage({
+                        id: config.labelBasePath + '.ear_tag_replacement.new_ear_tag',
+                        defaultMessage: config.labelBasePath + '.ear_tag_replacement.new_ear_tag'
+                      })}*
+                    </label>
+                    <input
+                      type='text'
+                      id='new_ear_tag'
+                      className='form-control'
+                      placeholder={this.context.intl.formatMessage({
+                        id: `${config.labelBasePath}.register.must_be_integer`,
+                        defaultMessage: `${config.labelBasePath}.register.must_be_integer`
+                      })}
+                    />
+                  </div>
+                  <div className='form-group field field-string' style={{ marginLeft: '0.5%' }}>
+                    <label htmlFor='replacementReason'>
+                      {this.context.intl.formatMessage({
+                        id: config.labelBasePath + '.form_labels.reason',
+                        defaultMessage: config.labelBasePath + '.form_labels.reason'
+                      })}*
+                    </label>
+                    <select id='replacementReason' className='form-control' onChange={this.handleReasonSelection}>
+                      {replacementReasons.map((reason, index) => {
+                        return <option value={reason} key={index}>
+                          {this.context.intl.formatMessage(
+                            {
+                              id: `${config.labelBasePath}.ear_tag_replc_reason.${reasonLabels[index]}`,
+                              defaultMessage: `${config.labelBasePath}.ear_tag_replc_reason.${reasonLabels[index]}`
+                            }
+                          )}
+                        </option>
+                      })}
+                    </select>
+                  </div>
+                  <div className='form-group field field-string' style={{ marginLeft: '0.5%' }}>
+                    <label htmlFor='replacementDate'>
+                      {this.context.intl.formatMessage({
+                        id: config.labelBasePath + '.replacementDate',
+                        defaultMessage: config.labelBasePath + '.replacementDate'
+                      })}*
+                    </label>
+                    <div id='CustomDateWithNowButton' className={style.CustomDate}>
+                      <input type='date' className='form-control' name='replacementDate' id='replacementDate'
+                        onChange={(e) => this.setDate(e.target.value)} value={replacementDate}
+                      />
+                      <button type='button' className='btn-success btn_save_form' id='setDateNowBtn'
+                        onClick={() => this.setDate(new Date().toISOString().substr(0, 19).split('T')[0])}
+                      >{nowBtnText}</button>
+                    </div>
+                  </div>
+                </fieldset>
               </div>
-              <div className='form-group' style={{ marginTop: '2%' }}>
-                <div
-                  id='ear_tag_replacement'
-                  className='btn_save_form'
-                  onClick={() => this.earTagReplacement()}
-                >
+              <div className='form-group field field-object' style={{ textAlign: 'center' }}>
+                <legend style={{ textAlign: 'center', marginTop: '1rem' }}>
+                  {this.context.intl.formatMessage({
+                    id: config.labelBasePath + '.form_labels.ear_tag_replc.additional_info',
+                    defaultMessage: config.labelBasePath + '.form_labels.ear_tag_replc.additional_info'
+                  })}
+                </legend>
+                <fieldset>
+                  <div className='form-group field field-string'>
+                    <label htmlFor='note'>
+                      {this.context.intl.formatMessage({
+                        id: config.labelBasePath + '.note',
+                        defaultMessage: config.labelBasePath + '.note'
+                      })}
+                    </label>
+                    <textarea id='note' className='form-control' />
+                  </div>
+                </fieldset>
+              </div>
+              <div style={{ float: 'right', marginRight: '2rem' }}>
+                <button id='earTagReplacement' className='btn-success btn_save_form' onClick={this.earTagReplacement}>
                   {this.context.intl.formatMessage({
                     id: config.labelBasePath + '.replace_ear_tag',
                     defaultMessage: config.labelBasePath + '.replace_ear_tag'
                   })}
-                </div>
+                </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       </div>

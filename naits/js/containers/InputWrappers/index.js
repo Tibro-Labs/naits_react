@@ -25,14 +25,22 @@ import PetFormSecondLevelInputWrapper from './PetFormSecondLevelInputWrapper.js'
 import HoldingResponsibleLinkInputWrapper from './HoldingResponsibleLinkInputWrapper.js'
 import LabSampleFormSecondLevelInputWrapper from './LabSampleFormSecondLevelInputWrapper.js'
 import UserFormCharLimitationInputWrapper from './UserFormCharLimitationInputWrapper.js'
-import LabTestTypeDisableSaveInputWrapper from './LabTestTypeDisableSaveInputWrapper.js'
 import DisableHolderTypeDropdownInputWrapper from './DisableHolderTypeDropdownInputWrapper.js'
 import InputCampaignSecondLevelWrapper from './InputCampaignSecondLevelWrapper.js'
+import HoldingKeeperInputWrapper from './HoldingKeeperInputWrapper.js'
+import HoldingFormSecondLevelInputWrapper from './HoldingFormSecondLevelInputWrapper.js'
+import RfidFormInputWrapper from './RfidFormInputWrapper.js'
+import OldRfidFormInputWrapper from './OldRfidFormInputWrapper.js'
+import CustomPetCollectFormWrapper from './CustomPetCollectFormWrapper.js'
+import CustomPetReleaseFormWrapper from './CustomPetReleaseFormWrapper.js'
 import CombineStrayPetWrappers from './CombineStrayPetWrappers.js'
 import CombineTransferWrappers from './CombineTransferWrappers.js'
 import CombineHealthBookWrappers from './CombineHealthBookWrappers.js'
 import CombineDisableAndSearchWrappers from './CombineDisableAndSearchWrappers.js'
 import CombineDisableAndInvItemInputsWrapper from './CombineDisableAndInvItemInputsWrapper.js'
+import InputHerdWrapper from './InputHerdWrapper'
+import EditQuestionnaireFormWrapper from './EditQuestionnaireFormWrapper'
+import PetQuarantineInputWrapper from './PetQuarantineInputWrapper'
 
 module.exports = {
   InputSearchWrapper: InputSearchWrapper,
@@ -62,12 +70,20 @@ module.exports = {
   HoldingResponsibleLinkInputWrapper: HoldingResponsibleLinkInputWrapper,
   LabSampleFormSecondLevelInputWrapper: LabSampleFormSecondLevelInputWrapper,
   UserFormCharLimitationInputWrapper: UserFormCharLimitationInputWrapper,
-  LabTestTypeDisableSaveInputWrapper: LabTestTypeDisableSaveInputWrapper,
   DisableHolderTypeDropdownInputWrapper: DisableHolderTypeDropdownInputWrapper,
   InputCampaignSecondLevelWrapper: InputCampaignSecondLevelWrapper,
+  HoldingKeeperInputWrapper: HoldingKeeperInputWrapper,
+  HoldingFormSecondLevelInputWrapper: HoldingFormSecondLevelInputWrapper,
+  RfidFormInputWrapper: RfidFormInputWrapper,
+  OldRfidFormInputWrapper: OldRfidFormInputWrapper,
+  CustomPetCollectFormWrapper: CustomPetCollectFormWrapper,
+  CustomPetReleaseFormWrapper: CustomPetReleaseFormWrapper,
   CombineStrayPetWrappers: CombineStrayPetWrappers,
   CombineTransferWrappers: CombineTransferWrappers,
   CombineHealthBookWrappers: CombineHealthBookWrappers,
   CombineDisableAndSearchWrappers: CombineDisableAndSearchWrappers,
-  CombineDisableAndInvItemInputsWrapper: CombineDisableAndInvItemInputsWrapper
+  CombineDisableAndInvItemInputsWrapper: CombineDisableAndInvItemInputsWrapper,
+  InputHerdWrapper: InputHerdWrapper,
+  EditQuestionnaireFormWrapper: EditQuestionnaireFormWrapper,
+  PetQuarantineInputWrapper: PetQuarantineInputWrapper
 }

@@ -71,11 +71,15 @@ export default class PrintBadge extends React.Component {
         if (props.gridToDisplay === 'PET' && props.gridType === 'PET' && singleGrid.active &&
           (!singleGrid.row['PET.IS_ADOPTED'] || singleGrid.row['PET.IS_ADOPTED'] !== 'yes')
         ) {
-          props.reports.splice(2, 1)
+          props.reports.splice(3, 1)
         } else if (props.gridToDisplay === 'HOLDING' && props.gridType === 'PET' && singleGrid.active &&
           (!singleGrid.row['PET.IS_ADOPTED'] || singleGrid.row['PET.IS_ADOPTED'] !== 'yes')
         ) {
-          props.reports.splice(2, 1)
+          props.reports.splice(3, 1)
+        } else if (props.gridToDisplay === 'HOLDING_RESPONSIBLE' && props.gridType === 'PET' && singleGrid.active &&
+          (!singleGrid.row['PET.IS_ADOPTED'] || singleGrid.row['PET.IS_ADOPTED'] !== 'yes')
+        ) {
+          props.reports.splice(3, 1)
         }
 
         // Checks for scenarios when an animal is selected
@@ -99,55 +103,58 @@ export default class PrintBadge extends React.Component {
 
         // Checks for scenarios when a holding (which is not a shelter nor a vet station) is selected
         if (props.gridToDisplay === 'HOLDING' && props.gridType === 'HOLDING' && singleGrid.active &&
-          ((singleGrid.row['HOLDING.TYPE'] !== '15' && singleGrid.row['HOLDING.TYPE'] !== '16') || !singleGrid.row['HOLDING.TYPE']) &&
-          props.componentToDisplay && (props.componentToDisplay[0] || props.componentToDisplay[1] || props.componentToDisplay[index]) &&
+          ((singleGrid.row['HOLDING.TYPE'] !== '15' && singleGrid.row['HOLDING.TYPE'] !== '16' && singleGrid.row['HOLDING.TYPE'] !== '17') ||
+            !singleGrid.row['HOLDING.TYPE']) && props.componentToDisplay &&
+          (props.componentToDisplay[0] || props.componentToDisplay[1] || props.componentToDisplay[index]) &&
           (props.componentToDisplay[0].props || props.componentToDisplay[1].props || props.componentToDisplay[index].props) &&
           (props.componentToDisplay[0].props.selectedObject === 'ANIMAL' || props.componentToDisplay[1].props.selectedObject === 'ANIMAL')) {
           props.reports.splice(1, 4)
         } else if (props.gridToDisplay === 'ANIMAL' && props.gridType === 'HOLDING' && singleGrid.active &&
-          ((singleGrid.row['HOLDING.TYPE'] !== '15' && singleGrid.row['HOLDING.TYPE'] !== '16') || !singleGrid.row['HOLDING.TYPE']) &&
-          props.componentToDisplay && (props.componentToDisplay[0] || props.componentToDisplay[1] || props.componentToDisplay[index]) &&
+          ((singleGrid.row['HOLDING.TYPE'] !== '15' && singleGrid.row['HOLDING.TYPE'] !== '16' && singleGrid.row['HOLDING.TYPE'] !== '17') ||
+            !singleGrid.row['HOLDING.TYPE']) && props.componentToDisplay &&
+          (props.componentToDisplay[0] || props.componentToDisplay[1] || props.componentToDisplay[index]) &&
           (props.componentToDisplay[0].props || props.componentToDisplay[1].props || props.componentToDisplay[index].props) &&
           (props.componentToDisplay[0].props.selectedObject === 'ANIMAL' || props.componentToDisplay[1].props.selectedObject === 'ANIMAL')) {
           props.reports.splice(1, 4)
         } else if (props.gridToDisplay === 'HOLDING_RESPONSIBLE' && props.gridType === 'HOLDING' && singleGrid.active &&
-          ((singleGrid.row['HOLDING.TYPE'] !== '15' && singleGrid.row['HOLDING.TYPE'] !== '16') || !singleGrid.row['HOLDING.TYPE']) &&
-          props.componentToDisplay && (props.componentToDisplay[0] || props.componentToDisplay[1] || props.componentToDisplay[index]) &&
+          ((singleGrid.row['HOLDING.TYPE'] !== '15' && singleGrid.row['HOLDING.TYPE'] !== '16' && singleGrid.row['HOLDING.TYPE'] !== '17') ||
+            !singleGrid.row['HOLDING.TYPE']) && props.componentToDisplay &&
+          (props.componentToDisplay[0] || props.componentToDisplay[1] || props.componentToDisplay[index]) &&
           (props.componentToDisplay[0].props || props.componentToDisplay[1].props || props.componentToDisplay[index].props) &&
           (props.componentToDisplay[0].props.selectedObject === 'ANIMAL' || props.componentToDisplay[1].props.selectedObject === 'ANIMAL')) {
           props.reports.splice(1, 4)
         } else if (props.gridToDisplay === 'QUARANTINE' && props.gridType === 'HOLDING' && singleGrid.active &&
-          ((singleGrid.row['HOLDING.TYPE'] !== '15' && singleGrid.row['HOLDING.TYPE'] !== '16') ||
+          ((singleGrid.row['HOLDING.TYPE'] !== '15' && singleGrid.row['HOLDING.TYPE'] !== '16' && singleGrid.row['HOLDING.TYPE'] !== '17') ||
             !singleGrid.row['HOLDING.TYPE']) && props.componentToDisplay && props.componentToDisplay[index] &&
           (props.componentToDisplay[index].props.showGrid === 'ANIMAL' || props.componentToDisplay[index].props.selectedObject === 'ANIMAL')) {
           props.reports.splice(1, 4)
         } else if (props.gridToDisplay === 'HOLDING' && props.gridType === 'HOLDING' && singleGrid.active &&
-          ((singleGrid.row['HOLDING.TYPE'] !== '15' && singleGrid.row['HOLDING.TYPE'] !== '16') ||
+          ((singleGrid.row['HOLDING.TYPE'] !== '15' && singleGrid.row['HOLDING.TYPE'] !== '16' && singleGrid.row['HOLDING.TYPE'] !== '17') ||
             !singleGrid.row['HOLDING.TYPE'])
         ) {
           props.reports.splice(3, 2)
         } else if (props.gridToDisplay === 'ANIMAL' && props.gridType === 'HOLDING' && singleGrid.active &&
-          ((singleGrid.row['HOLDING.TYPE'] !== '15' && singleGrid.row['HOLDING.TYPE'] !== '16') ||
+          ((singleGrid.row['HOLDING.TYPE'] !== '15' && singleGrid.row['HOLDING.TYPE'] !== '16' && singleGrid.row['HOLDING.TYPE'] !== '17') ||
             !singleGrid.row['HOLDING.TYPE'])
         ) {
           props.reports.splice(3, 2)
         } else if (props.gridToDisplay === 'HOLDING_RESPONSIBLE' && props.gridType === 'HOLDING' && singleGrid.active &&
-          ((singleGrid.row['HOLDING.TYPE'] !== '15' && singleGrid.row['HOLDING.TYPE'] !== '16') ||
+          ((singleGrid.row['HOLDING.TYPE'] !== '15' && singleGrid.row['HOLDING.TYPE'] !== '16' && singleGrid.row['HOLDING.TYPE'] !== '17') ||
             !singleGrid.row['HOLDING.TYPE'])) {
           props.reports.splice(3, 2)
         } else if (props.gridToDisplay === 'QUARANTINE' && props.gridType === 'HOLDING' && singleGrid.active &&
-          ((singleGrid.row['HOLDING.TYPE'] !== '15' && singleGrid.row['HOLDING.TYPE'] !== '16') ||
+          ((singleGrid.row['HOLDING.TYPE'] !== '15' && singleGrid.row['HOLDING.TYPE'] !== '16' && singleGrid.row['HOLDING.TYPE'] !== '17') ||
             !singleGrid.row['HOLDING.TYPE'])) {
           props.reports.splice(3, 2)
         }
 
         // Checks for scenarios when a holding of type pet shelter is selected
         if (props.gridToDisplay === 'HOLDING' && props.gridType === 'HOLDING' &&
-          singleGrid.active && singleGrid.row['HOLDING.TYPE'] === '15'
+          singleGrid.active && (singleGrid.row['HOLDING.TYPE'] === '15' || singleGrid.row['HOLDING.TYPE'] === '17')
         ) {
           props.reports.splice(0, 4)
         } else if (props.gridToDisplay === 'PET' && props.gridType === 'HOLDING' &&
-          singleGrid.active && singleGrid.row['HOLDING.TYPE'] === '15'
+          singleGrid.active && (singleGrid.row['HOLDING.TYPE'] === '15' || singleGrid.row['HOLDING.TYPE'] === '17')
         ) {
           props.reports.splice(0, 4)
         }
@@ -200,7 +207,9 @@ export default class PrintBadge extends React.Component {
         }}
         className={styles.container}
       >
-        <p>{this.context.intl.formatMessage({ id: `${config.labelBasePath}.print`, defaultMessage: `${config.labelBasePath}.print` })}</p>
+        <p style={{ marginTop: '16px' }}>
+          {this.context.intl.formatMessage({ id: `${config.labelBasePath}.print`, defaultMessage: `${config.labelBasePath}.print` })}
+        </p>
         <div id='showPrint' className={styles['gauge-container']}>
           <Circle
             className={styles['gauge-container']}

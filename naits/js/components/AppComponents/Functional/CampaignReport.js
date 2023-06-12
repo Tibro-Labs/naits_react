@@ -6,6 +6,7 @@ import * as config from 'config/config.js'
 import { dropdownConfig } from 'config/dropdownConfig'
 import { alertUser } from 'tibro-components'
 import { Loading } from 'components/ComponentsIndex'
+import { strcmp } from 'functions/utils'
 import style from 'components/AppComponents/ExecuteActions/ExecuteActionOnSelectedRows.module.css'
 import styles from 'components/AppComponents/Presentational/Badges/Badges.module.css'
 import consoleStyle from 'components/AppComponents/Functional/AdminConsole/AdminConsole.module.css'
@@ -55,18 +56,45 @@ class CampaignReport extends React.Component {
 
   handleMunicipalitySelection = (e) => {
     this.setState({ municValue: e.target.value })
+    this.disableOrEnableAlertBtn()
   }
 
   handleMonthSelection = (e) => {
     this.setState({ monthValue: e.target.value })
+    this.disableOrEnableAlertBtn()
   }
 
   close = () => {
     this.setState({ alert: false })
   }
 
+  disableOrEnableAlertBtn = () => {
+    const municDropdown = document.getElementById('municipalities')
+    const monthDropdown = document.getElementById('months')
+    let municDomValue, monthDomValue
+    if (municDropdown) {
+      municDomValue = municDropdown.value
+    }
+    if (monthDropdown) {
+      monthDomValue = monthDropdown.value
+    }
+
+    const submitBtn = document.getElementsByClassName('swal-button swal-button--confirm')
+    if ((strcmp(municDomValue, '') && strcmp(monthDomValue, '')) || (strcmp(municDomValue, '') || strcmp(monthDomValue, ''))) {
+      if (submitBtn) {
+        submitBtn[0].setAttribute('disabled', '')
+      }
+    } else {
+      if (submitBtn) {
+        submitBtn[0].removeAttribute('disabled')
+      }
+    }
+  }
+
   showAlert = () => {
-    if (this.state.municipalities === undefined || this.state.municipalities.length === 0) {
+    const { municipalities, months } = this.state
+
+    if (municipalities === undefined || municipalities.length === 0) {
       this.setState({
         alert: alertUser(
           true,
@@ -113,7 +141,7 @@ class CampaignReport extends React.Component {
                 }
               )}
             </option>
-            {this.state.municipalities.map(municipality => {
+            {municipalities.map(municipality => {
               return <option key={municipality.externalId} value={municipality.externalId}>
                 {municipality.name}
               </option>
@@ -151,7 +179,7 @@ class CampaignReport extends React.Component {
                 }
               )}
             </option>
-            {this.state.months.map(month => {
+            {months.map(month => {
               return <option key={month.VALUE} value={month.VALUE}>
                 {this.context.intl.formatMessage(
                   {
@@ -198,24 +226,25 @@ class CampaignReport extends React.Component {
           wrapper
         )
       })
+
+      const submitBtn = document.getElementsByClassName('swal-button swal-button--confirm')
+      if (submitBtn) {
+        submitBtn[0].setAttribute('disabled', '')
+      }
     }
   }
 
   generateCampaignReport = () => {
     let municCode = this.state.municValue
     let month = this.state.monthValue
-    if ((municCode === '' && month === '') || (municCode === '' || month === '')) {
-      this.close()
-    } else {
-      let url = config.svConfig.triglavRestVerbs.GET_CAMPAIGN_REPORT
-      url = url.replace('%session', this.props.svSession)
-      url = url.replace('%objectId', this.props.objectId)
-      url = url.replace('%reportName', 'vaccEventSummary')
-      url = url.replace('%param1', null)
-      url = url.replace('%param2', month)
-      url = url.replace('%param3', municCode)
-      window.open(`${config.svConfig.restSvcBaseUrl}/${url}`, '_blank')
-    }
+    let url = config.svConfig.triglavRestVerbs.GET_CAMPAIGN_REPORT
+    url = url.replace('%session', this.props.svSession)
+    url = url.replace('%objectId', this.props.objectId)
+    url = url.replace('%reportName', 'vaccEventSummary')
+    url = url.replace('%param1', null)
+    url = url.replace('%param2', month)
+    url = url.replace('%param3', municCode)
+    window.open(`${config.svConfig.restSvcBaseUrl}/${url}`, '_blank')
   }
 
   render () {
@@ -229,7 +258,7 @@ class CampaignReport extends React.Component {
               style={{ cursor: 'pointer', marginRight: '7px', color: 'white' }}
               onClick={this.showAlert}
             >
-              <p>
+              <p style={{ marginTop: '2px' }}>
                 {this.context.intl.formatMessage({
                   id: `${config.labelBasePath}.main.campaign_report`,
                   defaultMessage: `${config.labelBasePath}.main.campaign_report`

@@ -5,13 +5,15 @@ import { connect } from 'react-redux'
 import axios from 'axios'
 import * as config from 'config/config.js'
 import { menuConfig } from 'config/menuConfig'
-import { store, executeActionOnObjects, updateSelectedRows } from 'tibro-redux'
-import { massAnimalOrFlockAction, executeActionOnSelectedRows } from 'backend/executeActionOnSelectedRows.js'
+import { store, executeActionOnObjects, updateSelectedRows, saveFormData } from 'tibro-redux'
+import { massAnimalOrFlockAction } from 'backend/executeActionOnSelectedRows.js'
 import { massPetAction } from 'backend/massPetAction'
+import { formToGridResetAction } from 'backend/formToGridResetAction'
 import { massObjectHandlerAction } from 'backend/massObjectHandlerAction'
 import { alertUser, Select } from 'tibro-components'
 import ActionsList from './ActionsList'
-import { ComponentManager, GridManager, SearchPopup, ResultsGrid, GridInModalLinkObjects } from 'components/ComponentsIndex'
+import { ComponentManager, GridManager, FormManager, Loading, SearchPopup, GridInModalLinkObjects, ResultsGrid } from 'components/ComponentsIndex'
+import { CustomPetReleaseFormWrapper, InputHerdWrapper } from 'containers/InputWrappers'
 import DatePicker from 'react-date-picker'
 import {
   convertToShortDate,
@@ -19,13 +21,13 @@ import {
   isValidArray,
   strcmp,
   capitalizeFirstLetter,
-  insertSpaceAfterAChar
+  insertSpaceAfterAChar,
+  onGridSelectionChange
 } from 'functions/utils'
 import { reset } from 'backend/standAloneAction.js'
 import { exportAnimal, resetAnimal } from 'backend/exportAnimalAction.js'
 import { changeStatus, resetObject } from 'backend/changeStatusAction.js'
 import { generationInventoryItem } from 'backend/generationInventoryItemAction.js'
-import { moveInventoryItem } from 'backend/moveInventoryItemAction.js'
 import { labSampleAction, resetLabSample } from 'backend/labSampleAction.js'
 import { changeMovementDocStatus } from 'backend/changeMovementDocStatus'
 import { executeMassActionExtended } from 'backend/executeMassActionExtended'
@@ -43,6 +45,7 @@ class ExecuteActionOnSelectedRows extends React.Component {
     this.state = {
       alert: undefined,
       showAlert: false,
+      loading: false,
       showSearchPopup: false,
       inputElementId: 'selectAnimalShelter',
       shelterObjId: '',
@@ -77,7 +80,21 @@ class ExecuteActionOnSelectedRows extends React.Component {
       isInAffectedArea: null,
       isInActiveQuarantine: null,
       holdingType: null,
-      destroyedReason: ''
+      destroyedReason: '',
+      petReleaseForm: undefined,
+      strayPetAddressInput: '',
+      strayPetResponsibleNameInput: '',
+      strayPetResponsibleSurnameInput: '',
+      strayPetResponsibleNatRegNumInput: '',
+      showReleaseDetailsForm: false,
+      releaseDetailsForm: undefined,
+      herdsPerHoldingGrid: undefined,
+      showHerdForm: false,
+      newHerdForm: undefined,
+      herdActivityDate: undefined,
+      animalsPerHerdGrid: undefined,
+      showPetQuarantineGridModal: false,
+      holdingObjectId: undefined
     }
 
     this.displayPopupOnClick = this.displayPopupOnClick.bind(this)
@@ -98,6 +115,7 @@ class ExecuteActionOnSelectedRows extends React.Component {
   }
 
   componentWillReceiveProps (nextProps) {
+    this.setState({ loading: nextProps.isLoading })
     let responseDestination = nextProps.massActionResult || nextProps.actionResult
     if (this.props.gridId !== nextProps.gridId) {
       this.props.updateSelectedRows([], null)
@@ -173,7 +191,8 @@ class ExecuteActionOnSelectedRows extends React.Component {
             element
           )
         })
-      } else {
+      } else if (responseType.toLowerCase() === 'success' &&
+        (strcmp(nextProps.executedActionType, 'RELEASED') || strcmp(nextProps.executedActionType, 'ADOPTED'))) {
         this.setState({
           alert: alertUser(
             true,
@@ -187,6 +206,43 @@ class ExecuteActionOnSelectedRows extends React.Component {
         })
         this.refreshDataActionCallback(nextProps)
         this.setState({
+          petReleaseForm: undefined,
+          strayPetAddressInput: '',
+          strayPetResponsibleNameInput: '',
+          strayPetResponsibleSurnameInput: '',
+          strayPetResponsibleNatRegNumInput: '',
+          responsibleObjId: '',
+          ownerName: ''
+        })
+      } else {
+        if (responseDestination.includes('animalIdsThatAlreadyParticipatedInCampaign')) {
+          const response = responseDestination.split(':')
+          this.setState({
+            alert: alertUser(
+              true,
+              responseType,
+              this.context.intl.formatMessage({
+                id: response[0],
+                defaultMessage: response[0]
+              }) || '',
+              response[1] || null
+            )
+          })
+        } else {
+          this.setState({
+            alert: alertUser(
+              true,
+              responseType,
+              this.context.intl.formatMessage({
+                id: responseDestination,
+                defaultMessage: responseDestination
+              }) || '',
+              null
+            )
+          })
+        }
+        this.refreshDataActionCallback(nextProps)
+        this.setState({
           shelterObjId: '',
           activityDate: null,
           estimateDayOfArrival: null,
@@ -195,7 +251,8 @@ class ExecuteActionOnSelectedRows extends React.Component {
           showAlert: false,
           showAdoptionAlert: false,
           responsibleObjId: '',
-          ownerName: ''
+          ownerName: '',
+          noUnitsTreated: null
         })
       }
     }
@@ -297,9 +354,13 @@ class ExecuteActionOnSelectedRows extends React.Component {
         holdingObjectId = grid.row['ANIMAL.PARENT_ID']
       } else if (altObjects) {
         if (store.getState().parentSource.HOLDING) {
-          holdingObjectId = store.getState().parentSource.HOLDING.object_id
+          if (store.getState().parentSource.HOLDING.object_id) {
+            holdingObjectId = store.getState().parentSource.HOLDING.object_id
+          } else {
+            holdingObjectId = '0'
+          }
         } else {
-          holdingObjectId = null
+          holdingObjectId = '0'
         }
       }
     })
@@ -330,6 +391,903 @@ class ExecuteActionOnSelectedRows extends React.Component {
         )
       })
     }
+  }
+
+  addAnimalToExistingHerd = holdingObjId => {
+    const { selectedGridRows } = this.props
+    if (!isValidArray(selectedGridRows, 1)) {
+      this.setState({
+        alert: alertUser(true, 'warning',
+          this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.alert.empty_selection`,
+            defaultMessage: `${config.labelBasePath}.alert.empty_selection`
+          })
+        )
+      })
+    } else {
+      this.displayHerdGrid(selectedGridRows, holdingObjId)
+    }
+  }
+
+  displayHerdGrid = (selectedGridRows, holdingObjId) => {
+    const gridId = `HERD_${holdingObjId}`
+    const gridConfig = menuConfig('GRID_CONFIG', this.context.intl)
+    const herdsPerHoldingGrid = <div id='search_modal' className='modal to-front' style={{ display: 'flex' }}>
+      <div id='search_modal_content' className='modal-content'>
+        <div className='modal-header' />
+        <div id='search_modal_body' className='modal-body'>
+          <ResultsGrid key={gridId} id={gridId} gridToDisplay='HERD' gridConfig={gridConfig}
+            onRowSelectProp={() => this.addAnimalToExistingHerdPrompt(selectedGridRows, gridId)} customGridDataWS='GET_HERDS_PER_HOLDING' parentId={holdingObjId}
+          />
+        </div>
+      </div>
+      <div id='modal_close_btn' type='button' className='js-components-AppComponents-Functional-GridInModalLinkObjects-module-close'
+        style={{ position: 'absolute', right: 'calc(11% - 9px)', top: '44px', width: '32px', height: '32px', opacity: '1' }}
+        onClick={() => this.closeHerdGrid(gridId)} data-dismiss='modal' />
+    </div>
+
+    this.setState({ herdsPerHoldingGrid })
+  }
+
+  closeHerdGrid = gridId => {
+    this.setState({ herdsPerHoldingGrid: undefined })
+    ComponentManager.cleanComponentReducerState(gridId)
+  }
+
+  addAnimalToExistingHerdPrompt = (selectedGridRows, gridId) => {
+    const selectedHerdAnimalType = String(store.getState()[gridId].rowClicked['HERD.ANIMAL_TYPE'])
+    const objectArray = selectedGridRows.filter(row => row['ANIMAL.ANIMAL_CLASS'] === selectedHerdAnimalType)
+    if (isValidArray(objectArray, 1)) {
+      alertUser(
+        true, 'info', this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.alert.add_animal_to_herd_prompt`,
+          defaultMessage: `${config.labelBasePath}.alert.add_animal_to_herd_prompt`
+        }) + '?', null, () => this.addAnimalToExistingHerdAction(objectArray, selectedHerdAnimalType, gridId), () => { },
+        true, this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.main.yes`,
+          defaultMessage: `${config.labelBasePath}.main.yes`
+        }),
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.main.no`,
+          defaultMessage: `${config.labelBasePath}.main.no`
+        })
+      )
+    } else {
+      alertUser(true, 'warning',
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.alert.animal_type_does_not_match_the_herd_type`,
+          defaultMessage: `${config.labelBasePath}.alert.animal_type_does_not_match_the_herd_type`
+        })
+      )
+    }
+  }
+
+  addAnimalToExistingHerdAction = (objectArray, selectedHerdAnimalType, gridId) => {
+    this.setState({ loading: true })
+    const selectedHerdObjId = store.getState()[gridId].rowClicked['HERD.OBJECT_ID']
+    const selectedHerdContactPersonId = store.getState()[gridId].rowClicked['HERD.CONTACT_PERSON_ID']
+    const actionType = 'HERD_ACTIONS'
+    const actionName = 'ADD_ANIMAL_TO_HERD'
+    const paramsArray = [{
+      MASS_PARAM_ACTION: actionType,
+      MASS_PARAM_SUBACTION: actionName,
+      MASS_PARAM_ANIMAL_CLASS: selectedHerdAnimalType,
+      MASS_PARAM_HERD_OBJ_ID: selectedHerdObjId,
+      MASS_PARAM_HERD_NAME: '',
+      MASS_PARAM_HERD_CONTACT_PERSON_ID: selectedHerdContactPersonId,
+      MASS_PARAM_HERD_NOTE: ''
+    }]
+    const verbPath = config.svConfig.triglavRestVerbs.ADD_ANIMAL_TO_HERD
+    const url = `${config.svConfig.restSvcBaseUrl}${verbPath}/${this.props.svSession}`
+    const reqConfig = { method: 'post', url, data: JSON.stringify({ objectArray, paramsArray }) }
+    axios(reqConfig).then(res => {
+      if (res.data) {
+        this.setState({ loading: false })
+        const resType = formatAlertType(res.data)
+        alertUser(true, resType, this.context.intl.formatMessage({ id: res.data, defaultMessage: res.data }))
+        if (strcmp(resType, 'success')) {
+          this.props.updateSelectedRows([], null)
+          ComponentManager.setStateForComponent(`${this.props.gridId}1`, 'selectedIndexes', [])
+          ComponentManager.setStateForComponent(`${this.props.gridId}2`, 'selectedIndexes', [])
+          GridManager.reloadGridData(`${this.props.gridId}1`)
+          GridManager.reloadGridData(`${this.props.gridId}2`)
+          this.closeHerdGrid(gridId)
+        }
+      }
+    }).catch(err => {
+      console.error(err)
+      alertUser(true, 'error', err)
+      this.setState({ loading: false })
+    })
+  }
+
+  addAnimalToNewHerd = holdingObjId => {
+    const { selectedGridRows } = this.props
+    if (!isValidArray(selectedGridRows, 1)) {
+      this.setState({
+        alert: alertUser(true, 'warning',
+          this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.alert.empty_selection`,
+            defaultMessage: `${config.labelBasePath}.alert.empty_selection`
+          })
+        )
+      })
+    } else {
+      this.displayHerdForm(holdingObjId)
+    }
+  }
+
+  displayHerdForm = holdingObjId => {
+    const formId = 'NEW_HERD_FORM'
+    const params = []
+    params.push({
+      PARAM_NAME: 'formWeWant',
+      PARAM_VALUE: 'HERD'
+    }, {
+      PARAM_NAME: 'session',
+      PARAM_VALUE: this.props.svSession
+    }, {
+      PARAM_NAME: 'table_name',
+      PARAM_VALUE: 'HERD'
+    }, {
+      PARAM_NAME: 'object_id',
+      PARAM_VALUE: 0
+    }, {
+      PARAM_NAME: 'parent_id',
+      PARAM_VALUE: holdingObjId
+    })
+
+    const newHerdForm = FormManager.generateForm(
+      formId, formId, params, 'formData', 'GET_FORM_BUILDER', 'GET_UISCHEMA', 'GET_TABLE_FORMDATA',
+      this.closeHerdForm, (formData, formInstance) => this.saveHerdForm(formData, formInstance, formId), null, null, null, null,
+      'closeAndDelete', () => this.closeHerdForm(), undefined, undefined, undefined, InputHerdWrapper
+    )
+
+    this.setState({ loading: false, showHerdForm: true, newHerdForm })
+  }
+
+  resetHerdFormSaveState = formId => ComponentManager.setStateForComponent(formId, null, { saveExecuted: false })
+
+  saveHerdForm = (formData, formInstance, formId) => {
+    const { selectedGridRows, svSession } = this.props
+    const herdAnimalType = formData.formData['herd.basic_info'].ANIMAL_TYPE
+    const objectArray = selectedGridRows.filter(row => row['ANIMAL.ANIMAL_CLASS'] === herdAnimalType)
+    if (isValidArray(objectArray, 1)) {
+      let saveParamsAndData = formInstance.props.params
+      saveParamsAndData = saveParamsAndData.filter(item => item.PARAM_NAME !== 'jsonString')
+      saveParamsAndData.push({ PARAM_NAME: 'jsonString', PARAM_VALUE: JSON.stringify(formData.formData) })
+      saveFormData(formId, 'SAVE_TABLE_OBJECT', svSession, saveParamsAndData)
+    } else {
+      const selectedAnimalsAreOfADifferentTypeLabel = this.context.intl.formatMessage({
+        id: `${config.labelBasePath}.alert.animal_different_herd`,
+        defaultMessage: `${config.labelBasePath}.alert.animal_different_herd`
+      })
+      alertUser(true, 'info', selectedAnimalsAreOfADifferentTypeLabel, null, () => this.resetHerdFormSaveState(formId))
+    }
+  }
+
+  closeHerdForm = () => {
+    const { herdObjId, herdAnimalType, herdPersonId, selectedGridRows } = this.props
+    if (herdObjId && herdAnimalType) {
+      const objectArray = selectedGridRows.filter(row => row['ANIMAL.ANIMAL_CLASS'] === herdAnimalType)
+      this.addAnimalToNewHerdAction(herdObjId, herdAnimalType, herdPersonId, objectArray)
+      this.setState({ showHerdForm: false, newHerdForm: undefined })
+    } else {
+      this.setState({ showHerdForm: false, newHerdForm: undefined })
+    }
+  }
+
+  addAnimalToNewHerdAction = (herdObjId, herdAnimalType, herdPersonId, objectArray) => {
+    if (isValidArray(objectArray, 1)) {
+      this.setState({ loading: true })
+      const actionType = 'HERD_ACTIONS'
+      const actionName = 'ADD_ANIMAL_TO_HERD'
+      const paramsArray = [{
+        MASS_PARAM_ACTION: actionType,
+        MASS_PARAM_SUBACTION: actionName,
+        MASS_PARAM_ANIMAL_CLASS: herdAnimalType,
+        MASS_PARAM_HERD_OBJ_ID: herdObjId,
+        MASS_PARAM_HERD_NAME: '',
+        ...herdPersonId && { MASS_PARAM_HERD_CONTACT_PERSON_ID: herdPersonId },
+        MASS_PARAM_HERD_NOTE: ''
+      }]
+      const verbPath = config.svConfig.triglavRestVerbs.ADD_ANIMAL_TO_HERD
+      const url = `${config.svConfig.restSvcBaseUrl}${verbPath}/${this.props.svSession}`
+      const reqConfig = { method: 'post', url, data: JSON.stringify({ objectArray, paramsArray }) }
+      axios(reqConfig).then(res => {
+        if (res.data) {
+          this.setState({ loading: false })
+          const resType = formatAlertType(res.data)
+          alertUser(true, resType, this.context.intl.formatMessage({ id: res.data, defaultMessage: res.data }))
+          this.props.formToGridResetAction('NEW_HERD')
+          if (strcmp(resType, 'success')) {
+            this.props.updateSelectedRows([], null)
+            ComponentManager.setStateForComponent(`${this.props.gridId}1`, 'selectedIndexes', [])
+            ComponentManager.setStateForComponent(`${this.props.gridId}2`, 'selectedIndexes', [])
+            GridManager.reloadGridData(`${this.props.gridId}1`)
+            GridManager.reloadGridData(`${this.props.gridId}2`)
+          }
+        }
+      }).catch(err => {
+        console.error(err)
+        alertUser(true, 'error', err)
+        this.setState({ loading: false })
+        this.props.formToGridResetAction('NEW_HERD')
+      })
+    } else {
+      const selectedAnimalsWereNotAddedToTheHerdLabel = this.context.intl.formatMessage({
+        id: `${config.labelBasePath}.alert.the_selected_animals_were_not_added_to_the_herd_because_of_a_different_type`,
+        defaultMessage: `${config.labelBasePath}.alert.the_selected_animals_were_not_added_to_the_herd_because_of_a_different_type`
+      })
+      alertUser(true, 'info', selectedAnimalsWereNotAddedToTheHerdLabel)
+    }
+  }
+
+  executeHerdActionPrompt = (actionType, label) => {
+    const { selectedGridRows } = this.props
+    const yesLabel = this.context.intl.formatMessage({
+      id: `${config.labelBasePath}.main.yes`,
+      defaultMessage: `${config.labelBasePath}.main.yes`
+    })
+    const noLabel = this.context.intl.formatMessage({
+      id: `${config.labelBasePath}.main.no`,
+      defaultMessage: `${config.labelBasePath}.main.no`
+    })
+    if (isValidArray(selectedGridRows, 2)) {
+      alertUser(true, 'warning',
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.alert.only_one_record_can_be_selected`,
+          defaultMessage: `${config.labelBasePath}.alert.only_one_record_can_be_selected`
+        })
+      )
+    } else if (!isValidArray(selectedGridRows, 1)) {
+      alertUser(true, 'warning',
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.alert.empty_selection`,
+          defaultMessage: `${config.labelBasePath}.alert.empty_selection`
+        })
+      )
+    } else {
+      const promptLabel = this.context.intl.formatMessage({
+        id: `${config.labelBasePath}.actions.prompt_text`,
+        defaultMessage: `${config.labelBasePath}.actions.prompt_text`
+      }) + ' ' + '"' + label + '"' + '?'
+
+      alertUser(true, 'warning', promptLabel, null, () => this.executeHerdAction(actionType, selectedGridRows), () => { }, true, yesLabel, noLabel)
+    }
+  }
+
+  executeHerdAction = (actionType, objectArray) => {
+    const { gridType } = this.props
+    const herdObjId = objectArray[0][`${gridType}.OBJECT_ID`]
+    let actionTypeParam = actionType
+    if (strcmp(actionType, 'slaughtered')) {
+      actionTypeParam = 'slaughtrd'
+    }
+    this.setState({ loading: true })
+    const paramsArray = [{
+      MASS_PARAM_TBL_NAME: gridType,
+      MASS_PARAM_ACTION: 'RETIRE',
+      MASS_PARAM_SUBACTION: actionTypeParam.toUpperCase()
+    }]
+    const verbPath = config.svConfig.triglavRestVerbs.HERD_MASS_ACTION
+    const url = `${config.svConfig.restSvcBaseUrl}${verbPath}/${this.props.svSession}/${herdObjId}`
+    const reqConfig = { method: 'post', url, data: JSON.stringify({ objectArray, paramsArray }) }
+    axios(reqConfig).then(res => {
+      if (res.data) {
+        this.setState({ loading: false })
+        const resType = formatAlertType(res.data)
+        alertUser(true, resType, this.context.intl.formatMessage({ id: res.data, defaultMessage: res.data }))
+        if (strcmp(resType, 'success')) {
+          this.props.updateSelectedRows([], null)
+          ComponentManager.setStateForComponent(`${this.props.gridId}1`, 'selectedIndexes', [])
+          ComponentManager.setStateForComponent(`${this.props.gridId}2`, 'selectedIndexes', [])
+          GridManager.reloadGridData(`${this.props.gridId}1`)
+          GridManager.reloadGridData(`${this.props.gridId}2`)
+        }
+      }
+    }).catch(err => {
+      console.error(err)
+      alertUser(true, 'error', err)
+      this.setState({ loading: false })
+    })
+  }
+
+  executeHerdPhysicalCheckPrompt = label => {
+    const { selectedGridRows } = this.props
+    if (isValidArray(selectedGridRows, 2)) {
+      alertUser(true, 'warning',
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.alert.only_one_record_can_be_selected`,
+          defaultMessage: `${config.labelBasePath}.alert.only_one_record_can_be_selected`
+        })
+      )
+    } else if (!isValidArray(selectedGridRows, 1)) {
+      alertUser(true, 'warning',
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.alert.empty_selection`,
+          defaultMessage: `${config.labelBasePath}.alert.empty_selection`
+        })
+      )
+    } else {
+      const warningText = this.context.intl.formatMessage({
+        id: `${config.labelBasePath}.actions.default_date_msg`,
+        defaultMessage: `${config.labelBasePath}.actions.default_date_msg`
+      })
+      let wrapper = document.createElement('div')
+      ReactDOM.render(
+        <React.Fragment>
+          <label htmlFor='herdActivityDate' style={{ marginRight: '8px' }}>{this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.main.set_activity_date`,
+            defaultMessage: `${config.labelBasePath}.main.set_activity_date`
+          })}
+          </label>
+          <input
+            style={{ border: 'none', height: '40px', color: '#000', backgroundColor: '#eff0f1' }}
+            type='date'
+            name='herdActivityDate'
+            onChange={this.setActivityDate}
+            value={this.state.herdActivityDate}
+          />
+        </React.Fragment>,
+        wrapper
+      )
+
+      alertUser(true, 'warning',
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.actions.prompt_text`,
+          defaultMessage: `${config.labelBasePath}.actions.prompt_text`
+        }) + ' ' + '"' + label + '"' + '? ', warningText, () => this.executeHerdPhysicalCheck(selectedGridRows),
+        () => this.setState({ herdActivityDate: undefined }),
+        true, this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.actions.execute`,
+          defaultMessage: `${config.labelBasePath}.actions.execute`
+        }), this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.main.forms.cancel`,
+          defaultMessage: `${config.labelBasePath}.main.forms.cancel`
+        }), true, null, true, wrapper
+      )
+    }
+  }
+
+  executeHerdPhysicalCheck = objectArray => {
+    const { gridType } = this.props
+    const { herdActivityDate } = this.state
+    const shortDate = !herdActivityDate ? convertToShortDate(new Date(), 'y-m-d') : herdActivityDate
+    const herdObjId = objectArray[0][`${gridType}.OBJECT_ID`]
+    this.setState({ loading: true })
+    const paramsArray = [{
+      MASS_PARAM_TBL_NAME: gridType,
+      MASS_PARAM_ACTION: 'ACTIVITY',
+      MASS_PARAM_SUBACTION: 'PHYSICAL_CHECK',
+      MASS_PARAM_ACTION_DATE: shortDate,
+      MASS_PARAM_VACC_ACTIVITY_TYPE: ''
+    }]
+    const verbPath = config.svConfig.triglavRestVerbs.HERD_MASS_ACTION
+    const url = `${config.svConfig.restSvcBaseUrl}${verbPath}/${this.props.svSession}/${herdObjId}`
+    const reqConfig = { method: 'post', url, data: JSON.stringify({ objectArray, paramsArray }) }
+    axios(reqConfig).then(res => {
+      if (res.data) {
+        this.setState({ loading: false, herdActivityDate: undefined })
+        const resType = formatAlertType(res.data)
+        alertUser(true, resType, this.context.intl.formatMessage({ id: res.data, defaultMessage: res.data }))
+        if (strcmp(resType, 'success')) {
+          this.props.updateSelectedRows([], null)
+          ComponentManager.setStateForComponent(`${this.props.gridId}1`, 'selectedIndexes', [])
+          ComponentManager.setStateForComponent(`${this.props.gridId}2`, 'selectedIndexes', [])
+          GridManager.reloadGridData(`${this.props.gridId}1`)
+          GridManager.reloadGridData(`${this.props.gridId}2`)
+        }
+      }
+    }).catch(err => {
+      console.error(err)
+      alertUser(true, 'error', err)
+      this.setState({ loading: false, herdActivityDate: undefined })
+    })
+  }
+
+  executeHerdVaccinationEventPrompt = (eventLabel, eventObjId) => {
+    const { selectedGridRows } = this.props
+    if (isValidArray(selectedGridRows, 2)) {
+      alertUser(true, 'warning',
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.alert.only_one_record_can_be_selected`,
+          defaultMessage: `${config.labelBasePath}.alert.only_one_record_can_be_selected`
+        })
+      )
+    } else if (!isValidArray(selectedGridRows, 1)) {
+      alertUser(true, 'warning',
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.alert.empty_selection`,
+          defaultMessage: `${config.labelBasePath}.alert.empty_selection`
+        })
+      )
+    } else {
+      const warningText = this.context.intl.formatMessage({
+        id: `${config.labelBasePath}.actions.default_date_msg`,
+        defaultMessage: `${config.labelBasePath}.actions.default_date_msg`
+      })
+      let wrapper = document.createElement('div')
+      ReactDOM.render(
+        <React.Fragment>
+          <label htmlFor='herdActivityDate' style={{ marginRight: '8px' }}>{this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.main.set_activity_date`,
+            defaultMessage: `${config.labelBasePath}.main.set_activity_date`
+          })}
+          </label>
+          <input
+            style={{ border: 'none', height: '40px', color: '#000', backgroundColor: '#eff0f1' }}
+            type='date'
+            name='herdActivityDate'
+            onChange={this.setActivityDate}
+            value={this.state.herdActivityDate}
+          />
+        </React.Fragment>,
+        wrapper
+      )
+
+      alertUser(true, 'warning',
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.actions.prompt_text`,
+          defaultMessage: `${config.labelBasePath}.actions.prompt_text`
+        }) + ' ' + '"' + eventLabel + '"' + '? ', warningText, () => this.executeHerdVaccinationEventAction(selectedGridRows, eventObjId),
+        () => this.setState({ herdActivityDate: undefined }),
+        true, this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.actions.execute`,
+          defaultMessage: `${config.labelBasePath}.actions.execute`
+        }), this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.main.forms.cancel`,
+          defaultMessage: `${config.labelBasePath}.main.forms.cancel`
+        }), true, null, true, wrapper
+      )
+    }
+  }
+
+  executeHerdVaccinationEventAction = (objectArray, eventObjId) => {
+    const { gridType } = this.props
+    const { herdActivityDate } = this.state
+    const shortDate = !herdActivityDate ? convertToShortDate(new Date(), 'y-m-d') : herdActivityDate
+    const herdObjId = objectArray[0][`${gridType}.OBJECT_ID`]
+    this.setState({ loading: true })
+    const paramsArray = [{
+      MASS_PARAM_TBL_NAME: gridType,
+      MASS_PARAM_ACTION: 'ACTIVITY',
+      MASS_PARAM_SUBACTION: 'VACCINATION',
+      MASS_PARAM_ACTION_DATE: shortDate,
+      MASS_PARAM_ADDITIONAL_PARAM: eventObjId
+    }]
+    const verbPath = config.svConfig.triglavRestVerbs.HERD_MASS_ACTION
+    const url = `${config.svConfig.restSvcBaseUrl}${verbPath}/${this.props.svSession}/${herdObjId}`
+    const reqConfig = { method: 'post', url, data: JSON.stringify({ objectArray, paramsArray }) }
+    axios(reqConfig).then(res => {
+      if (res.data) {
+        this.setState({ loading: false, herdActivityDate: undefined })
+        const resType = formatAlertType(res.data)
+        alertUser(true, resType, this.context.intl.formatMessage({ id: res.data, defaultMessage: res.data }))
+        if (strcmp(resType, 'success')) {
+          this.props.updateSelectedRows([], null)
+          ComponentManager.setStateForComponent(`${this.props.gridId}1`, 'selectedIndexes', [])
+          ComponentManager.setStateForComponent(`${this.props.gridId}2`, 'selectedIndexes', [])
+          GridManager.reloadGridData(`${this.props.gridId}1`)
+          GridManager.reloadGridData(`${this.props.gridId}2`)
+        }
+      }
+    }).catch(err => {
+      console.error(err)
+      alertUser(true, 'error', err)
+      this.setState({ loading: false, herdActivityDate: undefined })
+    })
+  }
+
+  searchHerdDestination = () => {
+    const { selectedGridRows } = this.props
+    if (isValidArray(selectedGridRows, 2)) {
+      alertUser(true, 'warning',
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.alert.only_one_record_can_be_selected`,
+          defaultMessage: `${config.labelBasePath}.alert.only_one_record_can_be_selected`
+        })
+      )
+    } else if (!isValidArray(selectedGridRows, 1)) {
+      alertUser(true, 'warning',
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.alert.empty_selection`,
+          defaultMessage: `${config.labelBasePath}.alert.empty_selection`
+        })
+      )
+    } else {
+      this.setState({ modalIsOpen: true })
+    }
+  }
+
+  startHerdMovementPrompt = (paramsArray, gridType) => {
+    const { selectedGridRows } = this.props
+    const startMovementLabel = this.context.intl.formatMessage({
+      id: `${config.labelBasePath}.actions.start_movement`,
+      defaultMessage: `${config.labelBasePath}.actions.start_movement`
+    })
+    const promptLabel = this.context.intl.formatMessage({
+      id: `${config.labelBasePath}.actions.prompt_text`,
+      defaultMessage: `${config.labelBasePath}.actions.prompt_text`
+    }) + ' ' + '"' + startMovementLabel + '"' + ' ?'
+
+    alertUser(true, 'info', promptLabel, null, () => this.startHerdMovement(selectedGridRows, paramsArray, gridType), () => { },
+      true, this.context.intl.formatMessage({
+        id: `${config.labelBasePath}.actions.execute`,
+        defaultMessage: `${config.labelBasePath}.actions.execute`
+      }), this.context.intl.formatMessage({
+        id: `${config.labelBasePath}.main.forms.cancel`,
+        defaultMessage: `${config.labelBasePath}.main.forms.cancel`
+      })
+    )
+  }
+
+  startHerdMovement = (objectArray, paramsArray, gridType) => {
+    this.setState({ loading: true })
+    const herdObjId = objectArray[0][`${gridType}.OBJECT_ID`]
+    const verbPath = config.svConfig.triglavRestVerbs.HERD_MASS_ACTION
+    const url = `${config.svConfig.restSvcBaseUrl}${verbPath}/${this.props.svSession}/${herdObjId}`
+    const reqConfig = { method: 'post', url, data: JSON.stringify({ objectArray, paramsArray }) }
+    axios(reqConfig).then(res => {
+      if (res.data) {
+        this.setState({ loading: false })
+        const resType = formatAlertType(res.data)
+        alertUser(true, resType, this.context.intl.formatMessage({ id: res.data, defaultMessage: res.data }))
+        if (strcmp(resType, 'success')) {
+          this.props.updateSelectedRows([], null)
+          ComponentManager.setStateForComponent(`${this.props.gridId}1`, 'selectedIndexes', [])
+          ComponentManager.setStateForComponent(`${this.props.gridId}2`, 'selectedIndexes', [])
+          GridManager.reloadGridData(`${this.props.gridId}1`)
+          GridManager.reloadGridData(`${this.props.gridId}2`)
+          this.closeModal()
+        }
+      }
+    }).catch(err => {
+      console.error(err)
+      alertUser(true, 'error', err)
+      this.setState({ loading: false })
+    })
+  }
+
+  cancelHerdMovementPrompt = holdingObjId => {
+    const { selectedGridRows, gridProps } = this.props
+    const { showGrid, parentId, linkName, customId } = gridProps
+    const gridId = `${showGrid}_${parentId}_${linkName}_${customId}`
+    if (isValidArray(selectedGridRows, 2)) {
+      alertUser(true, 'warning',
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.alert.only_one_record_can_be_selected`,
+          defaultMessage: `${config.labelBasePath}.alert.only_one_record_can_be_selected`
+        })
+      )
+    } else if (!isValidArray(selectedGridRows, 1)) {
+      alertUser(true, 'warning',
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.alert.empty_selection`,
+          defaultMessage: `${config.labelBasePath}.alert.empty_selection`
+        })
+      )
+    } else {
+      alertUser(
+        true, 'info', this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.alert.cancel_herd_movement_prompt`,
+          defaultMessage: `${config.labelBasePath}.alert.cancel_herd_movement_prompt`
+        }) + '?', null, () => this.cancelHerdMovement(selectedGridRows, gridId, holdingObjId), () => { },
+        true, this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.main.yes`,
+          defaultMessage: `${config.labelBasePath}.main.yes`
+        }),
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.main.no`,
+          defaultMessage: `${config.labelBasePath}.main.no`
+        })
+      )
+    }
+  }
+
+  cancelHerdMovement = (objectArray, gridId, holdingObjId) => {
+    this.setState({ loading: true })
+    const herdObjId = objectArray[0]['HERD_MOVEMENT.PARENT_ID']
+    const actionName = 'MOVE'
+    const subActionName = 'CANCEL_MOVEMENT'
+    const paramsArray = [{
+      MASS_PARAM_TBL_NAME: 'ANIMAL_MOVEMENT',
+      MASS_PARAM_ACTION: actionName,
+      MASS_PARAM_SUBACTION: subActionName,
+      MASS_PARAM_ADDITIONAL_PARAM: String(holdingObjId)
+    }]
+    const verbPath = config.svConfig.triglavRestVerbs.HERD_MASS_ACTION
+    const url = `${config.svConfig.restSvcBaseUrl}${verbPath}/${this.props.svSession}/${herdObjId}`
+    const reqConfig = { method: 'post', url, data: JSON.stringify({ objectArray, paramsArray }) }
+    axios(reqConfig).then(res => {
+      if (res.data) {
+        this.setState({ loading: false })
+        const resType = formatAlertType(res.data)
+        alertUser(true, resType, this.context.intl.formatMessage({ id: res.data, defaultMessage: res.data }))
+        if (strcmp(resType, 'success')) {
+          this.props.updateSelectedRows([], null)
+          ComponentManager.setStateForComponent(gridId, 'selectedIndexes', [])
+          GridManager.reloadGridData(gridId)
+        }
+      }
+    }).catch(err => {
+      console.error(err)
+      alertUser(true, 'error', err)
+      this.setState({ loading: false })
+    })
+  }
+
+  acceptFullHerdPrompt = (holdingObjId, subActionName) => {
+    const { selectedGridRows, gridProps } = this.props
+    const { showGrid, parentId, linkName, customId } = gridProps
+    const gridId = `${showGrid}_${parentId}_${linkName}_${customId}`
+    if (isValidArray(selectedGridRows, 2)) {
+      alertUser(true, 'warning',
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.alert.only_one_record_can_be_selected`,
+          defaultMessage: `${config.labelBasePath}.alert.only_one_record_can_be_selected`
+        })
+      )
+    } else if (!isValidArray(selectedGridRows, 1)) {
+      alertUser(true, 'warning',
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.alert.empty_selection`,
+          defaultMessage: `${config.labelBasePath}.alert.empty_selection`
+        })
+      )
+    } else {
+      const warningText = this.context.intl.formatMessage({
+        id: `${config.labelBasePath}.actions.default_date_msg`,
+        defaultMessage: `${config.labelBasePath}.actions.default_date_msg`
+      })
+      let wrapper = document.createElement('div')
+      ReactDOM.render(
+        <React.Fragment>
+          <label htmlFor='herdActivityDate' style={{ marginRight: '8px' }}>{this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.main.set_activity_date`,
+            defaultMessage: `${config.labelBasePath}.main.set_activity_date`
+          })}
+          </label>
+          <input
+            style={{ border: 'none', height: '40px', color: '#000', backgroundColor: '#eff0f1' }}
+            type='date'
+            name='herdActivityDate'
+            onChange={this.setActivityDate}
+            value={this.state.herdActivityDate}
+          />
+        </React.Fragment>,
+        wrapper
+      )
+      alertUser(true, 'warning',
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.alert.${subActionName.toLowerCase()}_prompt`,
+          defaultMessage: `${config.labelBasePath}.alert.${subActionName.toLowerCase()}_prompt`
+        }) + '?', warningText, () => this.acceptFullHerd(selectedGridRows, gridId, holdingObjId, subActionName),
+        () => this.setState({ herdActivityDate: undefined }),
+        true, this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.main.yes`,
+          defaultMessage: `${config.labelBasePath}.main.yes`
+        }), this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.main.no`,
+          defaultMessage: `${config.labelBasePath}.main.no`
+        }), true, null, true, wrapper
+      )
+    }
+  }
+
+  acceptFullHerd = (objectArray, gridId, holdingObjId, subActionNameSecondary) => {
+    this.setState({ loading: true })
+    const { herdActivityDate } = this.state
+    const shortDate = !herdActivityDate ? convertToShortDate(new Date(), 'y-m-d') : herdActivityDate
+    const herdObjId = objectArray[0]['HERD_MOVEMENT.PARENT_ID']
+    const actionName = 'MOVE'
+    const subActionNamePrimary = 'FINISH_MOVEMENT'
+    const paramsArray = [{
+      MASS_PARAM_TBL_NAME: 'ANIMAL_MOVEMENT',
+      MASS_PARAM_ACTION: actionName,
+      MASS_PARAM_SUBACTION: subActionNamePrimary,
+      MASS_PARAM_SUB_ACTION: subActionNameSecondary,
+      MASS_PARAM_ADDITIONAL_PARAM: holdingObjId,
+      MASS_PARAM_DATE_OF_MOVEMENT: shortDate
+    }]
+    const verbPath = config.svConfig.triglavRestVerbs.HERD_MASS_ACTION
+    const url = `${config.svConfig.restSvcBaseUrl}${verbPath}/${this.props.svSession}/${herdObjId}`
+    const reqConfig = { method: 'post', url, data: JSON.stringify({ objectArray, paramsArray }) }
+    axios(reqConfig).then(res => {
+      if (res.data) {
+        this.setState({ loading: false, herdActivityDate: undefined })
+        const resType = formatAlertType(res.data)
+        alertUser(true, resType, this.context.intl.formatMessage({ id: res.data, defaultMessage: res.data }))
+        if (strcmp(resType, 'success')) {
+          this.props.updateSelectedRows([], null)
+          ComponentManager.setStateForComponent(gridId, 'selectedIndexes', [])
+          GridManager.reloadGridData(gridId)
+        }
+      }
+    }).catch(err => {
+      console.error(err)
+      alertUser(true, 'error', err)
+      this.setState({ loading: false, herdActivityDate: undefined })
+    })
+  }
+
+  acceptIndividualHerdPrompt = (holdingObjId, subActionName) => {
+    const { selectedGridRows, gridProps } = this.props
+    const { customId } = gridProps
+    if (isValidArray(selectedGridRows, 2)) {
+      alertUser(true, 'warning',
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.alert.only_one_record_can_be_selected`,
+          defaultMessage: `${config.labelBasePath}.alert.only_one_record_can_be_selected`
+        })
+      )
+    } else if (!isValidArray(selectedGridRows, 1)) {
+      alertUser(true, 'warning',
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.alert.empty_selection`,
+          defaultMessage: `${config.labelBasePath}.alert.empty_selection`
+        })
+      )
+    } else {
+      const finalGridId = `HERD_MOVEMENT_${holdingObjId}_HERD_MOVEMENT_HOLDING_${customId}`
+      this.displayAnimalsPerHerdGrid(selectedGridRows, holdingObjId, finalGridId, subActionName)
+    }
+  }
+
+  displayAnimalsPerHerdGrid = (objectArray, holdingObjId, gridId, subActionName) => {
+    const herdObjId = objectArray[0]['HERD_MOVEMENT.PARENT_ID']
+    const animalsPerHerdGridId = `ANIMALS_PER_HERD_${holdingObjId}`
+    const btnId = 'accept_the_selected_animals_btn'
+    const gridConfig = menuConfig('GRID_CONFIG', this.context.intl)
+    const animalsPerHerdGrid = <div id='search_modal' className='modal to-front' style={{ display: 'flex' }}>
+      <div id='search_modal_content' className='modal-content'>
+        <div className='modal-header' />
+        <div id='search_modal_body' className='modal-body'>
+          <button id={btnId} className='btn-success' style={{ marginTop: '1rem', fontSize: 'x-large', padding: '0.5rem' }}
+            onClick={() => this.acceptIndividualHerdPromptSecondary(holdingObjId, herdObjId, gridId, animalsPerHerdGridId, subActionName)}
+          >
+            {this.context.intl.formatMessage({
+              id: `${config.labelBasePath}.main.accept_the_selected_animals`,
+              defaultMessage: `${config.labelBasePath}.main.accept_the_selected_animals`
+            })}
+          </button>
+          <ResultsGrid key={animalsPerHerdGridId} id={animalsPerHerdGridId} gridToDisplay='ANIMAL' gridConfig={gridConfig} enableMultiSelect
+            onSelectChangeFunct={onGridSelectionChange} customGridDataWS='GET_ANIMALS_PER_HERD' parentId={herdObjId}
+          />
+        </div>
+      </div>
+      <div id='modal_close_btn' type='button' className='js-components-AppComponents-Functional-GridInModalLinkObjects-module-close'
+        style={{ position: 'absolute', right: 'calc(11% - 9px)', top: '44px', width: '32px', height: '32px', opacity: '1' }}
+        onClick={() => this.closeAnimalsPerHerdGrid(animalsPerHerdGridId)} data-dismiss='modal' />
+    </div>
+
+    this.props.updateSelectedRows([], null)
+    ComponentManager.setStateForComponent(gridId, 'selectedIndexes', [])
+    this.setState({ animalsPerHerdGrid })
+  }
+
+  closeAnimalsPerHerdGrid = gridId => {
+    this.setState({ animalsPerHerdGrid: undefined })
+    this.props.updateSelectedRows([], null)
+    ComponentManager.setStateForComponent(gridId, 'selectedIndexes', [])
+    ComponentManager.cleanComponentReducerState(gridId)
+  }
+
+  acceptIndividualHerdPromptSecondary = (holdingObjId, herdObjId, gridId, animalsPerHerdGridId, subActionName) => {
+    const { selectedGridRows } = this.props
+    if (!isValidArray(selectedGridRows, 1)) {
+      alertUser(true, 'warning',
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.alert.empty_selection`,
+          defaultMessage: `${config.labelBasePath}.alert.empty_selection`
+        })
+      )
+    } else {
+      alertUser(true, 'warning',
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.alert.accept_the_selected_animals_prompt`,
+          defaultMessage: `${config.labelBasePath}.alert.accept_the_selected_animals_prompt`
+        }) + '?', null, () => this.acceptIndividualHerd(holdingObjId, herdObjId, selectedGridRows, gridId, animalsPerHerdGridId, subActionName),
+        () => { }, true, this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.main.yes`,
+          defaultMessage: `${config.labelBasePath}.main.yes`
+        }), this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.main.no`,
+          defaultMessage: `${config.labelBasePath}.main.no`
+        })
+      )
+    }
+  }
+
+  acceptIndividualHerd = (holdingObjId, herdObjId, selectedAnimals, gridId, animalsPerHerdGridId, subActionName) => {
+    this.setState({ loading: true })
+    const objectArray = selectedAnimals
+    const paramsArray = [{
+      MASS_PARAM_TBL_NAME: 'ANIMAL_MOVEMENT',
+      MASS_PARAM_ACTION: 'MOVE',
+      MASS_PARAM_SUBACTION: 'FINISH_MOVEMENT',
+      MASS_PARAM_SUB_ACTION: subActionName,
+      MASS_PARAM_ADDITIONAL_PARAM: holdingObjId
+    }]
+    const verbPath = config.svConfig.triglavRestVerbs.INVIDIUAL_HERD_MOVEMENT_MASS_ACTION
+    const url = `${config.svConfig.restSvcBaseUrl}${verbPath}/${this.props.svSession}/${herdObjId}`
+    const reqConfig = { method: 'post', url, data: JSON.stringify({ objectArray, paramsArray }) }
+    axios(reqConfig).then(res => {
+      if (res.data) {
+        this.setState({ loading: false })
+        const resType = formatAlertType(res.data)
+        alertUser(true, resType, this.context.intl.formatMessage({ id: res.data, defaultMessage: res.data }))
+        if (strcmp(resType, 'success')) {
+          this.props.updateSelectedRows([], null)
+          ComponentManager.setStateForComponent(gridId, 'selectedIndexes', [])
+          GridManager.reloadGridData(gridId)
+          this.setState({ animalsPerHerdGrid: undefined })
+          ComponentManager.setStateForComponent(animalsPerHerdGridId, 'selectedIndexes', [])
+          ComponentManager.cleanComponentReducerState(animalsPerHerdGridId)
+        }
+      }
+    }).catch(err => {
+      console.error(err)
+      alertUser(true, 'error', err)
+      this.setState({ loading: false })
+    })
+  }
+
+  changeHerdMovementDocStatusPrompt = status => {
+    const { selectedGridRows, svSession, gridProps } = this.props
+    const gridId = gridProps.customGridId
+    if (!isValidArray(selectedGridRows, 1)) {
+      alertUser(true, 'warning', this.context.intl.formatMessage({
+        id: `${config.labelBasePath}.alert.empty_selection`,
+        defaultMessage: `${config.labelBasePath}.alert.empty_selection`
+      }))
+    } else {
+      const filteredRows = selectedGridRows.filter(row => strcmp(row['MOVEMENT_DOC.MOVEMENT_TYPE'], 'HERD'))
+      if (!isValidArray(filteredRows, 1)) {
+        alertUser(true, 'info', this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.alert.select_only_herd_movement_type_docs`,
+          defaultMessage: `${config.labelBasePath}.alert.select_only_herd_movement_type_docs`
+        }))
+      } else {
+        alertUser(
+          true, 'info', this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.alert.${status.toLowerCase()}_herd_movement_document_prompt`,
+            defaultMessage: `${config.labelBasePath}.alert.${status.toLowerCase()}_herd_movement_document_prompt`
+          }) + '?', null, () => this.changeHerdMovementDocStatus(filteredRows, status, svSession, gridId), () => { },
+          true, this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.main.yes`,
+            defaultMessage: `${config.labelBasePath}.main.yes`
+          }),
+          this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.main.no`,
+            defaultMessage: `${config.labelBasePath}.main.no`
+          })
+        )
+      }
+    }
+  }
+
+  changeHerdMovementDocStatus = (objectArray, status, session, gridId) => {
+    this.setState({ loading: true })
+    const verbPath = config.svConfig.triglavRestVerbs.CHANGE_HERD_MOVEMENT_DOC_STATUS
+    const url = `${config.svConfig.restSvcBaseUrl}${verbPath}/${session}/${status}`
+    const reqConfig = { method: 'post', url, data: JSON.stringify({ objectArray }), headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    axios(reqConfig).then(res => {
+      this.setState({ loading: false })
+      const resType = formatAlertType(res.data)
+      alertUser(true, resType, this.context.intl.formatMessage({ id: res.data, defaultMessage: res.data }))
+      if (strcmp(resType, 'success')) {
+        this.props.updateSelectedRows([], null)
+        ComponentManager.setStateForComponent(`${gridId}1`, 'selectedIndexes', [])
+        ComponentManager.setStateForComponent(`${gridId}2`, 'selectedIndexes', [])
+        GridManager.reloadGridData(`${gridId}1`)
+        GridManager.reloadGridData(`${gridId}2`)
+      }
+    }).catch(err => {
+      console.error(err)
+      alertUser(true, 'error', err)
+      this.setState({ loading: false })
+    })
   }
 
   passportRequestPrompt = (actionText, selectedReason) => {
@@ -478,6 +1436,125 @@ class ExecuteActionOnSelectedRows extends React.Component {
     }
   }
 
+  executePetQuarantineMassAction = (action) => {
+    this.setState({ loading: true })
+    const { svSession } = this.props
+    const objectArray = this.props.selectedGridRows
+    const subAction = strcmp(action, 'add') ? 'ADD_PET_TO_QUARANTINE' : 'REMOVE_PET_FROM_QUARANTINE'
+    const paramsArray = [{
+      MASS_PARAM_ACTION: 'PET_ACTIONS',
+      MASS_PARAM_SUBACTION: subAction,
+      ...strcmp(action, 'add') && {
+        MASS_PARAM_PET_QUARANTINE_OBJ_ID: store.getState()['PET_QUARANTINES_SEARCH_RESULT'].rowClicked['PET_QUARANTINE.OBJECT_ID']
+      }
+    }]
+    const verbPath = config.svConfig.triglavRestVerbs.MANAGE_PET_QUARANTINE
+    const url = `${config.svConfig.restSvcBaseUrl}${verbPath}/${svSession}`
+    const reqConfig = { method: 'post', url, data: JSON.stringify({ objectArray, paramsArray }) }
+    axios(reqConfig).then(res => {
+      if (res.data) {
+        this.setState({ loading: false })
+        const resType = formatAlertType(res.data)
+        alertUser(true, resType, this.context.intl.formatMessage({ id: res.data, defaultMessage: res.data }))
+        if (strcmp(resType, 'success')) {
+          this.closePetQuarantinesGridModal()
+          const gridId = `${this.props.gridId}_ALL_PETS`
+          this.props.updateSelectedRows([], null)
+          ComponentManager.setStateForComponent(gridId, 'selectedIndexes', [])
+          GridManager.reloadGridData(gridId)
+        }
+      }
+    }).catch(err => {
+      console.error(err)
+      alertUser(true, 'error', err)
+      this.setState({ loading: false })
+    })
+  }
+
+  handleQuarantineSelection = () => {
+    const promptLabel = this.context.intl.formatMessage({
+      id: `${config.labelBasePath}.alert.add_pet_to_quarantine_prompt`,
+      defaultMessage: `${config.labelBasePath}.alert.add_pet_to_quarantine_prompt`
+    })
+    const yesLabel = this.context.intl.formatMessage({
+      id: `${config.labelBasePath}.main.yes`,
+      defaultMessage: `${config.labelBasePath}.main.yes`
+    })
+    const noLabel = this.context.intl.formatMessage({
+      id: `${config.labelBasePath}.main.no`,
+      defaultMessage: `${config.labelBasePath}.main.no`
+    })
+
+    alertUser(true, 'warning', promptLabel, '', () => this.executePetQuarantineMassAction('add'), () => { }, true, yesLabel, noLabel)
+  }
+
+  closePetQuarantinesGridModal = () => {
+    this.setState({ showPetQuarantineGridModal: false })
+    ComponentManager.cleanComponentReducerState('PET_QUARANTINES_SEARCH_RESULT')
+  }
+
+  generatePetQuarantinesGridModal = () => {
+    const modal = (
+      <div id='search_modal' className='modal' style={{ display: 'flex' }}>
+        <div id='search_modal_content' className='modal-content'>
+          <div className='modal-header' />
+          <div id='search_modal_body' className='modal-body'>
+            <ResultsGrid
+              id='PET_QUARANTINES_SEARCH_RESULT'
+              key='PET_QUARANTINES_SEARCH_RESULT'
+              gridToDisplay='PET_QUARANTINE'
+              onRowSelectProp={this.handleQuarantineSelection}
+              gridTypeCall='GET_BYPARENTID'
+              parentId={this.state.holdingObjectId}
+            />
+          </div>
+        </div>
+        <div id='modal_close_btn' type='button' className='js-components-AppComponents-Functional-GridInModalLinkObjects-module-close'
+          style={{
+            position: 'absolute',
+            right: 'calc(11% - 9px)',
+            top: '44px',
+            width: '32px',
+            height: '32px',
+            opacity: '1'
+          }}
+          onClick={this.closePetQuarantinesGridModal} data-dismiss='modal' />
+      </div>
+    )
+
+    return modal
+  }
+
+  petQuarantineMassActionPrompt = (actionName, holdingObjectId) => {
+    if (!isValidArray(this.props.selectedGridRows, 1)) {
+      alertUser(true, 'warning',
+        this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.alert.empty_selection`,
+          defaultMessage: `${config.labelBasePath}.alert.empty_selection`
+        })
+      )
+    } else {
+      if (strcmp(actionName, 'add')) {
+        this.setState({ showPetQuarantineGridModal: true, holdingObjectId })
+      } else {
+        const promptLabel = this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.alert.remove_pet_from_quarantine_prompt`,
+          defaultMessage: `${config.labelBasePath}.alert.remove_pet_from_quarantine_prompt`
+        })
+        const yesLabel = this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.main.yes`,
+          defaultMessage: `${config.labelBasePath}.main.yes`
+        })
+        const noLabel = this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.main.no`,
+          defaultMessage: `${config.labelBasePath}.main.no`
+        })
+
+        alertUser(true, 'warning', promptLabel, '', () => this.executePetQuarantineMassAction('remove'), () => { }, true, yesLabel, noLabel)
+      }
+    }
+  }
+
   petMassActionPrompt = (actionName, campaignObjId, campaignLabel) => {
     let warningText = this.context.intl.formatMessage({
       id: `${config.labelBasePath}.actions.default_date_msg`,
@@ -502,12 +1579,6 @@ class ExecuteActionOnSelectedRows extends React.Component {
         actionText = insertSpaceAfterAChar(campaignLabel, '/')
         warningText = ''
         break
-      case 'released':
-        actionText = this.context.intl.formatMessage({
-          id: `${config.labelBasePath}.actions.released`,
-          defaultMessage: `${config.labelBasePath}.actions.released`
-        })
-        break
       case 'died':
         actionText = this.context.intl.formatMessage({
           id: `${config.labelBasePath}.actions.died`,
@@ -518,6 +1589,36 @@ class ExecuteActionOnSelectedRows extends React.Component {
         actionText = this.context.intl.formatMessage({
           id: `${config.labelBasePath}.actions.died_euthanasia`,
           defaultMessage: `${config.labelBasePath}.actions.died_euthanasia`
+        })
+        break
+      case 'exported':
+        actionText = this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.actions.exported`,
+          defaultMessage: `${config.labelBasePath}.actions.exported`
+        })
+        break
+      case 'inactive':
+        actionText = this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.actions.inactive`,
+          defaultMessage: `${config.labelBasePath}.actions.inactive`
+        })
+        break
+      case 'disposal':
+        actionText = this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.actions.disposal`,
+          defaultMessage: `${config.labelBasePath}.actions.disposal`
+        })
+        break
+      case 'disinfection':
+        actionText = this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.actions.disinfection`,
+          defaultMessage: `${config.labelBasePath}.actions.disinfection`
+        })
+        break
+      case 'castration':
+        actionText = this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.actions.castration`,
+          defaultMessage: `${config.labelBasePath}.actions.castration`
         })
         break
     }
@@ -546,7 +1647,7 @@ class ExecuteActionOnSelectedRows extends React.Component {
         alert: alertUser(
           true,
           'warning',
-          actionName === 'released' || actionName === 'died' || actionName === 'died_euthanasia'
+          actionName === 'died' || actionName === 'died_euthanasia' || actionName === 'exported' || actionName === 'inactive' || actionName === 'disposal'
             ? this.context.intl.formatMessage({
               id: `${config.labelBasePath}.actions.change_pet_status_prompt`,
               defaultMessage: `${config.labelBasePath}.actions.change_pet_status_prompt`
@@ -562,7 +1663,7 @@ class ExecuteActionOnSelectedRows extends React.Component {
             activityDate: null
           }),
           true,
-          actionName === 'released' || actionName === 'died' || actionName === 'died_euthanasia'
+          actionName === 'died' || actionName === 'died_euthanasia' || actionName === 'exported' || actionName === 'inactive' || actionName === 'disposal'
             ? this.context.intl.formatMessage({
               id: `${config.labelBasePath}.actions.change`,
               defaultMessage: `${config.labelBasePath}.actions.change`
@@ -591,6 +1692,188 @@ class ExecuteActionOnSelectedRows extends React.Component {
         )
       })
     }
+  }
+
+  petReleasePrompt = () => {
+    let warningText = this.context.intl.formatMessage({
+      id: `${config.labelBasePath}.actions.default_date_msg`,
+      defaultMessage: `${config.labelBasePath}.actions.default_date_msg`
+    })
+
+    let actionText = this.context.intl.formatMessage({
+      id: `${config.labelBasePath}.actions.released`,
+      defaultMessage: `${config.labelBasePath}.actions.released`
+    })
+
+    let wrapper = document.createElement('div')
+    ReactDOM.render(
+      <React.Fragment>
+        <label htmlFor='activityDate' style={{ marginRight: '8px' }}>{this.context.intl.formatMessage({
+          id: `${config.labelBasePath}.main.set_activity_date`,
+          defaultMessage: `${config.labelBasePath}.main.set_activity_date`
+        })}
+        </label>
+        <input
+          style={{ border: 'none', height: '40px', color: '#000', backgroundColor: '#eff0f1' }}
+          type='date'
+          name='activityDate'
+          onChange={this.setActivityDate}
+          value={this.state.activityDate}
+        />
+      </React.Fragment>,
+      wrapper
+    )
+
+    if (isValidArray(this.props.selectedGridRows, 2)) {
+      this.setState({
+        alert: alertUser(true, 'warning',
+          this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.alert.only_one_record_can_be_selected`,
+            defaultMessage: `${config.labelBasePath}.alert.only_one_record_can_be_selected`
+          }), null, () => this.setState({ alert: alertUser(false, 'info', '') })
+        )
+      })
+    } else if (isValidArray(this.props.selectedGridRows, 1)) {
+      this.setState({
+        alert: alertUser(
+          true, 'warning', this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.actions.change_pet_status_prompt`,
+            defaultMessage: `${config.labelBasePath}.actions.change_pet_status_prompt`
+          }) + ' ' + '"' + actionText + '"' + ' ? ' + warningText, null,
+          () => this.executePetReleaseAction(),
+          () => this.setState({
+            alert: alertUser(false, 'info', ''),
+            activityDate: null
+          }),
+          true, this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.actions.proceed`,
+            defaultMessage: `${config.labelBasePath}.actions.proceed`
+          }), this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.main.forms.cancel`,
+            defaultMessage: `${config.labelBasePath}.main.forms.cancel`
+          }), true, null, true, wrapper
+        )
+      })
+    } else {
+      this.setState({
+        alert: alertUser(true, 'warning',
+          this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.alert.empty_selection`,
+            defaultMessage: `${config.labelBasePath}.alert.empty_selection`
+          }), null,
+          () => this.setState({ alert: alertUser(false, 'info', '') })
+        )
+      })
+    }
+  }
+
+  executePetReleaseAction = () => {
+    this.setState({ loading: true })
+    const objectArray = this.props.selectedGridRows
+    const selectedPetObjId = this.props.selectedGridRows[0]['PET.OBJECT_ID']
+    const actionType = 'UPDATE_STATUS'
+    const actionName = 'RELEASED'
+    const shortDate = !this.state.activityDate ? convertToShortDate(new Date(), 'y-m-d') : this.state.activityDate
+    const paramsArray = [{
+      MASS_PARAM_TBL_NAME: this.props.gridType,
+      MASS_PARAM_ACTION: actionType,
+      MASS_PARAM_ACTION_DATE: shortDate,
+      MASS_PARAM_SUBACTION: actionName
+    }]
+    const verbPath = config.svConfig.triglavRestVerbs.MASS_PET_ACTION
+    const url = `${config.svConfig.restSvcBaseUrl}${verbPath}/${this.props.svSession}`
+    axios({
+      method: 'post',
+      url: url,
+      data: JSON.stringify({ objectArray, paramsArray })
+    }).then((response) => {
+      if (response.data) {
+        const resType = formatAlertType(response.data)
+        this.setState({
+          alert: alertUser(true, resType,
+            this.context.intl.formatMessage({
+              id: response.data,
+              defaultMessage: response.data
+            }), null, () => {
+              if (strcmp(resType, 'success')) {
+                this.prepareReleaseDetailsForm(selectedPetObjId)
+                this.setState({ alert: alertUser(false, 'info', '') })
+              } else {
+                store.dispatch({ type: 'RESET_LAST_PET_MOVEMENT' })
+                this.setState({ alert: alertUser(false, 'info', '') })
+              }
+            }
+          ),
+          loading: false
+        })
+      }
+    }).catch((error) => {
+      console.error(error)
+      this.setState({ alert: alertUser(true, 'error', error), loading: false })
+    })
+
+    const server = config.svConfig.restSvcBaseUrl
+    let additionalVerbPath = config.svConfig.triglavRestVerbs.GET_LAST_PET_MOVEMENT
+    additionalVerbPath = additionalVerbPath.replace('%session', this.props.svSession)
+    additionalVerbPath = additionalVerbPath.replace('%objectId', selectedPetObjId)
+    const additionalUrl = `${server}${additionalVerbPath}`
+    axios.get(additionalUrl).then(res => {
+      if (res.data && typeof res.data === 'number' && res.data !== 0) {
+        store.dispatch({ type: 'LAST_PET_MOVEMENT_FULFILLED', payload: res.data })
+      }
+    }).catch(err => {
+      store.dispatch({ type: 'LAST_PET_MOVEMENT_REJECTED' })
+      console.error(err)
+    })
+  }
+
+  prepareReleaseDetailsForm = selectedPetObjId => {
+    this.displayReleaseDetailsForm(selectedPetObjId)
+  }
+
+  displayReleaseDetailsForm = selectedPetObjId => {
+    this.setState({ loading: true })
+    const formId = 'STRAY_PET_LOCATION_ADDITIONAL_FORM'
+    const params = []
+    params.push({
+      PARAM_NAME: 'formWeWant',
+      PARAM_VALUE: 'STRAY_PET_LOCATION'
+    }, {
+      PARAM_NAME: 'session',
+      PARAM_VALUE: this.props.svSession
+    }, {
+      PARAM_NAME: 'table_name',
+      PARAM_VALUE: 'STRAY_PET_LOCATION'
+    }, {
+      PARAM_NAME: 'object_id',
+      PARAM_VALUE: 0
+    }, {
+      PARAM_NAME: 'parent_id',
+      PARAM_VALUE: selectedPetObjId
+    }, {
+      PARAM_NAME: 'locationReason',
+      PARAM_VALUE: '2'
+    })
+
+    const releaseDetailsForm = FormManager.generateForm(
+      formId, formId, params, 'formData',
+      'GET_FORM_BUILDER', 'GET_UISCHEMA', 'CUSTOM_GET_TABLE_FORMDATA',
+      this.closeReleaseDetailsForm, null, null, null, null, null, 'closeAndDelete',
+      () => this.closeReleaseDetailsForm(), undefined, undefined,
+      undefined, CustomPetReleaseFormWrapper
+    )
+
+    this.setState({ loading: false, showReleaseDetailsForm: true, releaseDetailsForm })
+  }
+
+  closeReleaseDetailsForm = () => {
+    this.props.updateSelectedRows([], null)
+    ComponentManager.setStateForComponent(`${this.props.gridId}1`, 'selectedIndexes', [])
+    ComponentManager.setStateForComponent(`${this.props.gridId}2`, 'selectedIndexes', [])
+    GridManager.reloadGridData(`${this.props.gridId}1`)
+    GridManager.reloadGridData(`${this.props.gridId}2`)
+    store.dispatch({ type: 'RESET_LAST_PET_MOVEMENT' })
+    this.setState({ showReleaseDetailsForm: false, releaseDetailsForm: undefined, ownerName: '', responsibleObjId: '' })
   }
 
   petMovementPrompt = () => {
@@ -688,7 +1971,16 @@ class ExecuteActionOnSelectedRows extends React.Component {
   }
 
   petAdoptionPrompt = () => {
-    if (isValidArray(this.props.selectedGridRows, 1)) {
+    if (isValidArray(this.props.selectedGridRows, 2)) {
+      this.setState({
+        alert: alertUser(true, 'warning',
+          this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.alert.only_one_record_can_be_selected`,
+            defaultMessage: `${config.labelBasePath}.alert.only_one_record_can_be_selected`
+          }), null, () => this.setState({ alert: alertUser(false, 'info', '') })
+        )
+      })
+    } else if (isValidArray(this.props.selectedGridRows, 1)) {
       this.setState({ showAdoptionAlert: true })
       let wrapper = document.createElement('div')
       ReactDOM.render(
@@ -739,16 +2031,12 @@ class ExecuteActionOnSelectedRows extends React.Component {
             id: `${config.labelBasePath}.actions.default_date_msg`,
             defaultMessage: `${config.labelBasePath}.actions.default_date_msg`
           }),
-          () => {
-            this.executeMassPetAction('adopted', this.state.responsibleObjId)
-          },
-          () => {
-            this.close()
-          },
+          () => this.executePetAdoptionAction(),
+          () => this.close(),
           true,
           this.context.intl.formatMessage({
-            id: `${config.labelBasePath}.main.adopt`,
-            defaultMessage: `${config.labelBasePath}.main.adopt`
+            id: `${config.labelBasePath}.actions.proceed`,
+            defaultMessage: `${config.labelBasePath}.actions.proceed`
           }),
           this.context.intl.formatMessage({
             id: `${config.labelBasePath}.main.forms.cancel`,
@@ -793,8 +2081,8 @@ class ExecuteActionOnSelectedRows extends React.Component {
   }
 
   chooseItem = () => {
-    const shelterObjId = String(store.getState()[`${this.state.searchGrid}_${this.state.inputElementId}`].rowClicked[`${this.state.searchGrid}.OBJECT_ID`])
-    const shelterPic = store.getState()[`${this.state.searchGrid}_${this.state.inputElementId}`].rowClicked[`${this.state.searchGrid}.PIC`]
+    const shelterObjId = String(store.getState()[`${this.state.searchGrid}`].rowClicked[`${this.state.searchGrid}.OBJECT_ID`])
+    const shelterPic = store.getState()[`${this.state.searchGrid}`].rowClicked[`${this.state.searchGrid}.PIC`]
     this.setState({ shelterObjId })
     const shelterInput = document.getElementById(this.state.inputElementId)
     shelterInput.value = shelterPic
@@ -825,14 +2113,70 @@ class ExecuteActionOnSelectedRows extends React.Component {
     }
   }
 
+  executePetAdoptionAction = () => {
+    this.setState({ loading: true })
+    const objectArray = this.props.selectedGridRows
+    const selectedPetObjId = this.props.selectedGridRows[0]['PET.OBJECT_ID']
+    const actionName = 'ADOPTED'
+    const shortDate = !this.state.activityDate ? convertToShortDate(new Date(), 'y-m-d') : this.state.activityDate
+    const paramsArray = [{
+      MASS_PARAM_TBL_NAME: this.props.gridType,
+      MASS_PARAM_ACTION: actionName,
+      MASS_PARAM_ACTION_DATE: shortDate,
+      MASS_PARAM_SUBACTION: actionName,
+      MASS_PARAM_ADDITIONAL_PARAM: this.state.responsibleObjId
+    }]
+    const verbPath = config.svConfig.triglavRestVerbs.MASS_PET_ACTION
+    const url = `${config.svConfig.restSvcBaseUrl}${verbPath}/${this.props.svSession}`
+    axios({
+      method: 'post',
+      url: url,
+      data: JSON.stringify({ objectArray, paramsArray })
+    }).then((response) => {
+      if (response.data) {
+        const resType = formatAlertType(response.data)
+        this.setState({
+          alert: alertUser(true, resType,
+            this.context.intl.formatMessage({
+              id: response.data,
+              defaultMessage: response.data
+            }), null, () => {
+              if (strcmp(resType, 'success')) {
+                this.prepareReleaseDetailsForm(selectedPetObjId)
+                this.setState({ alert: alertUser(false, 'info', '') })
+              } else {
+                store.dispatch({ type: 'RESET_LAST_PET_MOVEMENT' })
+                this.setState({ alert: alertUser(false, 'info', '') })
+              }
+            }
+          ),
+          loading: false
+        })
+      }
+    }).catch((error) => {
+      console.error(error)
+      this.setState({ alert: alertUser(true, 'error', error), loading: false })
+    })
+
+    const server = config.svConfig.restSvcBaseUrl
+    let additionalVerbPath = config.svConfig.triglavRestVerbs.GET_LAST_PET_MOVEMENT
+    additionalVerbPath = additionalVerbPath.replace('%session', this.props.svSession)
+    additionalVerbPath = additionalVerbPath.replace('%objectId', selectedPetObjId)
+    const additionalUrl = `${server}${additionalVerbPath}`
+    axios.get(additionalUrl).then(res => {
+      if (res.data && typeof res.data === 'number' && res.data !== 0) {
+        store.dispatch({ type: 'LAST_PET_MOVEMENT_FULFILLED', payload: res.data })
+      }
+    }).catch(err => {
+      store.dispatch({ type: 'LAST_PET_MOVEMENT_REJECTED' })
+      console.error(err)
+    })
+  }
+
   executeMassPetAction = (actionName, additionalParam) => {
     if (actionName === 'create_movement' && additionalParam === '') {
       this.close()
     } else if (actionName === 'create_movement' && additionalParam === '' && !this.state.activityDate) {
-      this.close()
-    } else if (actionName === 'adopted' && additionalParam === '') {
-      this.close()
-    } else if (actionName === 'adopted' && additionalParam === '' && !this.state.activityDate) {
       this.close()
     } else {
       let shortDate
@@ -848,6 +2192,8 @@ class ExecuteActionOnSelectedRows extends React.Component {
       switch (actionName) {
         case 'vaccination':
         case 'sampling':
+        case 'disinfection':
+        case 'castration':
           actionType = 'ACTIVITY'
           paramsArray = [{
             MASS_PARAM_TBL_NAME: this.props.gridType,
@@ -872,9 +2218,11 @@ class ExecuteActionOnSelectedRows extends React.Component {
             this.props.svSession, massPetActionType, actionName, this.props.selectedGridRows, paramsArray
           ))
           break
-        case 'released':
         case 'died':
         case 'died_euthanasia':
+        case 'exported':
+        case 'inactive':
+        case 'disposal':
           actionType = 'UPDATE_STATUS'
           paramsArray = [{
             MASS_PARAM_TBL_NAME: this.props.gridType,
@@ -890,18 +2238,6 @@ class ExecuteActionOnSelectedRows extends React.Component {
           paramsArray = [{
             MASS_PARAM_TBL_NAME: this.props.gridType,
             MASS_PARAM_ACTION: actionName.toUpperCase(),
-            MASS_PARAM_ACTION_DATE: shortDate,
-            MASS_PARAM_ADDITIONAL_PARAM: additionalParam
-          }]
-          store.dispatch(massPetAction(
-            this.props.svSession, massPetActionType, actionName, this.props.selectedGridRows, paramsArray
-          ))
-          break
-        case 'adopted':
-          paramsArray = [{
-            MASS_PARAM_TBL_NAME: this.props.gridType,
-            MASS_PARAM_ACTION: actionName.toUpperCase(),
-            MASS_PARAM_SUBACTION: actionName.toUpperCase(),
             MASS_PARAM_ACTION_DATE: shortDate,
             MASS_PARAM_ADDITIONAL_PARAM: additionalParam
           }]
@@ -1138,7 +2474,7 @@ class ExecuteActionOnSelectedRows extends React.Component {
           MASS_PARAM_TBL_NAME: this.props.gridType,
           MASS_PARAM_ACTION: actionType,
           MASS_PARAM_SUBACTION: actionText.toUpperCase(),
-          MASS_PARAM_DATE_OF_MOVEMENT: shortDate,
+          MASS_PARAM_ACTION_DATE: shortDate,
           ...destroyedReason && { MASS_PARAM_REASON: destroyedReason }
         }]
         store.dispatch(massAnimalOrFlockAction(
@@ -1149,21 +2485,93 @@ class ExecuteActionOnSelectedRows extends React.Component {
     }
   }
 
+  generatePreOrPostMortemPrompt = (actionText, actionLabel) => {
+    this.setState({ actionText, actionLabel })
+
+    if (isValidArray(this.props.selectedGridRows, 1)) {
+      this.setState({
+        alert: alertUser(
+          true,
+          'warning',
+          this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.actions.prompt_text`,
+            defaultMessage: `${config.labelBasePath}.actions.prompt_text`
+          }) + ' ' + '"' + actionLabel + '"' + ' ? ', ' ',
+          () => {
+            this.executeGeneratePreOrPostMortemAction(actionText)
+            this.setState({
+              alert: alertUser(false, 'info', ''),
+              actionText: null,
+              actionLabel: null
+            })
+          },
+          () => this.setState({
+            alert: alertUser(false, 'info', ''),
+            actionText: null,
+            actionLabel: null
+          }),
+          true,
+          this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.actions.execute`,
+            defaultMessage: `${config.labelBasePath}.actions.execute`
+          }),
+          this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.main.forms.cancel`,
+            defaultMessage: `${config.labelBasePath}.main.forms.cancel`
+          })
+        )
+      })
+    } else {
+      this.setState({
+        alert: alertUser(true, 'warning',
+          this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.alert.empty_selection`,
+            defaultMessage: `${config.labelBasePath}.alert.empty_selection`
+          }), null,
+          () => this.setState({ alert: alertUser(false, 'info', ''), actionText: null, actionLabel: null })
+        )
+      })
+    }
+  }
+
+  executeGeneratePreOrPostMortemAction = (actionText) => {
+    const massActionType = 'EXECUTE_ACTION_ON_ROWS'
+    const actionType = 'OTHER'
+    switch (actionText) {
+      case 'generate_premortem':
+      case 'generate_postmortem':
+        const paramsArray = [{
+          MASS_PARAM_TBL_NAME: this.props.gridType,
+          MASS_PARAM_ACTION: actionType,
+          MASS_PARAM_SUBACTION: actionText.toUpperCase()
+        }]
+        store.dispatch(massAnimalOrFlockAction(
+          this.props.svSession, massActionType, actionText, this.props.selectedGridRows, paramsArray
+        ))
+        this.setState({ actionLabel: null })
+        break
+    }
+  }
+
   executeMassActivityAction = () => {
-    const {
-      actionName, subActionName, activityDate, actionParam, transportType, transporterLicense,
-      estimateDayOfArrival, estimateDayOfDeparture, disinfectionDate, animalMvmReason
-    } = this.state
+    const { actionName, subActionName, activityDate, actionParam } = this.state
     let shortDate
     !activityDate ? shortDate = convertToShortDate(new Date(), 'y-m-d') : shortDate = activityDate
     this.inputDataBeforeSubmit(
-      () => this.props.executeActionOnSelectedRows(
-        this.props.svSession, this.props.gridType, 'EXECUTE_ACTION_ON_ROWS',
-        actionName, subActionName, this.props.selectedGridRows,
-        actionParam, shortDate, 'null', 'null',
-        transportType || 'null', transporterLicense || this.state.noUnitsTreated || 'null', // this param is sometimes used for flock activity
-        estimateDayOfArrival || 'null', estimateDayOfDeparture || 'null',
-        disinfectionDate || 'null', animalMvmReason || 'null')
+      () => {
+        const massActionType = 'EXECUTE_ACTION_ON_ROWS'
+        const paramsArray = [{
+          MASS_PARAM_TBL_NAME: this.props.gridType,
+          MASS_PARAM_ACTION: actionName,
+          MASS_PARAM_SUBACTION: subActionName === 'null' ? 'vaccination' : subActionName,
+          MASS_PARAM_ACTION_DATE: shortDate,
+          ...actionParam !== 'null' && { MASS_PARAM_ADDITIONAL_PARAM: String(actionParam) },
+          MASS_PARAM_TOTAL_UNITS: parseInt(this.state.noUnitsTreated) || 0
+        }]
+        store.dispatch(massAnimalOrFlockAction(
+          this.props.svSession, massActionType, subActionName, this.props.selectedGridRows, paramsArray
+        ))
+      }
     )
   }
 
@@ -1252,15 +2660,28 @@ class ExecuteActionOnSelectedRows extends React.Component {
           })
         }
       } else {
-        this.prompt(this, () => this.props.executeMassActionExtended(
-          'MOVE_FLOCK_UNITS', this.props.svSession,
-          this.props.gridType, 'EXECUTE_ACTION_ON_ROWS', actionName,
-          subActionName, this.props.selectedGridRows, actionParam,
-          'null', 'null', 'null',
-          transportType || 'null', transporterLicense || 'null',
-          estimateDayOfArrival || 'null', estimateDayOfDeparture || 'null',
-          disinfectionDate || 'null', animalMvmReason || 'null',
-          totalUnits, maleUnits, femaleUnits, adultsUnits), actionText, warning)
+        const massActionType = 'EXECUTE_ACTION_ON_ROWS'
+        const paramsArray = [{
+          MASS_PARAM_TBL_NAME: this.props.gridType,
+          MASS_PARAM_ACTION: actionName,
+          MASS_PARAM_SUBACTION: subActionName,
+          ...subActionName === 'START_MOVEMENT' && { MASS_PARAM_DATE_OF_MOVEMENT: convertToShortDate(new Date(), 'y-m-d') },
+          ...actionParam !== 'null' && { MASS_PARAM_ADDITIONAL_PARAM: String(actionParam) },
+          ...transportType && { MASS_PARAM_MVM_TRANSPORT_TYPE: transportType },
+          ...transporterLicense !== 'null' && { MASS_PARAM_TRANSPORTER_LICENCE: transporterLicense },
+          ...estimateDayOfArrival && { MASS_PARAM_ESTM_DATE_OF_ARRIVAL: estimateDayOfArrival },
+          ...estimateDayOfDeparture && { MASS_PARAM_ESTM_DATE_OF_DEPARTURE: estimateDayOfDeparture },
+          ...disinfectionDate !== 'null' && { MASS_PARAM_DISINFECTION_DATE: disinfectionDate },
+          ...animalMvmReason && { MASS_PARAM_ANIMAL_MVM_REASON: animalMvmReason },
+          ...totalUnits && { MASS_PARAM_TOTAL_UNITS: parseInt(totalUnits) },
+          ...maleUnits && { MASS_PARAM_MALE_UNITS: parseInt(maleUnits) },
+          ...femaleUnits && { MASS_PARAM_FEMALE_UNITS: parseInt(femaleUnits) },
+          ...adultsUnits && { MASS_PARAM_ADULT_UNITS: parseInt(adultsUnits) }
+        }]
+
+        this.prompt(this, () => store.dispatch(massAnimalOrFlockAction(
+          this.props.svSession, massActionType, subActionName, this.props.selectedGridRows, paramsArray
+        )), actionText, warning)
       }
     }
   }
@@ -1301,10 +2722,6 @@ class ExecuteActionOnSelectedRows extends React.Component {
           this.prompt(this, () => this.props.generationInventoryItem(this.props.svSession, this.props.selectedGridRows), actionText)
           break
         }
-        case 'move_inventory_item': {
-          this.prompt(this, () => this.props.moveInventoryItem(this.props.svSession, this.props.selectedGridRows), actionText)
-          break
-        }
         case 'change_the_status_of_lab_sample':
         case 'sample_action':
         case 'set_health_status_to_results': {
@@ -1313,41 +2730,41 @@ class ExecuteActionOnSelectedRows extends React.Component {
           break
         }
         case 'change_movement_doc_status': {
-          this.prompt(this, () => store.dispatch(changeMovementDocStatus(this.props.svSession, subActionName, this.props.selectedGridRows)), actionText)
+          const warningLabel = this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.alert.select_only_animal_movement_type_docs`,
+            defaultMessage: `${config.labelBasePath}.alert.select_only_animal_movement_type_docs`
+          })
+          const filteredObjectArray = this.props.selectedGridRows.filter(row => strcmp(row['MOVEMENT_DOC.MOVEMENT_TYPE'], 'ANIMAL'))
+          if (!isValidArray(filteredObjectArray, 1)) {
+            alertUser(true, 'info', warningLabel)
+          } else {
+            this.prompt(this, () => store.dispatch(changeMovementDocStatus(this.props.svSession, subActionName, filteredObjectArray)), actionText)
+          }
           break
         }
         default: {
-          if (datePicked) {
-            if (this.state.date) {
-              const shortDate = convertToShortDate(this.state.date, 'y-m-d')
-              this.prompt(this, () => this.props.executeActionOnSelectedRows(
-                this.props.svSession, this.props.gridType, 'EXECUTE_ACTION_ON_ROWS',
-                actionName, subActionName, this.props.selectedGridRows,
-                actionParam, shortDate, 'null', 'null',
-                transportType || 'null', transporterLicense || 'null',
-                estimateDayOfArrival || 'null', estimateDayOfDeparture || 'null',
-                disinfectionDate || 'null', animalMvmReason || 'null'), actionText)
-            } else {
-              this.setState({
-                alert: alertUser(true, 'warning',
-                  this.context.intl.formatMessage({
-                    id: `${config.labelBasePath}.alert.no_date_selected`,
-                    defaultMessage: `${config.labelBasePath}.alert.no_date_selected`
-                  }), null,
-                  () => this.setState({ alert: alertUser(false, 'info', '') })
-                )
-              })
-            }
-          } else if (actionName === 'activity') {
+          if (actionName === 'activity') {
             this.massActionPrompt(actionText)
           } else {
-            this.prompt(this, () => this.props.executeActionOnSelectedRows(this.props.svSession,
-              this.props.gridType, 'EXECUTE_ACTION_ON_ROWS', actionName,
-              subActionName, this.props.selectedGridRows, actionParam,
-              'null', 'null', 'null',
-              transportType || 'null', transporterLicense || 'null',
-              estimateDayOfArrival || 'null', estimateDayOfDeparture || 'null',
-              disinfectionDate || 'null', animalMvmReason || 'null'), actionText)
+            this.prompt(this, () => {
+              const massActionType = 'EXECUTE_ACTION_ON_ROWS'
+              const paramsArray = [{
+                MASS_PARAM_TBL_NAME: this.props.gridType,
+                MASS_PARAM_ACTION: actionName,
+                MASS_PARAM_SUBACTION: subActionName,
+                ...subActionName === 'START_MOVEMENT' && { MASS_PARAM_DATE_OF_MOVEMENT: convertToShortDate(new Date(), 'y-m-d') },
+                ...actionParam !== 'null' && { MASS_PARAM_ADDITIONAL_PARAM: String(actionParam) },
+                ...transportType && { MASS_PARAM_MVM_TRANSPORT_TYPE: transportType },
+                ...transporterLicense !== 'null' && { MASS_PARAM_TRANSPORTER_LICENCE: transporterLicense },
+                ...estimateDayOfArrival && { MASS_PARAM_ESTM_DATE_OF_ARRIVAL: estimateDayOfArrival },
+                ...estimateDayOfDeparture && { MASS_PARAM_ESTM_DATE_OF_DEPARTURE: estimateDayOfDeparture },
+                ...disinfectionDate !== 'null' && { MASS_PARAM_DISINFECTION_DATE: disinfectionDate },
+                ...animalMvmReason && { MASS_PARAM_ANIMAL_MVM_REASON: animalMvmReason }
+              }]
+              store.dispatch(massAnimalOrFlockAction(
+                this.props.svSession, massActionType, subActionName, this.props.selectedGridRows, paramsArray
+              ))
+            }, actionText)
           }
         }
       }
@@ -1412,11 +2829,19 @@ class ExecuteActionOnSelectedRows extends React.Component {
             defaultMessage: `${config.labelBasePath}.actions.default_date_msg`
           }),
           () => {
-            this.props.executeActionOnSelectedRows(
-              this.props.svSession, this.props.gridType, 'EXECUTE_ACTION_ON_ROWS',
-              'move', 'FINISH_MOVEMENT', this.props.selectedGridRows, holdingObjectId,
-              shortDate, 'null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'
-            )
+            const massActionType = 'EXECUTE_ACTION_ON_ROWS'
+            const actionType = 'MOVE'
+            const subActionType = 'FINISH_MOVEMENT'
+            const paramsArray = [{
+              MASS_PARAM_TBL_NAME: this.props.gridType,
+              MASS_PARAM_ACTION: actionType,
+              MASS_PARAM_SUBACTION: subActionType,
+              MASS_PARAM_DATE_OF_MOVEMENT: shortDate,
+              MASS_PARAM_ADDITIONAL_PARAM: String(holdingObjectId)
+            }]
+            store.dispatch(massAnimalOrFlockAction(
+              this.props.svSession, massActionType, subActionType, this.props.selectedGridRows, paramsArray
+            ))
             this.setState({
               alert: alertUser(false, 'info', ''),
               date: null
@@ -1439,6 +2864,68 @@ class ExecuteActionOnSelectedRows extends React.Component {
           null,
           true,
           wrapper
+        )
+      })
+    } else {
+      this.setState({
+        alert: alertUser(true, 'warning',
+          this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.alert.empty_selection`,
+            defaultMessage: `${config.labelBasePath}.alert.empty_selection`
+          }), null,
+          () => this.setState({ alert: alertUser(false, 'info', '') })
+        )
+      })
+    }
+  }
+
+  cancelMovementPrompt = () => {
+    let holdingObjectId
+    const gridHierarchy = this.props.gridHierarchy
+    gridHierarchy.forEach(grid => {
+      if (grid.gridType === 'HOLDING') {
+        holdingObjectId = grid.row['HOLDING.OBJECT_ID']
+      }
+    })
+
+    if (isValidArray(this.props.selectedGridRows, 1)) {
+      this.setState({
+        alert: alertUser(
+          true,
+          'warning',
+          this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.actions.prompt_text`,
+            defaultMessage: `${config.labelBasePath}.actions.prompt_text`
+          }) + ' ' + '"' + this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.actions.cancel_movement`,
+            defaultMessage: `${config.labelBasePath}.actions.cancel_movement`
+          }) + '"' + ' ? ', null,
+          () => {
+            const massActionType = 'EXECUTE_ACTION_ON_ROWS'
+            const actionType = 'MOVE'
+            const subActionType = 'CANCEL_MOVEMENT'
+            const paramsArray = [{
+              MASS_PARAM_TBL_NAME: this.props.gridType,
+              MASS_PARAM_ACTION: actionType,
+              MASS_PARAM_SUBACTION: subActionType,
+              MASS_PARAM_ADDITIONAL_PARAM: String(holdingObjectId)
+            }]
+            store.dispatch(massAnimalOrFlockAction(
+              this.props.svSession, massActionType, subActionType, this.props.selectedGridRows, paramsArray
+            ))
+          },
+          () => this.setState({
+            alert: alertUser(false, 'info', '')
+          }),
+          true,
+          this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.actions.execute`,
+            defaultMessage: `${config.labelBasePath}.actions.execute`
+          }),
+          this.context.intl.formatMessage({
+            id: `${config.labelBasePath}.main.forms.cancel`,
+            defaultMessage: `${config.labelBasePath}.main.forms.cancel`
+          })
         )
       })
     } else {
@@ -1492,38 +2979,94 @@ class ExecuteActionOnSelectedRows extends React.Component {
     }
 
     if (valid && validReason && validDate) {
+      const selectedHolding = store.getState()['HOLDING_SEARCH'].rowClicked
+      let holdingType
+      if (selectedHolding && selectedHolding['HOLDING.TYPE']) {
+        holdingType = selectedHolding['HOLDING.TYPE']
+      }
       if (gridType === 'ANIMAL') {
-        this.executeAction(this.context.intl.formatMessage({
-          id: `${config.labelBasePath}.actions.start_movement`,
-          defaultMessage: `${config.labelBasePath}.actions.start_movement`
-        }), 'move', 'START_MOVEMENT', destination, false, transportTypeVal,
-        transporterLicenseVal || 'null', estimateDayOfArrival, estimateDayOfDeparture,
-        disinfectionDate || 'null', animalReason)
-      } else if (gridType === 'FLOCK') {
-        const totalUnits = document.getElementById('totalUnits').value || '0'
-        const maleUnits = document.getElementById('maleUnits').value || '0'
-        const femaleUnits = document.getElementById('femaleUnits').value || '0'
-        const adultsUnits = document.getElementById('adultsUnits').value || '0'
-        if (femaleUnits !== '0' && adultsUnits === null) {
+        if (holdingType === '15' || holdingType === '16' || holdingType === '17') {
           this.setState({
             alert: alertUser(true, 'warning',
               this.context.intl.formatMessage({
-                id: `${config.labelBasePath}.alert.parameters_missing`,
-                defaultMessage: `${config.labelBasePath}.alert.parameters_missing`
-              }),
-              this.context.intl.formatMessage({
-                id: `${config.labelBasePath}.main.flock.adults`,
-                defaultMessage: `${config.labelBasePath}.main.flock.adults`
-              }),
-              () => this.setState({ alert: alertUser(false, 'info', '') }))
+                id: `${config.labelBasePath}.alert.error_transfer_animal_to_shelter_vet_station_or_vet_clinic`,
+                defaultMessage: `${config.labelBasePath}.alert.error_transfer_animal_to_shelter_vet_station_or_vet_clinic`
+              }), null, () => this.setState({ alert: alertUser(false, 'info', '') })
+            )
           })
         } else {
-          this.initiateFlockMovement(this.context.intl.formatMessage({
+          this.executeAction(this.context.intl.formatMessage({
             id: `${config.labelBasePath}.actions.start_movement`,
             defaultMessage: `${config.labelBasePath}.actions.start_movement`
           }), 'move', 'START_MOVEMENT', destination, false, transportTypeVal,
           transporterLicenseVal || 'null', estimateDayOfArrival, estimateDayOfDeparture,
-          disinfectionDate || 'null', animalReason, totalUnits, maleUnits, femaleUnits, adultsUnits)
+          disinfectionDate || 'null', animalReason)
+        }
+      } else if (gridType === 'FLOCK') {
+        if (holdingType === '15' || holdingType === '16' || holdingType === '17') {
+          this.setState({
+            alert: alertUser(true, 'warning',
+              this.context.intl.formatMessage({
+                id: `${config.labelBasePath}.alert.error_transfer_flock_to_shelter_vet_station_or_vet_clinic`,
+                defaultMessage: `${config.labelBasePath}.alert.error_transfer_flock_to_shelter_vet_station_or_vet_clinic`
+              }), null, () => this.setState({ alert: alertUser(false, 'info', '') })
+            )
+          })
+        } else {
+          const totalUnits = document.getElementById('totalUnits').value || '0'
+          const maleUnits = document.getElementById('maleUnits').value || '0'
+          const femaleUnits = document.getElementById('femaleUnits').value || '0'
+          const adultsUnits = document.getElementById('adultsUnits').value
+          if (femaleUnits !== '0' && !adultsUnits) {
+            this.setState({
+              alert: alertUser(true, 'warning',
+                this.context.intl.formatMessage({
+                  id: `${config.labelBasePath}.alert.parameters_missing`,
+                  defaultMessage: `${config.labelBasePath}.alert.parameters_missing`
+                }),
+                this.context.intl.formatMessage({
+                  id: `${config.labelBasePath}.main.flock.adults`,
+                  defaultMessage: `${config.labelBasePath}.main.flock.adults`
+                }),
+                () => this.setState({ alert: alertUser(false, 'info', '') }))
+            })
+          } else {
+            this.initiateFlockMovement(this.context.intl.formatMessage({
+              id: `${config.labelBasePath}.actions.start_movement`,
+              defaultMessage: `${config.labelBasePath}.actions.start_movement`
+            }), 'move', 'START_MOVEMENT', destination, false, transportTypeVal,
+            transporterLicenseVal || 'null', estimateDayOfArrival, estimateDayOfDeparture,
+            disinfectionDate || 'null', animalReason, totalUnits, maleUnits, femaleUnits, adultsUnits || '0')
+          }
+        }
+      } else if (gridType === 'HERD') {
+        if (holdingType === '15' || holdingType === '16' || holdingType === '17') {
+          this.setState({
+            alert: alertUser(true, 'warning',
+              this.context.intl.formatMessage({
+                id: `${config.labelBasePath}.alert.error_transfer_herd_to_shelter_vet_station_or_vet_clinic`,
+                defaultMessage: `${config.labelBasePath}.alert.error_transfer_herd_to_shelter_vet_station_or_vet_clinic`
+              }), null, () => this.setState({ alert: alertUser(false, 'info', '') })
+            )
+          })
+        } else {
+          const actionName = 'MOVE'
+          const subActionName = 'START_MOVEMENT'
+          const paramsArray = [{
+            MASS_PARAM_TBL_NAME: this.props.gridType,
+            MASS_PARAM_ACTION: actionName,
+            MASS_PARAM_SUBACTION: subActionName,
+            MASS_PARAM_DATE_OF_MOVEMENT: convertToShortDate(new Date(), 'y-m-d'),
+            ...destination && { MASS_PARAM_ADDITIONAL_PARAM: String(destination) },
+            ...transportTypeVal && { MASS_PARAM_MVM_TRANSPORT_TYPE: transportTypeVal },
+            ...transporterLicenseVal !== '' && { MASS_PARAM_TRANSPORTER_LICENCE: transporterLicenseVal },
+            ...estimateDayOfArrival && { MASS_PARAM_ESTM_DATE_OF_ARRIVAL: estimateDayOfArrival },
+            ...estimateDayOfDeparture && { MASS_PARAM_ESTM_DATE_OF_DEPARTURE: estimateDayOfDeparture },
+            ...disinfectionDate && { MASS_PARAM_DISINFECTION_DATE: disinfectionDate },
+            ...animalReason && { MASS_PARAM_ANIMAL_MVM_REASON: animalReason }
+          }]
+
+          this.startHerdMovementPrompt(paramsArray, this.props.gridType)
         }
       }
     } else {
@@ -1652,7 +3195,7 @@ class ExecuteActionOnSelectedRows extends React.Component {
   }
 
   closeModal = () => {
-    this.setState({ modalIsOpen: false, estimateDayOfArrival: null, estimateDayOfDeparture: null })
+    this.setState({ modalIsOpen: false, estimateDayOfArrival: null, estimateDayOfDeparture: null, disinfectionDate: null })
   }
 
   setDate = e => {
@@ -1695,31 +3238,20 @@ class ExecuteActionOnSelectedRows extends React.Component {
       }
     })
 
-    const gridConfig = menuConfig('GRID_CONFIG', this.context.intl)
-    const searchPopup = <div id='search_modal' className='modal to-front' style={{ display: 'flex' }}>
+    const searchPopup = <div id='search_modal' className='modal' style={{ display: 'flex' }}>
       <div id='search_modal_content' className='modal-content'>
         <div className='modal-header' />
         <div id='search_modal_body' className='modal-body'>
-          <ResultsGrid
+          <GridInModalLinkObjects
+            loadFromParent
+            linkedTable={this.state.searchGrid}
+            onRowSelect={this.chooseItem}
             key={this.state.searchGrid + '_' + this.state.inputElementId}
-            id={this.state.searchGrid + '_' + this.state.inputElementId}
-            gridToDisplay={this.state.searchGrid}
-            gridConfig={gridConfig}
-            onRowSelectProp={this.chooseItem}
-            customGridDataWS='GET_SHELTERS'
+            closeModal={this.closeSearchPopup}
+            isFromPetMovement
           />
         </div>
       </div>
-      <div id='modal_close_btn' type='button' className='js-components-AppComponents-Functional-GridInModalLinkObjects-module-close'
-        style={{
-          position: 'absolute',
-          right: 'calc(11% - 9px)',
-          top: '44px',
-          width: '32px',
-          height: '32px',
-          opacity: '1'
-        }}
-        onClick={() => this.closeSearchPopup(this)} data-dismiss='modal' />
     </div>
 
     const ownerSearchPopup = <div id='search_modal_owner' className='modal' style={{ display: 'flex' }}>
@@ -1836,12 +3368,26 @@ class ExecuteActionOnSelectedRows extends React.Component {
         selectedGridRows={this.props.selectedGridRows.gridId}
         executeAction={this.executeAction}
         finishMovementPrompt={this.finishMovementPrompt}
+        cancelMovementPrompt={this.cancelMovementPrompt}
         petMassActionPrompt={this.petMassActionPrompt}
+        petQuarantineMassActionPrompt={this.petQuarantineMassActionPrompt}
         passportRequestPrompt={this.passportRequestPrompt}
         slaughterAndDestroyPrompt={this.slaughterAndDestroyPrompt}
+        generatePreOrPostMortemPrompt={this.generatePreOrPostMortemPrompt}
         searchDestination={this.searchDestination}
         petMovementPrompt={this.petMovementPrompt}
         petAdoptionPrompt={this.petAdoptionPrompt}
+        petReleasePrompt={this.petReleasePrompt}
+        addAnimalToExistingHerd={this.addAnimalToExistingHerd}
+        addAnimalToNewHerd={this.addAnimalToNewHerd}
+        executeHerdActionPrompt={this.executeHerdActionPrompt}
+        executeHerdPhysicalCheckPrompt={this.executeHerdPhysicalCheckPrompt}
+        executeHerdVaccinationEventPrompt={this.executeHerdVaccinationEventPrompt}
+        searchHerdDestination={this.searchHerdDestination}
+        cancelHerdMovementPrompt={this.cancelHerdMovementPrompt}
+        acceptFullHerdPrompt={this.acceptFullHerdPrompt}
+        acceptIndividualHerdPrompt={this.acceptIndividualHerdPrompt}
+        changeHerdMovementDocStatusPrompt={this.changeHerdMovementDocStatusPrompt}
         subMenu={this.state.subMenu}
         holdingType={this.state.holdingType}
       />
@@ -1880,6 +3426,14 @@ class ExecuteActionOnSelectedRows extends React.Component {
                   dateFields={dateFields}
                 />
               }
+              {this.props.gridType === 'HERD' &&
+                <SearchPopup
+                  gridToDisplay={this.state.searchGrid}
+                  onRowSelect={this.moveItems}
+                  CustomForm={CustomForm}
+                  dateFields={dateFields}
+                />
+              }
             </div>
           </div>
         </div>
@@ -1899,6 +3453,10 @@ class ExecuteActionOnSelectedRows extends React.Component {
         return null
       }
 
+      if (this.props.gridType === 'HEALTH_PASSPORT') {
+        return null
+      }
+
       if (this.props.gridHierarchy[0].gridType === 'HOLDING' && this.props.gridType === 'SVAROG_ORG_UNITS') {
         return null
       }
@@ -1914,7 +3472,35 @@ class ExecuteActionOnSelectedRows extends React.Component {
     }
 
     return (
-      portalValidation()
+      <React.Fragment>
+        {this.state.loading && <Loading />}
+        {portalValidation()}
+        {this.state.showReleaseDetailsForm &&
+          <div id='form_modal' className='modal' style={{ display: 'block' }}>
+            <div id='form_modal_content' className='modal-content'>
+              <div id='form_modal_body' className='modal-body' style={{ marginTop: '1rem' }}>
+                {this.state.releaseDetailsForm}
+              </div>
+            </div>
+          </div>
+        }
+        {this.state.showHerdForm &&
+          <div id='form_modal' className='modal' style={{ display: 'block' }}>
+            <div id='form_modal_content' className='modal-content'>
+              <div className='modal-header'>
+                <button id='modal_close_btn' type='button' className='close' onClick={this.closeHerdForm} data-dismiss='modal'>&times;</button>
+              </div>
+              <div id='form_modal_body' className='modal-body' style={{ marginTop: '1rem' }}>
+                {this.state.newHerdForm}
+              </div>
+            </div>
+          </div>
+        }
+        {this.state.showPetQuarantineGridModal && this.generatePetQuarantinesGridModal()}
+        {this.state.herdsPerHoldingGrid}
+        {this.state.animalsPerHerdGrid}
+        {this.state.petReleaseForm && ReactDOM.createPortal(this.state.petReleaseForm, document.getElementById('app'))}
+      </React.Fragment>
     )
   }
 }
@@ -1932,7 +3518,11 @@ const mapStateToProps = state => ({
   executedActionType: state.massActionResult.executedActionType,
   componentToDisplay: state.componentToDisplay.componentToDisplay,
   actionResult: state.massAction.result,
-  getUserGroups: state.userInfoReducer.getUsers
+  getUserGroups: state.userInfoReducer.getUsers,
+  isLoading: state.massAction.isLoading,
+  herdObjId: state.formToGridAfterSaveReducer.HERD_OBJ_ID,
+  herdAnimalType: state.formToGridAfterSaveReducer.HERD_ANIMAL_TYPE,
+  herdPersonId: state.formToGridAfterSaveReducer.HERD_CONTACT_PERSON_ID
 })
 
 const mapDispatchToProps = dispatch => ({
@@ -1951,14 +3541,8 @@ const mapDispatchToProps = dispatch => ({
   generationInventoryItem: (...params) => {
     dispatch(generationInventoryItem(...params))
   },
-  moveInventoryItem: (...params) => {
-    dispatch(moveInventoryItem(...params))
-  },
   labSampleAction: (...params) => {
     dispatch(labSampleAction(...params))
-  },
-  executeActionOnSelectedRows: (...params) => {
-    dispatch(executeActionOnSelectedRows(...params))
   },
   massAnimalOrFlockAction: (...params) => {
     dispatch(massAnimalOrFlockAction(...params))
@@ -1971,6 +3555,9 @@ const mapDispatchToProps = dispatch => ({
   },
   executeMassActionExtended: (...params) => {
     dispatch(executeMassActionExtended(...params))
+  },
+  formToGridResetAction: (table) => {
+    dispatch(formToGridResetAction(table))
   }
 })
 

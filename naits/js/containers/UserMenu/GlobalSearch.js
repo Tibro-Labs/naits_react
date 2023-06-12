@@ -259,7 +259,7 @@ export class GlobalSearch extends React.Component {
                         // clearTimeout(this.timer)
                         this.timerEnableButton()
                       }
-                    }
+                    }, false
                   )
                 }
               )
@@ -354,8 +354,8 @@ const mapStateToProps = state => ({
 })
 
 const mapDispatchToProps = dispatch => ({
-  globalSearchAction: (svSession, tableName, searchCriteria, searchValue, rowLimit, callback) => {
-    dispatch(globalSearchAction(svSession, tableName, searchCriteria, searchValue, rowLimit, callback))
+  globalSearchAction: (svSession, tableName, searchCriteria, searchValue, rowLimit, callback, altParam) => {
+    dispatch(globalSearchAction(svSession, tableName, searchCriteria, searchValue, rowLimit, callback, altParam))
   }
 })
 

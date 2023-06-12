@@ -1,9 +1,16 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
+import { store } from 'tibro-redux'
 import { isValidObject } from 'functions/utils'
 
 class PreviewData extends React.Component {
+  componentWillUnmount () {
+    if (this.props.questionnaireComponent) {
+      store.dispatch({ type: 'CLOSE_QUESTIONNAIRES' })
+    }
+  }
+
   render () {
     let splitString = []
     let data = null
@@ -36,8 +43,8 @@ class PreviewData extends React.Component {
       }
     }
     return (
-      <div id='previewData' className='preview-data-holder'>
-        {splitString.length > 0 ? splitString : data}
+      <div id='previewData' className='preview-data-holder' style={{ opacity: this.props.questionnaireComponent ? '1' : '0.6' }}>
+        {this.props.questionnaireComponent || (splitString.length > 0 ? splitString : data)}
       </div>
     )
   }
@@ -49,7 +56,8 @@ PreviewData.contextTypes = {
 
 const mapStateToProps = (state, ownProps) => ({
   svSession: state.security.svSession,
-  additionalData: state.additionalData[ownProps.objectType]
+  additionalData: state.additionalData[ownProps.objectType],
+  questionnaireComponent: state.questionnaire.component
 })
 
 export default connect(mapStateToProps)(PreviewData)

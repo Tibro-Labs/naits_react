@@ -3,57 +3,47 @@ import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
 import * as config from 'config/config.js'
 import { Loading, ComponentManager, GridManager } from 'components/ComponentsIndex'
-import consoleStyle from 'components/AppComponents/Functional/AdminConsole/AdminConsole.module.css'
-import { alertUser } from 'tibro-components'
+import { DependencyDropdowns, alertUser } from 'tibro-components'
 import { dropdownConfig } from 'config/dropdownConfig.js'
 import { store } from 'tibro-redux'
 import { generateAnimalsAction, resetAnimal } from 'backend/generateAnimalsAction'
-import { formatAlertType } from 'functions/utils'
+import { strcmp, formatAlertType } from 'functions/utils'
+import style from 'components/AppComponents/Functional/EarTagReplacement/EarTagReplacement.module.css'
 
 class MassAnimalForm extends React.Component {
   constructor (props) {
     super(props)
     this.state = {
-      animal_start_tag_id: '',
-      animal_end_tag_id: '',
-      animalGroups: null,
-      startTagId: 'animal_start_tag_id',
-      endTagId: 'animal_end_tag_id',
-      animalGroup: null,
-      setDropdownData: 'animalGroups',
+      startTagId: '',
+      endTagId: '',
+      animalGender: '',
+      animalGenders: [],
+      birthDate: '',
       loading: false
     }
   }
 
   componentDidMount () {
-    let config = dropdownConfig('ANIMAL_CATEGORY_DROPDOWN')
-    // functional setState
-    let options = []
-    for (let key in config) {
-      if (config.hasOwnProperty(key)) {
-        const value = config[key]
-        options.push(<option key={value} value={key}>
-          {this.context.intl.formatMessage({ id: value.LABEL, defaultMessage: value.LABEL })}
-        </option>)
-      }
-    }
-    this.setState({ dropdownData: options })
+    // Get all the animal genders from config
+    this.setState({ animalGenders: dropdownConfig('GENDER_DROPDOWN'), animalGender: '1' })
   }
-  chooseAnimalGroups = (event) => {
-    this.setState({ 'animalGroup': event.target.value })
+
+  onChange = e => {
+    this.setState({ [e.target.name]: e.target.value })
+  }
+
+  setDate = date => {
+    this.setState({ birthDate: date })
   }
 
   generateMassAnimals = () => {
-    const { startTagId, endTagId, setDropdownData } = this.state
-    const inputStartTagContainer = document.getElementById(startTagId).value
-    const inputEndTagContainer = document.getElementById(endTagId).value
-    const inputDropDownData = document.getElementById(setDropdownData).value
+    const { startTagId, endTagId, animalGender, birthDate } = this.state
     let gridType = this.props.gridType
     let objectId
     if (this.props.selectedObjects.length > 0) {
       for (let i = 0; i < this.props.selectedObjects.length; i++) {
-        if (this.props.selectedObjects[i].active) {
-          gridType = this.props.selectedObjects[i].gridId
+        if (this.props.selectedObjects[i].active || strcmp(this.props.selectedObjects[i].gridType, 'HOLDING')) {
+          gridType = this.props.selectedObjects[i].gridType
           objectId = this.props.selectedObjects[i].row[`${gridType}.OBJECT_ID`]
         }
       }
@@ -89,37 +79,62 @@ class MassAnimalForm extends React.Component {
         )
       })
     }
-    const inputStartTagContainerLbl = this.context.intl.formatMessage({
+    const startTagIdLabel = this.context.intl.formatMessage({
       id: `${config.labelBasePath}.mass_animal_form.animal_start_tag_id`,
       defaultMessage: `${config.labelBasePath}.mass_animal_form.animal_start_tag_id`
     })
-    const inputEndTagContainerLbl = this.context.intl.formatMessage({
+    const endTagIdLabel = this.context.intl.formatMessage({
       id: `${config.labelBasePath}.mass_animal_form.animal_end_tag_id`,
       defaultMessage: `${config.labelBasePath}.mass_animal_form.animal_end_tag_id`
     })
-    const inputDropDownDataLbl = this.context.intl.formatMessage({
-      id: `${config.labelBasePath}.mass_animal_form.animal_groups`,
-      defaultMessage: `${config.labelBasePath}.mass_animal_form.animal_groups`
+    const animalClassLabel = this.context.intl.formatMessage({
+      id: `${config.labelBasePath}.main.animal.animal_class`,
+      defaultMessage: `${config.labelBasePath}.main.animal.animal_class`
     })
-    if (objectId && inputStartTagContainer && inputEndTagContainer && inputDropDownData) {
+    const animalBreedLabel = this.context.intl.formatMessage({
+      id: `${config.labelBasePath}.main.animal.animal_race`,
+      defaultMessage: `${config.labelBasePath}.main.animal.animal_race`
+    })
+    const genderLabel = this.context.intl.formatMessage({
+      id: `${config.labelBasePath}.main.animal.gender`,
+      defaultMessage: `${config.labelBasePath}.main.animal.gender`
+    })
+    const birthDateLabel = this.context.intl.formatMessage({
+      id: `${config.labelBasePath}.main.animal.birth_date`,
+      defaultMessage: `${config.labelBasePath}.main.animal.birth_date`
+    })
+
+    const animalClassElement = document.getElementById('root_animal.description_ANIMAL_CLASS')
+    const animalBreedElement = document.getElementById('root_animal.description_ANIMAL_RACE')
+    let selectedAnimalClass = ''
+    let selectedAnimalBreed = ''
+    if (animalClassElement) {
+      selectedAnimalClass = animalClassElement.options[animalClassElement.selectedIndex].value
+    }
+    if (animalBreedElement) {
+      selectedAnimalBreed = animalBreedElement.options[animalBreedElement.selectedIndex].value
+    }
+
+    if (objectId && startTagId && endTagId && selectedAnimalClass && selectedAnimalBreed && birthDate) {
       prompt(this, () => {
         this.setState({ loading: true })
         this.props.generateAnimalsAction(this.props.svSession,
-          objectId, inputStartTagContainer, inputEndTagContainer, inputDropDownData)
+          objectId, startTagId, endTagId, selectedAnimalClass, selectedAnimalBreed, animalGender, birthDate)
       })
     } else {
       let message = ''
-      if (!inputStartTagContainer) message = message + inputStartTagContainerLbl + ' '
-      if (!inputEndTagContainer) message = message + inputEndTagContainerLbl + ' '
-      if (!inputDropDownData) message = message + inputDropDownDataLbl + ' '
+      if (!startTagId) message = message + startTagIdLabel + ' '
+      if (!endTagId) message = message + endTagIdLabel + ' '
+      if (!selectedAnimalClass) message = message + animalClassLabel + ' '
+      if (!selectedAnimalBreed) message = message + animalBreedLabel + ' '
+      if (!animalGender) message = message + genderLabel + ' '
+      if (!birthDate) message = message + birthDateLabel + ' '
       this.setState({
         alert: alertUser(true, 'warning',
           this.context.intl.formatMessage({
             id: `${config.labelBasePath}.alert.parameters_missing`,
             defaultMessage: `${config.labelBasePath}.alert.parameters_missing`
-          }),
-          message,
-          () => this.setState({ alert: alertUser(false, 'info', '') }))
+          }), message, () => this.setState({ alert: alertUser(false, 'info', '') }))
       })
     }
   }
@@ -138,6 +153,7 @@ class MassAnimalForm extends React.Component {
       })
       this.setState({ loading: false })
       this.reloadData(nextProps)
+      this.props.onAlertClose()
     }
     if ((this.props.generateAnimalsError !== nextProps.generateAnimalsError) &&
       nextProps.generateAnimalsError) {
@@ -151,9 +167,7 @@ class MassAnimalForm extends React.Component {
         })
       })
       this.setState({ loading: false })
-      this.reloadData(nextProps)
     }
-    this.props.onAlertClose()
   }
 
   reloadData = (props) => {
@@ -170,103 +184,127 @@ class MassAnimalForm extends React.Component {
     ComponentManager.setStateForComponent(gridId + '1', 'selectedIndexes', [])
     GridManager.reloadGridData(gridId + '1')
   }
+
   render () {
-    const { loading } = this.state
+    const { loading, birthDate } = this.state
+    const nowBtnText = this.context.intl.formatMessage({
+      id: `${config.labelBasePath}.main.now`,
+      defaultMessage: `${config.labelBasePath}.main.now`
+    })
 
     return (
-      <div id='form_modal' className='modal' style={{ display: 'block' }}>
-        <div id='form_modal_content' className='modal-content disable_scroll_bar'>
-          {loading && <Loading />}
-          <div className='modal-header'>
-            <button id='modal_close_btn' type='button' className='close'
-              onClick={this.props.closeModal} >&times;</button>
-          </div>
-          <div id='form_modal_body' className='modal-body'>
-            <form id='mass_animal_form' className='form-test custom-modal-content disable_scroll_bar'>
-              <p id='title' style={{ marginTop: '0.8%', fontSize: '150%' }}>{this.context.intl.formatMessage({
-                id: config.labelBasePath + '.generate_mass_animal',
-                defaultMessage: config.labelBasePath + '.generate_mass_animal'
-              })} </p>
-              <hr style={{ color: 'white' }} />
-              <div className={'form-group' + ' ' + consoleStyle.formGroupInline}
-                style={{ marginLeft: '1%', marginTop: '1.5%' }}>
-                <label htmlFor='animalGroup' style={{ marginLeft: '44%' }}>
+      <React.Fragment>
+        <div id='form_modal' className='modal' style={{ display: 'block' }}>
+          <div id='form_modal_content' className='modal-content disable_scroll_bar'>
+            <div className='modal-header'>
+              <button id='modal_close_btn' type='button' className='close'
+                onClick={this.props.closeModal} >&times;</button>
+            </div>
+            <div id='form_modal_body' className='modal-body'>
+              <div id='mass_animal_form' className='form-test custom-modal-content disable_scroll_bar'>
+                <legend style={{ textAlign: 'center', marginTop: '1rem' }}>
                   {this.context.intl.formatMessage({
-                    id: config.labelBasePath + '.mass_animal_form.animal_groups',
-                    defaultMessage: config.labelBasePath + '.mass_animal_form.animal_groups'
-                  })} *
-                </label>
-                <div className='form-group'>
-                  <select id='animalGroups'
-                    className={consoleStyle.dropdown} style={{ marginLeft: '46%' }}
-                    onChange={this.chooseAnimalGroups}
-                  >
-                    <option
-                      id='blankPlaceholder'
-                      key='blankPlaceholder'
-                      disabled defaultValue hidden
-                    >
-                      {this.context.intl.formatMessage(
-                        {
-                          id: config.labelBasePath + '.mass_animal_form.animal_groups',
-                          defaultMessage: config.labelBasePath + '.mass_animal_form.animal_groups'
-                        }
-                      )}
-                    </option>
-                    {this.state.dropdownData}
-                  </select>
-                </div>
-              </div>
-              <div className={'form-group' + ' ' + consoleStyle.formGroupInline}>
-                <label htmlFor='animal_start_tag_id' style={{ marginLeft: '-3%' }}>
-                  {this.context.intl.formatMessage({
-                    id: config.labelBasePath + '.mass_animal_form.animal_start_tag_id',
-                    defaultMessage: config.labelBasePath + '.mass_animal_form.animal_start_tag_id'
-                  })} *
-                </label>
-                <input
-                  id='animal_start_tag_id'
-                  className='form-control'
-                  style={{ marginLeft: '28%', width: '45%' }}
-                  placeholder={this.context.intl.formatMessage({
-                    id: `${config.labelBasePath}.register.must_be_integer`,
-                    defaultMessage: `${config.labelBasePath}.register.must_be_integer`
-                  })}
-                />
-              </div>
-              <div className={'form-group' + ' ' + consoleStyle.formGroupInline}>
-                <label htmlFor='animal_end_tag_id' style={{ marginLeft: '-59%' }}>
-                  {this.context.intl.formatMessage({
-                    id: config.labelBasePath + '.mass_animal_form.animal_end_tag_id',
-                    defaultMessage: config.labelBasePath + '.mass_animal_form.animal_end_tag_id'
-                  })} *
-                </label>
-                <input
-                  id='animal_end_tag_id'
-                  className='form-control'
-                  style={{ marginLeft: '1%', width: '45%' }}
-                  placeholder={this.context.intl.formatMessage({
-                    id: `${config.labelBasePath}.register.must_be_integer`,
-                    defaultMessage: `${config.labelBasePath}.register.must_be_integer`
-                  })}
-                />
-              </div>
-              <div className='form-group' style={{ marginTop: '2%' }}>
-                <div
-                  id='massAnimalGenerator'
-                  className='btn_save_form'
-                  onClick={() => this.generateMassAnimals()}>{this.context.intl.formatMessage({
                     id: config.labelBasePath + '.generate_mass_animal',
                     defaultMessage: config.labelBasePath + '.generate_mass_animal'
-                  })}</div>
+                  })}
+                </legend>
+                <div className='form-group field field-object' style={{ textAlign: 'center' }}>
+                  <fieldset>
+                    <div className='form-group field field-string'>
+                      <label htmlFor='startTagId'>
+                        {this.context.intl.formatMessage({
+                          id: config.labelBasePath + '.mass_animal_form.animal_start_tag_id',
+                          defaultMessage: config.labelBasePath + '.mass_animal_form.animal_start_tag_id'
+                        })}*
+                      </label>
+                      <input
+                        id='startTagId'
+                        name='startTagId'
+                        className='form-control'
+                        onChange={this.onChange}
+                        placeholder={this.context.intl.formatMessage({
+                          id: `${config.labelBasePath}.register.must_be_integer`,
+                          defaultMessage: `${config.labelBasePath}.register.must_be_integer`
+                        })}
+                      />
+                    </div>
+                    <div className='form-group field field-string'>
+                      <label htmlFor='endTagId'>
+                        {this.context.intl.formatMessage({
+                          id: config.labelBasePath + '.mass_animal_form.animal_end_tag_id',
+                          defaultMessage: config.labelBasePath + '.mass_animal_form.animal_end_tag_id'
+                        })}*
+                      </label>
+                      <input
+                        id='endTagId'
+                        name='endTagId'
+                        className='form-control'
+                        onChange={this.onChange}
+                        placeholder={this.context.intl.formatMessage({
+                          id: `${config.labelBasePath}.register.must_be_integer`,
+                          defaultMessage: `${config.labelBasePath}.register.must_be_integer`
+                        })}
+                      />
+                    </div>
+                    <div className='form-group field field-string'>
+                      <DependencyDropdowns tableName='ANIMAL' />
+                    </div>
+                    <div className='form-group field field-string'>
+                      <label htmlFor='animalGender'>
+                        {this.context.intl.formatMessage({
+                          id: config.labelBasePath + '.main.animal.gender',
+                          defaultMessage: config.labelBasePath + '.main.animal.gender'
+                        })}*
+                      </label>
+                      <select id='animalGender' name='animalGender' className='form-control' onChange={this.onChange}>
+                        {this.state.animalGenders.map(animalGender => {
+                          return <option key={animalGender.VALUE} value={animalGender.VALUE}>
+                            {this.context.intl.formatMessage({
+                              id: animalGender.LABEL,
+                              defaultMessage: animalGender.LABEL
+                            })}
+                          </option>
+                        })}
+                      </select>
+                    </div>
+                    <div className='form-group field field-string'>
+                      <label htmlFor='birthDate'>
+                        {this.context.intl.formatMessage({
+                          id: config.labelBasePath + '.main.animal.birth_date',
+                          defaultMessage: config.labelBasePath + '.main.animal.birth_date'
+                        })}*
+                      </label>
+                      <div id='CustomDateWithNowButton' className={style.CustomDate}>
+                        <input type='date' className='form-control' name='birthDate' id='birthDate'
+                          onChange={(e) => this.setDate(e.target.value)} value={birthDate}
+                        />
+                        <button type='button' className='btn-success btn_save_form' id='setDateNowBtn'
+                          onClick={() => this.setDate(new Date().toISOString().substr(0, 19).split('T')[0])}
+                        >{nowBtnText}</button>
+                      </div>
+                    </div>
+                  </fieldset>
+                </div>
+                <div style={{ float: 'right', marginRight: '2rem' }}>
+                  <button id='massAnimalGenerator' className='btn-success btn_save_form' onClick={this.generateMassAnimals}>
+                    {this.context.intl.formatMessage({
+                      id: config.labelBasePath + '.generate_mass_animal',
+                      defaultMessage: config.labelBasePath + '.generate_mass_animal'
+                    })}
+                  </button>
+                </div>
               </div>
-            </form>
+            </div>
           </div>
         </div>
-      </div>
-
+        {loading && <Loading />}
+      </React.Fragment>
     )
   }
+}
+
+MassAnimalForm.contextTypes = {
+  intl: PropTypes.object.isRequired
 }
 
 const mapDispatchToProps = dispatch => ({
@@ -274,10 +312,6 @@ const mapDispatchToProps = dispatch => ({
     dispatch(generateAnimalsAction(...params))
   }
 })
-
-MassAnimalForm.contextTypes = {
-  intl: PropTypes.object.isRequired
-}
 
 const mapStateToProps = state => ({
   admConsoleRequests: state.admConsoleRequests,

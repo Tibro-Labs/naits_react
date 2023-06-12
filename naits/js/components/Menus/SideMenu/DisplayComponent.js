@@ -7,34 +7,53 @@ import {
   DailySlaughterhouseReport, CampaignReport, InventoryModuleReport,
   UserGroupNote, AssignOwnerToStrayPet, SampleForPopulation,
   UpdatePopulationStatus, GeoPopulationFilter, DownloadPopulationSampleFile,
-  ApplyStratificationFilter, StratifyPopulation
+  ApplyStratificationFilter, StratifyPopulation, RFIDFileInfo, SetPetStatusToValid
 } from 'components/ComponentsIndex'
-import { selectObject } from 'functions/utils'
+import { selectObject, strcmp } from 'functions/utils'
 
 class DisplayComponent extends React.Component {
+  constructor (props) {
+    super(props)
+    this.state = {
+      holdingType: ''
+    }
+  }
+
   static propTypes = {
     menuType: PropTypes.string.isRequired,
     configuration: PropTypes.func.isRequired,
     componentStack: PropTypes.array,
     lastSelectedItem: PropTypes.func.isRequired
-    // dataSource: PropTypes.string
+  }
+
+  componentDidMount () {
+    if (strcmp(this.props.menuType, 'HOLDING')) {
+      this.getCurrentHoldingType(this.props)
+    }
+  }
+
+  componentWillReceiveProps (nextProps) {
+    if (nextProps.shouldRefreshPrintBadgeAndSummaryInfo) {
+      this.getCurrentHoldingType(nextProps)
+    }
+
+    if (strcmp(nextProps.menuType, 'HOLDING') && this.props.objectId !== nextProps.objectId) {
+      this.getCurrentHoldingType(nextProps)
+    }
+  }
+
+  /* Get the currently selected holding type */
+  getCurrentHoldingType = props => {
+    props.componentStack.map(grid => {
+      if (strcmp(grid.gridType, props.menuType)) {
+        this.setState({ holdingType: grid.row[props.menuType + '.TYPE'] || '' })
+      }
+    })
   }
 
   render () {
-    const { componentStack, configuration, menuType } = this.props
-    let getUsers = this.props.getUserGroups
-
-    /* Check if the current holding is of type slaughterhouse
-    ** so the slaughterhouse daily report will be displayed correctly
-    **/
-    let holdingType = ''
-    componentStack.forEach(grid => {
-      if (menuType === 'HOLDING' && grid.active && grid.row['HOLDING.TYPE'] !== '7') {
-        holdingType = ''
-      } else if (menuType === 'HOLDING' && grid.active && grid.row['HOLDING.TYPE'] === '7') {
-        holdingType = '7'
-      }
-    })
+    const { componentStack, configuration, menuType, gridType, getUserGroups } = this.props
+    const { holdingType } = this.state
 
     return (
       <div
@@ -51,13 +70,13 @@ class DisplayComponent extends React.Component {
           {this.props.statusBadges &&
             <this.props.statusBadges {...this.props} holdingObjId={this.props.objectId} />
           }
-          {(menuType === 'ANIMAL' || menuType === 'FLOCK') && getUsers &&
+          {(menuType === 'ANIMAL' || menuType === 'FLOCK') && getUserGroups &&
             <UndoAnimalRetirement gridType={menuType} />
           }
           {menuType === 'ANIMAL' &&
             <EarTagReplacementAction gridType={menuType} />
           }
-          {holdingType === '7' &&
+          {menuType === 'HOLDING' && gridType === 'HOLDING' && holdingType && holdingType === '7' &&
             <DailySlaughterhouseReport {...this.props} />
           }
           {menuType === 'SVAROG_ORG_UNITS' &&
@@ -72,6 +91,9 @@ class DisplayComponent extends React.Component {
           {menuType === 'STRAY_PET' &&
             <AssignOwnerToStrayPet {...this.props} />
           }
+          {menuType === 'PET' &&
+            <SetPetStatusToValid {...this.props} />
+          }
           {menuType === 'POPULATION' &&
             <React.Fragment>
               <GeoPopulationFilter {...this.props} />
@@ -81,6 +103,9 @@ class DisplayComponent extends React.Component {
               <StratifyPopulation {...this.props} />
               <DownloadPopulationSampleFile {...this.props} />
             </React.Fragment>
+          }
+          {menuType === 'RFID_INPUT' &&
+            <RFIDFileInfo {...this.props} />
           }
         </div>
         <div id='returnedComponent' className='main-display-subcomponent'>
@@ -93,7 +118,8 @@ class DisplayComponent extends React.Component {
 
 const mapStateToProps = state => ({
   componentToDisplay: state.componentToDisplay.componentToDisplay,
-  getUserGroups: state.userInfoReducer.getUsers
+  getUserGroups: state.userInfoReducer.getUsers,
+  shouldRefreshPrintBadgeAndSummaryInfo: state.changeStatus.shouldRefreshPrintBadgeAndSummaryInfo
 })
 
 export default connect(mapStateToProps)(DisplayComponent)

@@ -62,6 +62,26 @@ class RecordInfoClass extends React.Component {
     if (this.props.holdingStatusHasChanged !== nextProps.holdingStatusHasChanged) {
       reloadCachedSelectedObjectsData()
     }
+
+    // Reload the record info if the holding type has been changed
+    if (this.props.holdingTypeHasChanged !== nextProps.holdingTypeHasChanged) {
+      reloadCachedSelectedObjectsData()
+    }
+
+    // Reload the record info if the RFID action & subaction type has changed
+    if (this.props.rfidActionAndSubActionTypeHasChanged !== nextProps.rfidActionAndSubActionTypeHasChanged) {
+      reloadCachedSelectedObjectsData()
+    }
+
+    // Reload the record info if the RFID status has changed
+    if (this.props.rfidStatusHasChanged !== nextProps.rfidStatusHasChanged) {
+      reloadCachedSelectedObjectsData()
+    }
+
+    // Reload the record info if the undo animal retirement action has been executed
+    if ((this.props.undoAnimalRetirementWasExecuted !== nextProps.undoAnimalRetirementWasExecuted) && nextProps.undoAnimalRetirementWasExecuted) {
+      reloadCachedSelectedObjectsData()
+    }
   }
 
   loadFunctions = (props) => {
@@ -302,6 +322,10 @@ class RecordInfoClass extends React.Component {
         break
       case 'INVENTORY_ITEM':
         src = '/naits/img/MainPalette/19_inventory_item/inventory_item.svg'
+        break
+      // case 'RFID':
+      //   src = '/naits/img/MainPalette/22_rfid/rfid.svg'
+      //   break
     }
     switch (holdingType) {
       case '1':
@@ -338,6 +362,7 @@ class RecordInfoClass extends React.Component {
         src = '/naits/img/recordInfo/border_post.png'
         break
       case '15':
+      case '17':
         src = '/naits/img/recordInfo/animal_shelter.png'
         break
       case '16':
@@ -410,7 +435,11 @@ const mapStateToProps = state => {
     earTagHasBeenChanged: state.earTagReplacement.earTagHasBeenChanged,
     populationStatusHasBeenUpdated: state.updatePopulationStatus.populationStatusHasBeenUpdated,
     populationHasBeenUpdated: state.additionalData.populationHasBeenUpdated,
-    holdingStatusHasChanged: state.changeStatus.holdingStatusHasChanged
+    holdingStatusHasChanged: state.changeStatus.holdingStatusHasChanged,
+    holdingTypeHasChanged: state.changeStatus.holdingTypeHasChanged,
+    rfidActionAndSubActionTypeHasChanged: state.rfidSecondLevelForm.rfidActionAndSubActionTypeHasChanged,
+    rfidStatusHasChanged: state.rfidStatus.rfidStatusHasChanged,
+    undoAnimalRetirementWasExecuted: state.additionalData.undoAnimalRetirementWasExecuted
   })
 }
 

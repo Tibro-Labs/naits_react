@@ -7,18 +7,20 @@ import { alertUser } from 'tibro-components'
 import { updateStatus, resetObject } from 'backend/changeStatusAction'
 import { store, updateSelectedRows } from 'tibro-redux'
 import { formatAlertType, strcmp } from 'functions/utils'
-import { ComponentManager, GridManager } from 'components/ComponentsIndex'
+import { ComponentManager, GridManager, Loading } from 'components/ComponentsIndex'
 import styles from 'components/AppComponents/Presentational/Badges/Badges.module.css'
 
 class ChangeTransferStatus extends React.Component {
   constructor (props) {
     super(props)
     this.state = {
-      alert: null
+      alert: null,
+      loading: false
     }
   }
 
   componentWillReceiveProps (nextProps) {
+    this.setState({ loading: nextProps.isLoading })
     if ((this.props.massActionResult !== nextProps.massActionResult) &&
       nextProps.massActionResult) {
       this.setState({
@@ -104,7 +106,16 @@ class ChangeTransferStatus extends React.Component {
     }
     for (let i = 0; i < selectedObjects.length; i++) {
       if (selectedObjects[i].active && this.props.selectedGridRows.length > 0) {
-        prompt(this, () => this.props.updateStatus(this.props.svSession, gridType, status, this.props.selectedGridRows))
+        let reducedGridRows = []
+        this.props.selectedGridRows.map(row => {
+          if (row['TRANSFER.OBJECT_ID'] && row['TRANSFER.PARENT_ID']) {
+            reducedGridRows.push({
+              'TRANSFER.OBJECT_ID': row['TRANSFER.OBJECT_ID'],
+              'TRANSFER.PARENT_ID': row['TRANSFER.PARENT_ID']
+            })
+          }
+        })
+        prompt(this, () => this.props.updateStatus(this.props.svSession, gridType, status, reducedGridRows))
       } else {
         this.setState({
           alert: alertUser(true, 'warning',
@@ -162,7 +173,12 @@ class ChangeTransferStatus extends React.Component {
         }
       }
     }
-    return component
+    return (
+      <React.Fragment>
+        {this.state.loading && <Loading />}
+        {component}
+      </React.Fragment>
+    )
   }
 }
 
@@ -190,7 +206,8 @@ const mapStateToProps = (state) => ({
   selectedGrid: state.selectedGridRows,
   selectedGridRows: state.selectedGridRows.selectedGridRows,
   massActionResult: state.massActionResult.result,
-  componentToDisplay: state.componentToDisplay.componentToDisplay
+  componentToDisplay: state.componentToDisplay.componentToDisplay,
+  isLoading: state.massAction.isLoading
 })
 
 export default connect(mapStateToProps, mapDispatchToProps)(ChangeTransferStatus)

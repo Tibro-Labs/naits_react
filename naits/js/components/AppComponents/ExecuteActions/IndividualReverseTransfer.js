@@ -38,19 +38,27 @@ class IndividualReverseTransfer extends React.Component {
   }
 
   reloadData = (props) => {
-    let gridIdPrime = props.selectedGrid.gridId.slice(0, -1) + '1'
-    let gridIdSec = props.selectedGrid.gridId.slice(0, -1) + '2'
+    if (props.selectedObject === 'INVENTORY_ITEM') {
+      let gridId = props.selectedObject
+      ComponentManager.setStateForComponent(gridId, null, {
+        selectedIndexes: []
+      })
+      GridManager.reloadGridData(gridId)
+    } else {
+      let gridIdPrime = props.selectedGrid.gridId.slice(0, -1) + '1'
+      let gridIdSec = props.selectedGrid.gridId.slice(0, -1) + '2'
 
-    ComponentManager.setStateForComponent(gridIdPrime)
-    ComponentManager.setStateForComponent(gridIdPrime, null, {
-      selectedIndexes: []
-    })
-    GridManager.reloadGridData(gridIdPrime)
-    ComponentManager.setStateForComponent(gridIdSec)
-    ComponentManager.setStateForComponent(gridIdSec, null, {
-      selectedIndexes: []
-    })
-    GridManager.reloadGridData(gridIdSec)
+      ComponentManager.setStateForComponent(gridIdPrime)
+      ComponentManager.setStateForComponent(gridIdPrime, null, {
+        selectedIndexes: []
+      })
+      GridManager.reloadGridData(gridIdPrime)
+      ComponentManager.setStateForComponent(gridIdSec)
+      ComponentManager.setStateForComponent(gridIdSec, null, {
+        selectedIndexes: []
+      })
+      GridManager.reloadGridData(gridIdSec)
+    }
   }
 
   componentWillUnmount () {
@@ -129,7 +137,7 @@ class IndividualReverseTransfer extends React.Component {
             className={styles.container} style={{ cursor: 'pointer', marginRight: '7px', color: 'white' }}
             onClick={this.individualTransfer}
           >
-            <p>
+            <p style={{ marginTop: '2px' }}>
               {this.context.intl.formatMessage({
                 id: `${config.labelBasePath}.individual_transfer`,
                 defaultMessage: `${config.labelBasePath}.individual_transfer`

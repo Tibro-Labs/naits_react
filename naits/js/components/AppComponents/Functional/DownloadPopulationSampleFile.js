@@ -32,18 +32,6 @@ class DownloadPopulationSampleFile extends React.Component {
     }
   }
 
-  checkIfFileExists = () => {
-    const server = config.svConfig.restSvcBaseUrl
-    let verbPath = config.svConfig.triglavRestVerbs.CHECK_IF_FILE_EXISTS
-    let url = `${server}${verbPath}`
-    url = url.replace('%sessionId', this.props.svSession)
-    url = url.replace('%fileName', `strat_sample_${this.props.objectId}`)
-
-    axios.get(url).then(res => {
-      this.setState({ fileExists: res.data })
-    })
-  }
-
   showInitialSampleAlert = () => {
     const populationId = this.props.componentStack[0].row['POPULATION.POPULATION_ID']
     this.setState({

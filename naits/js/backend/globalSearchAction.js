@@ -1,7 +1,7 @@
 import axios from 'axios'
 import * as config from 'config/config.js'
 
-export function globalSearchAction (svSession, tableName, searchCriteria, searchValue, rowLimit, callback) {
+export function globalSearchAction (svSession, tableName, searchCriteria, searchValue, rowLimit, callback, altParam) {
   return function (dispatch) {
     let verbPath
     let restUrl
@@ -9,6 +9,9 @@ export function globalSearchAction (svSession, tableName, searchCriteria, search
     const tempVar = 'GLOBAL_SEARCH'
 
     verbPath = config.svConfig.triglavRestVerbs.GET_TABLE_WITH_LIKE_FILTER
+    if (altParam) {
+      verbPath = config.svConfig.triglavRestVerbs.GET_TABLE_WITH_LIKE_FILTER_2
+    }
     restUrl = config.svConfig.restSvcBaseUrl + verbPath
 
     restUrl = restUrl.replace('%svSession', svSession)

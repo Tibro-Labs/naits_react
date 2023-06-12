@@ -9,7 +9,8 @@ export default class InputCampaignSecondLevelWrapper extends React.Component {
       testTypeFieldName: 'root_campaign.info_CAMPAIGN_TEST_TYPE',
       activityTypeDropdownName: 'root_campaign.info_ACTIVITY_TYPE',
       diseaseDropdownName: 'root_campaign.info_DISEASE',
-      activitySubTypeDropdownName: 'root_campaign.info_ACTIVITY_SUBTYPE'
+      activitySubTypeDropdownName: 'root_campaign.info_ACTIVITY_SUBTYPE',
+      scopeDropdownName: 'root_campaign.info_CAMPAIGN_SCOPE'
     }
   }
 
@@ -38,7 +39,12 @@ export default class InputCampaignSecondLevelWrapper extends React.Component {
       activitySubTypeDropdown.setAttribute('disabled', '')
     }
 
-    if (activityTypeDropdown && diseaseDropdown && activitySubTypeDropdown) {
+    const scopeDropdown = document.getElementById(this.state.scopeDropdownName)
+    if (scopeDropdown) {
+      scopeDropdown.setAttribute('disabled', '')
+    }
+
+    if (activityTypeDropdown && diseaseDropdown && activitySubTypeDropdown && scopeDropdown) {
       this.setState({ loading: false })
     }
   }
